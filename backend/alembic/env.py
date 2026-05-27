@@ -1,12 +1,15 @@
 import asyncio
 from logging.config import fileConfig
+
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 from sqlmodel import SQLModel
 
-# Import all models so Alembic detects them
-from app.models.models import Student, Mentor, Assignment, GradingSession, HeartbeatLog
+from app.models.models import (
+    Student, Mentor, Assignment,
+    GradingSession, ProofSubmission, UsedNonce,
+)
 from app.core.config import settings
 
 config = context.config
@@ -19,9 +22,8 @@ target_metadata = SQLModel.metadata
 
 
 def run_migrations_offline() -> None:
-    url = config.get_main_option("sqlalchemy.url")
     context.configure(
-        url=url,
+        url=settings.DATABASE_URL_SYNC,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},

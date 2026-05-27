@@ -22,16 +22,5 @@ async def close_redis() -> None:
         _redis_client = None
 
 
-# Key helpers — centralised so typos don't create ghost keys
-def session_heartbeat_key(session_id: str) -> str:
-    """TTL key — expires if no heartbeat arrives within timeout window."""
-    return f"heartbeat:ttl:{session_id}"
-
-
-def session_sequence_key(session_id: str) -> str:
-    """Tracks the last accepted heartbeat sequence number."""
-    return f"heartbeat:seq:{session_id}"
-
-
 def rate_limit_key(identifier: str, action: str) -> str:
     return f"ratelimit:{action}:{identifier}"

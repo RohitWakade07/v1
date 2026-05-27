@@ -1,5 +1,5 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -32,7 +32,6 @@ class Settings(BaseSettings):
 
     @property
     def DATABASE_URL_SYNC(self) -> str:
-        # Used by Alembic (sync driver)
         return (
             f"postgresql+psycopg2://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
@@ -51,16 +50,12 @@ class Settings(BaseSettings):
         return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
 
     # JWT
-    JWT_SECRET_KEY: str = "CHANGE_THIS_TO_A_LONG_RANDOM_SECRET"
+    JWT_SECRET_KEY: str = "CHANGE_THIS"
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
-    # Session
-    SESSION_HEARTBEAT_TIMEOUT_SECONDS: int = 30
-    SESSION_MAX_DURATION_MINUTES: int = 120
-
-    # Challenge signing key (HMAC-SHA256)
-    CHALLENGE_SIGNING_KEY: str = "CHANGE_THIS_TO_ANOTHER_LONG_RANDOM_SECRET"
+    # Proof signing — same key must be embedded in the grader binary
+    PROOF_SIGNING_KEY: str = "CHANGE_THIS"
 
     # Rate limiting
     LOGIN_RATE_LIMIT_PER_MINUTE: int = 10

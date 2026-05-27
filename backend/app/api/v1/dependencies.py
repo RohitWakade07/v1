@@ -16,25 +16,21 @@ async def get_current_student(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
     db: AsyncSession = Depends(get_db),
 ) -> Student:
-    token = credentials.credentials
     try:
-        payload = decode_access_token(token)
+        payload = decode_access_token(credentials.credentials)
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
     if payload.get("role") != UserRole.STUDENT:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Student access required",
         )
-
-    roll_number: str = payload.get("sub")
     result = await db.execute(
-        select(Student).where(Student.roll_number == roll_number)
+        select(Student).where(Student.roll_number == payload.get("sub"))
     )
     student = result.scalar_one_or_none()
     if not student or not student.is_active:
@@ -49,26 +45,22 @@ async def get_current_mentor(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
     db: AsyncSession = Depends(get_db),
 ) -> Mentor:
-    token = credentials.credentials
     try:
-        payload = decode_access_token(token)
+        payload = decode_access_token(credentials.credentials)
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
     role = payload.get("role")
     if role not in [UserRole.MENTOR, UserRole.ADMIN]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Mentor access required",
         )
-
-    username: str = payload.get("sub")
     result = await db.execute(
-        select(Mentor).where(Mentor.username == username)
+        select(Mentor).where(Mentor.username == payload.get("sub"))
     )
     mentor = result.scalar_one_or_none()
     if not mentor or not mentor.is_active:

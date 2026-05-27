@@ -1,12 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
-from app.db.session import get_db
-from app.db.redis import get_redis, rate_limit_key
-from app.services.auth_service import AuthService
-from app.models.models import Student, UserRole
 from app.core.security import hash_password
 from app.core.config import settings
+from app.db.session import get_db
+from app.db.redis import get_redis, rate_limit_key
+from app.models.models import Student, Mentor, UserRole
+from app.services.auth_service import AuthService
 from app.schemas.schemas import (
     StudentLoginRequest,
     MentorLoginRequest,
@@ -29,30 +30,25 @@ async def student_login(
     body: StudentLoginRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    # Rate limiting — max N login attempts per IP per minute
     redis = await get_redis()
     ip = request.client.host
-    rl_key = rate_limit_key(ip, "student_login")
-    count = await redis.incr(rl_key)
+    key = rate_limit_key(ip, "student_login")
+    count = await redis.incr(key)
     if count == 1:
-        await redis.expire(rl_key, 60)
+        await redis.expire(key, 60)
     if count > settings.LOGIN_RATE_LIMIT_PER_MINUTE:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Too many login attempts. Try again in a minute.",
         )
 
-    token_response = await AuthService.login_student(
-        roll_number=body.roll_number,
-        password=body.password,
-        db=db,
-    )
-    if not token_response:
+    token = await AuthService.login_student(body.roll_number, body.password, db)
+    if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid roll number or password",
         )
-    return token_response
+    return token
 
 
 @router.post(
@@ -64,17 +60,13 @@ async def mentor_login(
     body: MentorLoginRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    token_response = await AuthService.login_mentor(
-        username=body.username,
-        password=body.password,
-        db=db,
-    )
-    if not token_response:
+    token = await AuthService.login_mentor(body.username, body.password, db)
+    if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",
         )
-    return token_response
+    return token
 
 
 @router.post(
@@ -87,11 +79,6 @@ async def register_student(
     body: StudentCreate,
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Admin-facing registration endpoint.
-    In production, restrict this behind mentor/admin auth.
-    """
-    from sqlmodel import select
     existing = await db.execute(
         select(Student).where(Student.roll_number == body.roll_number.upper())
     )
@@ -100,7 +87,6 @@ async def register_student(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Roll number {body.roll_number} already registered",
         )
-
     student = Student(
         roll_number=body.roll_number.upper(),
         full_name=body.full_name,
@@ -109,7 +95,6 @@ async def register_student(
     )
     db.add(student)
     await db.flush()
-
     return StudentPublic(
         id=student.id,
         roll_number=student.roll_number,
