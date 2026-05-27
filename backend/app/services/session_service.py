@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Optional
 
 from fastapi import HTTPException, status
@@ -45,7 +45,7 @@ class SessionService:
             )
 
         # 2. Deadline check
-        if assignment.deadline and datetime.now(timezone.utc) > assignment.deadline:
+        if assignment.deadline and datetime.utcnow() > assignment.deadline:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Assignment deadline has passed",

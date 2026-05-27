@@ -1,0 +1,57 @@
+# =========================
+# Backend-specific
+# =========================
+backend/.venv/
+backend/.env
+backend/.env.*
+!backend/.env.example
+backend/__pycache__/
+backend/*.db
+backend/*.sqlite3
+backend/logs/
+backend/tmp/
+backend/temp/
+
+# Python caches anywhere
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.coverage
+**/htmlcov/
+
+# Build artifacts
+**/build/
+**/dist/
+**/*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+nohup.out
+
+# Docker / local volumes
+backend/postgres_data/
+backend/pgdata/
+docker-compose.override.yml
+
+# Secrets / keys
+*.pem
+*.key
+*.crt
+secrets.json
+
+# Jupyter
+**/.ipynb_checkpoints/
+
+# Optional frontend (if added later)
+node_modules/
+

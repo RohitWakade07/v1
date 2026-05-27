@@ -1,6 +1,6 @@
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Optional
 
 from fastapi import HTTPException, status
@@ -125,7 +125,7 @@ class ProofService:
         ))
 
         # ── 9. Complete session ───────────────────────────────────────
-        now = datetime.now(timezone.utc)
+        now = datetime.utcnow()
         session.status = SessionStatus.COMPLETED
         session.submitted_at = now
         session.completed_at = now
@@ -199,7 +199,7 @@ class ProofService:
         reason: str,
     ) -> None:
         session.status = SessionStatus.REJECTED
-        session.submitted_at = datetime.now(timezone.utc)
+        session.submitted_at = datetime.utcnow()
         session.rejection_reason = reason
         db.add(session)
 
@@ -212,7 +212,7 @@ class ProofService:
         hashes_valid: bool,
         score: Optional[float],
     ) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.utcnow()
         record = ProofSubmission(
             session_id=session.id,
             student_id=session.student_id,

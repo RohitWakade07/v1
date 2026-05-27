@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from enum import Enum
 from typing import Optional
 
@@ -46,8 +46,8 @@ class Student(SQLModel, table=True):
     email: str = Field(sa_column=Column(String(200), unique=True, nullable=False))
     hashed_password: str = Field(sa_column=Column(String(200), nullable=False))
     is_active: bool = Field(default=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 # ── Mentor ────────────────────────────────────────────────────────────
@@ -64,7 +64,7 @@ class Mentor(SQLModel, table=True):
     hashed_password: str = Field(sa_column=Column(String(200), nullable=False))
     role: UserRole = Field(default=UserRole.MENTOR)
     is_active: bool = Field(default=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 # ── Assignment ────────────────────────────────────────────────────────
@@ -83,8 +83,8 @@ class Assignment(SQLModel, table=True):
     deadline: Optional[datetime] = Field(default=None)
     is_published: bool = Field(default=False)
     created_by_id: uuid.UUID = Field(foreign_key="mentors.id")
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 # ── Grading Session ───────────────────────────────────────────────────
@@ -104,7 +104,7 @@ class GradingSession(SQLModel, table=True):
     status: SessionStatus = Field(default=SessionStatus.STARTED)
 
     # Timestamps
-    started_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    started_at: datetime = Field(default_factory=datetime.utcnow)
     submitted_at: Optional[datetime] = Field(default=None)
     completed_at: Optional[datetime] = Field(default=None)
 
@@ -143,7 +143,7 @@ class ProofSubmission(SQLModel, table=True):
     hashes_valid: bool = Field(default=False)
     final_score: Optional[float] = Field(default=None)
 
-    submitted_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    submitted_at: datetime = Field(default_factory=datetime.utcnow)
     verified_at: Optional[datetime] = Field(default=None)
 
 
@@ -156,4 +156,4 @@ class UsedNonce(SQLModel, table=True):
         sa_column=Column(String(200), primary_key=True, nullable=False)
     )
     student_id: uuid.UUID = Field(foreign_key="students.id")
-    used_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    used_at: datetime = Field(default_factory=datetime.utcnow)

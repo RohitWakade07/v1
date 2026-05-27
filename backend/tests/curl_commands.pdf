@@ -1,0 +1,120 @@
+Health:
+curl -sS http://127.0.0.1:8000/health | jq
+
+Mentor login (save token):
+MENTOR_TOKEN=$(curl -sS -X POST http://127.0.0.1:8000/api/v1/auth/mentor/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"mentor1","password":"MentorPass123"}' | jq -r .access_token)
+echo "$MENTOR_TOKEN"
+
+Create assignment (save id):
+ASSIGN_ID=$(curl -sS -X POST http://127.0.0.1:8000/api/v1/assignments/ \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $MENTOR_TOKEN" \
+  -d '{"slug":"postman-test-1","title":"Postman Test Assignment","description":"Created from curl","category":"manual_review","max_score":10}' \
+  | jq -r .id)
+echo "$ASSIGN_ID"
+
+Publish assignment:
+curl -sS -X POST "http://127.0.0.1:8000/api/v1/assignments/${ASSIGN_ID}/publish" \
+  -H "Authorization: Bearer $MENTOR_TOKEN" | jq
+
+Student register:
+curl -sS -X POST http://127.0.0.1:8000/api/v1/auth/student/register \
+  -H "Content-Type: application/json" \
+  -d '{"roll_number":"CS002","full_name":"Student Two","email":"student2@example.com","password":"StudentPass123"}' | jq
+
+Student login (save token):
+STUDENT_TOKEN=$(curl -sS -X POST http://127.0.0.1:8000/api/v1/auth/student/login \
+  -H "Content-Type: application/json" \
+  -d '{"roll_number":"CS002","password":"StudentPass123"}' | jq -r .access_token)
+echo "$STUDENT_TOKEN"
+
+List published assignments (student):
+curl -sS -H "Authorization: Bearer $STUDENT_TOKEN" \
+  http://127.0.0.1:8000/api/v1/assignments/ | jq
+
+Create session (save session_id):
+SESSION_ID=$(curl -sS -X POST http://127.0.0.1:8000/api/v1/sessions/ \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $STUDENT_TOKEN" \
+  -d "{\"assignment_id\":\"$ASSIGN_ID\"}" | jq -r .session_id)
+echo "$SESSION_ID"
+
+Start session:
+curl -sS -X PATCH "http://127.0.0.1:8000/api/v1/sessions/${SESSION_ID}/start" \
+  -H "Authorization: Bearer $STUDENT_TOKEN" | jq
+
+Proof submit — quick reject test (invalid HMAC):
+curl -sS -X POST http://127.0.0.1:8000/api/v1/proof/submit \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $STUDENT_TOKEN" \
+  -d '{
+    "session_id":"'"$SESSION_ID"'",
+    "assignment_id":"'"$ASSIGN_ID"'",
+    "student_id":"CS002",
+    "timestamp":"'"$(date -u +"%Y-%m-%dT%H:%M:%S")"'",
+    "nonce":"'"$(uuidgen)"'",
+    "grader_binary_hash":"'"$(printf 'a%.0s' {1..64})"'",
+    "results":{"smoke_test":{"test_id":"smoke_test","passed":true,"stdout_hash":"'"$(printf 'b%.0s' {1..64})"'","stderr_hash":null,"exit_code":0,"score":10}},
+    "artifact_hashes":{"artifact.txt":"'"$(printf 'c%.0s' {1..64})"'"},
+    "hmac_signature":"deadbeef"
+  }' | jq
+
+Proof submit — compute valid HMAC and submit (run from project root; use project venv):
+1) create proof.json (example):
+cat > proof.json <<'JSON'
+{
+  "session_id": "SESSION_ID_PLACEHOLDER",
+  "assignment_id": "ASSIGN_ID_PLACEHOLDER",
+  "student_id": "CS002",
+  "timestamp": "2026-05-27T00:00:00",
+  "nonce": "REPLACE_WITH_UUID",
+  "grader_binary_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "results": {
+    "smoke_test": {
+      "test_id": "smoke_test",
+      "passed": true,
+      "stdout_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "stderr_hash": null,
+      "exit_code": 0,
+      "score": 10
+    }
+  },
+  "artifact_hashes": {
+    "artifact.txt": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  },
+  "hmac_signature": ""
+}
+JSON
+
+Replace placeholders in proof.json (session_id, assignment_id, nonce).
+
+2) compute signature (use project venv so `app.core.config` reads `PROOF_SIGNING_KEY`):
+.venv/bin/python - <<'PY'
+import json, hmac, hashlib
+from app.core.config import settings
+p=json.load(open('proof.json'))
+payload_to_sign = {k:v for k,v in p.items() if k!='hmac_signature'}
+canonical = json.dumps(payload_to_sign, sort_keys=True, separators=(',',':'))
+sig = hmac.new(settings.PROOF_SIGNING_KEY.encode(), canonical.encode(), hashlib.sha256).hexdigest()
+print(sig)
+PY
+
+3) update `proof.json` with the printed signature (set `hmac_signature`), then submit:
+curl -sS -X POST http://127.0.0.1:8000/api/v1/proof/submit \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $STUDENT_TOKEN" \
+  --data-binary @proof.json | jq
+
+Get results (student):
+curl -sS -H "Authorization: Bearer $STUDENT_TOKEN" http://127.0.0.1:8000/api/v1/results/ | jq
+
+Get result detail:
+curl -sS -H "Authorization: Bearer $STUDENT_TOKEN" \
+  http://127.0.0.1:8000/api/v1/results/$SESSION_ID | jq
+
+Notes:
+- Run these from the backend project root when computing signatures with the app's config (`.venv` activated or use `.venv/bin/python`).
+- Use `jq` for pretty JSON; install if needed.
+- Replace placeholders (like `SESSION_ID`, `ASSIGN_ID`) with variables printed by earlier commands.
