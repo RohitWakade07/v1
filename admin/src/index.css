@@ -1,0 +1,223 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Root & Color-scheme ─────────────────────────────────────────── */
+:root {
+  color-scheme: light;
+  --color-navy-950: #ffffff;
+  --color-navy-900: #F3F4F6;
+  --color-navy-800: #E5E7EB;
+  --color-accent-blue: #2E86C1;
+  --color-accent-teal: #1ABC9C;
+  --color-text-primary: #111827;
+  --color-text-secondary: #4B5563;
+  --color-warning: #E67E22;
+  --color-danger: #C0392B;
+}
+
+/* ─── Dark theme overrides ────────────────────────────────────────── */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --color-navy-950: #0F1923;
+  --color-navy-900: #1A2D42;
+  --color-navy-800: #253545;
+  --color-text-primary: #E8EDF2;
+  --color-text-secondary: #8CA0B3;
+}
+
+/* ─── Base ────────────────────────────────────────────────────────── */
+body {
+  margin: 0;
+  font-family: 'IBM Plex Sans', sans-serif;
+  background: var(--color-navy-950);
+  color: var(--color-text-primary);
+  transition: background 0.25s ease, color 0.25s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* { box-sizing: border-box; }
+a { color: inherit; text-decoration: none; }
+
+/* ─── Scrollbar ───────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--color-navy-950); }
+::-webkit-scrollbar-thumb { background: var(--color-navy-800); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-accent-blue); }
+
+/* ─── Typography ──────────────────────────────────────────────────── */
+.font-display { font-family: 'DM Sans', sans-serif; }
+.font-mono { font-family: 'JetBrains Mono', monospace; }
+
+/* ─── Keyframes ───────────────────────────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(46, 134, 193, 0); }
+  50% { box-shadow: 0 0 16px 2px rgba(46, 134, 193, 0.25); }
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ─── Animation utilities ─────────────────────────────────────────── */
+.animate-fade-in-up { animation: fadeInUp 0.35s ease both; }
+.animate-slide-in-right { animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-fade-in { animation: fadeIn 0.2s ease both; }
+.animate-spin-custom { animation: spin 0.8s linear infinite; }
+.animate-pulse-glow { animation: pulseGlow 2.5s ease-in-out infinite; }
+.delay-75 { animation-delay: 75ms; }
+.delay-150 { animation-delay: 150ms; }
+.delay-225 { animation-delay: 225ms; }
+.delay-300 { animation-delay: 300ms; }
+
+/* ─── Skeleton shimmer ────────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, var(--color-navy-900) 25%, var(--color-navy-800) 50%, var(--color-navy-900) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.6s infinite linear;
+  border-radius: 8px;
+}
+
+/* ─── Glassmorphism ───────────────────────────────────────────────── */
+.glass {
+  background: rgba(26, 45, 66, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(37, 53, 69, 0.8);
+}
+
+/* ─── Gradient text ───────────────────────────────────────────────── */
+.gradient-text {
+  background: linear-gradient(135deg, #2E86C1 0%, #1ABC9C 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Transition preset ───────────────────────────────────────────── */
+.transition-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.transition-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(6, 10, 15, 0.35);
+}
+
+/* ─── Input base ──────────────────────────────────────────────────── */
+.input-dark {
+  background: var(--color-navy-950);
+  border: 1px solid var(--color-navy-800);
+  color: var(--color-text-primary);
+  border-radius: 8px;
+  padding: 10px 14px;
+  width: 100%;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.input-dark::placeholder { color: var(--color-text-secondary); }
+.input-dark:focus {
+  outline: none;
+  border-color: var(--color-accent-blue);
+  box-shadow: 0 0 0 3px rgba(46, 134, 193, 0.15);
+}
+.input-dark:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ─── Buttons ─────────────────────────────────────────────────────── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-accent-blue);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+}
+.btn-primary:hover:not(:disabled) {
+  background: #2471A3;
+  box-shadow: 0 4px 12px rgba(46, 134, 193, 0.35);
+}
+.btn-primary:active:not(:disabled) { transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  color: var(--color-accent-blue);
+  border: 1px solid var(--color-accent-blue);
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.btn-secondary:hover:not(:disabled) { background: rgba(46, 134, 193, 0.1); }
+.btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-danger);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.btn-danger:hover:not(:disabled) { background: #a93226; }
+.btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ─── Card base ───────────────────────────────────────────────────── */
+.card-dark {
+  background: var(--color-navy-900);
+  border: 1px solid var(--color-navy-800);
+  border-radius: 12px;
+  box-shadow: 0 10px 22px rgba(6, 10, 15, 0.08);
+  transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+[data-theme="dark"] .card-dark {
+  box-shadow: 0 10px 22px rgba(6, 10, 15, 0.3);
+}
+
+/* ─── Category badge colours ──────────────────────────────────────── */
+.cat-artifact_validation { background: rgba(46, 134, 193, 0.15); color: #2E86C1; }
+.cat-deterministic_execution { background: rgba(26, 188, 156, 0.15); color: #1ABC9C; }
+.cat-filesystem_validation { background: rgba(155, 89, 182, 0.15); color: #9B59B6; }
+.cat-git_validation { background: rgba(230, 126, 34, 0.15); color: #E67E22; }
+.cat-network_validation { background: rgba(52, 152, 219, 0.15); color: #3498DB; }
+.cat-documentation_review { background: rgba(241, 196, 15, 0.15); color: #F1C40F; }
+.cat-manual_review { background: rgba(192, 57, 43, 0.15); color: #C0392B; }

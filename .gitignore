@@ -2,6 +2,7 @@
 # Backend-specific
 # =========================
 backend/.venv/
+backend/venv/
 backend/.env
 backend/.env.*
 !backend/.env.example

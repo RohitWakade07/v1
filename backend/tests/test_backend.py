@@ -14,6 +14,7 @@ from sqlmodel import SQLModel
 from app.main import app
 from app.db.session import get_db
 from app.core.config import settings
+from app.db.redis import close_redis
 
 TEST_DB = "sqlite+aiosqlite:///:memory:"
 test_engine = create_async_engine(TEST_DB, echo=False)
@@ -40,6 +41,12 @@ async def setup_db():
     yield
     async with test_engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.drop_all)
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def cleanup_redis():
+    yield
+    await close_redis()
 
 
 @pytest_asyncio.fixture

@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
-import { getSession, listSessions } from '@/api/sessions'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { getSession, listSessions, startSession } from '@/api/sessions'
 
 export const useSessions = () =>
   useQuery({
@@ -13,3 +13,14 @@ export const useSession = (id?: string) =>
     queryFn: () => getSession(id ?? ''),
     enabled: Boolean(id),
   })
+
+export const useStartSession = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => startSession(id),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['sessions'] })
+      queryClient.setQueryData(['sessions', data.id], data)
+    },
+  })
+}

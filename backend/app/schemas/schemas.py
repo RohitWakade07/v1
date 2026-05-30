@@ -69,6 +69,11 @@ class AssignmentPublic(BaseModel):
     category: AssignmentCategory
     max_score: float
     deadline: Optional[datetime]
+    is_published: bool
+    is_archived: bool
+    created_by_id: uuid.UUID
+    created_at: datetime
+    updated_at: Optional[datetime] = None
 
 
 class AssignmentCreate(BaseModel):
@@ -77,6 +82,13 @@ class AssignmentCreate(BaseModel):
     description: Optional[str] = None
     category: AssignmentCategory
     max_score: float = 100.0
+    deadline: Optional[datetime] = None
+
+
+class AssignmentUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    max_score: Optional[float] = None
     deadline: Optional[datetime] = None
 
 
@@ -133,6 +145,106 @@ class ProofSubmitResponse(BaseModel):
     status: SessionStatus
     final_score: Optional[float]
     message: str
+
+
+# ── Mentor Portal Phase 2 ──────────────────────────────────────────────
+
+class MentorStudentPublic(BaseModel):
+    id: uuid.UUID
+    roll_number: str
+    full_name: str
+    email: str
+    assignments_participated: int
+    sessions_count: int
+
+
+class MentorSessionPublic(BaseModel):
+    id: uuid.UUID
+    student_roll: str
+    student_name: str
+    assignment_slug: str
+    assignment_title: str
+    status: SessionStatus
+    started_at: datetime
+    completed_at: Optional[datetime]
+    final_score: Optional[float]
+
+
+class MentorResultPublic(BaseModel):
+    session_id: uuid.UUID
+    student_roll: str
+    student_name: str
+    assignment_slug: str
+    assignment_title: str
+    final_score: float
+    max_score: float
+    completed_at: datetime
+
+
+class MentorAnalyticsSummary(BaseModel):
+    total_students: int
+    completion_rate: float
+    avg_score: float
+    total_submissions: int
+    score_distribution: dict[str, int]
+    assignments_participation: dict[str, int]
+    category_breakdown: dict[str, int]
+
+
+# ── Grader ────────────────────────────────────────────────────────────
+
+class GraderPublic(BaseModel):
+    id: uuid.UUID
+    name: str
+    description: Optional[str]
+    status: str
+    created_at: datetime
+
+
+class GraderVersionPublic(BaseModel):
+    id: uuid.UUID
+    grader_id: uuid.UUID
+    version: str
+    binary_hash: str
+    created_at: datetime
+
+
+# ── Evaluator Build ───────────────────────────────────────────────────
+
+class EvaluatorBuildPublic(BaseModel):
+    id: uuid.UUID
+    assignment_id: uuid.UUID
+    mentor_id: uuid.UUID
+    status: str
+    binary_hash: Optional[str]
+    error_message: Optional[str]
+    started_at: datetime
+    completed_at: Optional[datetime]
+
+
+# ── Notification ──────────────────────────────────────────────────────
+
+class NotificationPublic(BaseModel):
+    id: uuid.UUID
+    mentor_id: uuid.UUID
+    title: str
+    message: str
+    is_read: bool
+    created_at: datetime
+
+
+# ── Assignment Config ─────────────────────────────────────────────────
+
+class AssignmentConfigPublic(BaseModel):
+    id: uuid.UUID
+    assignment_id: uuid.UUID
+    config_data: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class AssignmentConfigUpdate(BaseModel):
+    config_data: str
 
 
 # ── Error ─────────────────────────────────────────────────────────────

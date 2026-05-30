@@ -1,62 +1,194 @@
 import { useParams, Link } from 'react-router-dom'
 import { PageWrapper } from '@/components/layout/PageWrapper'
 import { PageHeader } from '@/components/shared/PageHeader'
-import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { useSession } from '@/hooks/useSessions'
+import { useStartSession } from '@/hooks/useSessions'
+import { useAssignment } from '@/hooks/useAssignments'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { SessionTimeline } from '@/components/sessions/SessionTimeline'
-import { formatScore } from '@/lib/utils'
+import { SkeletonCard } from '@/components/shared/SkeletonCard'
+import { formatDate, formatScore, truncateHash } from '@/lib/utils'
+import { CheckCircle2, XCircle, Loader2, FileCheck2 } from 'lucide-react'
 
 const SessionDetailPage = () => {
   const { id } = useParams()
   const { data, isLoading } = useSession(id)
+  const startSession = useStartSession()
+  const { data: assignment } = useAssignment(data?.assignment_id)
 
-  if (isLoading) return <LoadingSpinner />
+  if (isLoading) {
+    return (
+      <PageWrapper>
+        <div className="grid gap-5 lg:grid-cols-2">
+          <SkeletonCard rows={5} />
+          <SkeletonCard rows={5} />
+        </div>
+      </PageWrapper>
+    )
+  }
+
   if (!data) return null
+
+  const canSubmit = data.status === 'STARTED' || data.status === 'IN_PROGRESS'
+  const canMarkInProgress = data.status === 'STARTED'
 
   return (
     <PageWrapper>
       <PageHeader
         title="Session Detail"
-        description="Review the current status and proof submission details."
+        description={assignment?.title ?? 'Evaluation session details and status.'}
+        backTo="/sessions"
+        backLabel="All Sessions"
         action={
-          (data.status === 'STARTED' || data.status === 'IN_PROGRESS') && (
+          canSubmit ? (
             <Link
               to={`/proof/submit?session_id=${data.id}`}
-              className="rounded-lg bg-accent-blue px-4 py-2 text-sm font-medium text-white"
+              className="btn-primary"
+              aria-label="Submit proof for this session"
             >
-              Submit Proof
+              <FileCheck2 size={15} /> Submit Proof
             </Link>
-          )
+          ) : undefined
         }
       />
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-navy-800 bg-navy-900/50 p-5 shadow-card">
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        {/* Session info card */}
+        <div className="card-dark p-5">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-text-secondary">Session ID</p>
-              <p className="font-mono text-sm text-text-primary">{data.id}</p>
-            </div>
+            <p className="text-xs font-medium uppercase tracking-wider text-text-secondary">
+              Session ID
+            </p>
             <StatusBadge status={data.status} />
           </div>
-          <div className="mt-4 text-sm text-text-secondary">
-            <p>Assignment ID: {data.assignment_id}</p>
-            <p>Final Score: {formatScore(data.final_score, null)}</p>
-          </div>
-          {data.rejection_reason && (
-            <div className="mt-4 rounded-lg border border-status-danger/40 bg-status-danger/10 px-4 py-3 text-sm text-status-danger">
-              {data.rejection_reason}
+          <p className="mt-2 font-mono text-sm text-text-primary break-all">{data.id}</p>
+
+          <div className="mt-5 space-y-4 text-sm">
+            {assignment && (
+              <div>
+                <p className="text-xs text-text-secondary uppercase tracking-wide">Assignment</p>
+                <Link
+                  to={`/assignments/${data.assignment_id}`}
+                  className="mt-0.5 font-medium text-accent-blue hover:text-accent-teal transition-colors"
+                >
+                  {assignment.title}
+                </Link>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-text-secondary uppercase tracking-wide">Started</p>
+                <p className="mt-0.5 text-text-primary">{formatDate(data.started_at)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-text-secondary uppercase tracking-wide">Completed</p>
+                <p className="mt-0.5 text-text-primary">{formatDate(data.completed_at)}</p>
+              </div>
             </div>
-          )}
+
+            {(data.final_score !== null && data.final_score !== undefined) && (
+              <div className="rounded-lg border border-accent-teal/30 bg-accent-teal/10 px-4 py-3">
+                <p className="text-xs text-text-secondary">Final Score</p>
+                <p className="mt-1 font-display text-2xl font-bold text-accent-teal">
+                  {formatScore(data.final_score, null)}
+                </p>
+              </div>
+            )}
+
+            {data.proof_nonce && data.status === 'COMPLETED' && (
+              <div>
+                <p className="text-xs text-text-secondary uppercase tracking-wide">Proof Nonce</p>
+                <p className="mt-0.5 font-mono text-xs text-text-primary break-all">
+                  {truncateHash(data.proof_nonce)}
+                </p>
+              </div>
+            )}
+
+            {/* Status-specific messaging */}
+            {data.status === 'COMPLETED' && (
+              <div className="flex items-start gap-3 rounded-lg border border-accent-teal/30 bg-accent-teal/10 px-4 py-3">
+                <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-accent-teal" />
+                <p className="text-sm text-accent-teal">
+                  Your proof was verified successfully. Results are now available.
+                </p>
+              </div>
+            )}
+
+            {data.status === 'REJECTED' && (
+              <div className="flex items-start gap-3 rounded-lg border border-status-danger/30 bg-status-danger/10 px-4 py-3">
+                <XCircle size={16} className="mt-0.5 shrink-0 text-status-danger" />
+                <div>
+                  <p className="text-sm font-medium text-status-danger">Verification Failed</p>
+                  {data.rejection_reason && (
+                    <p className="mt-1 text-xs text-status-danger/80">{data.rejection_reason}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {canMarkInProgress && (
+              <div className="flex flex-col gap-3">
+                <div className="rounded-lg border border-accent-blue/30 bg-accent-blue/10 px-4 py-3">
+                  <p className="text-sm text-accent-blue">
+                    Session started. Run the evaluator binary and submit the generated proof.json.
+                  </p>
+                </div>
+                <button
+                  className="btn-secondary self-start text-sm"
+                  disabled={startSession.isPending}
+                  onClick={() => id && startSession.mutate(id)}
+                  aria-label="Mark session as in progress"
+                >
+                  {startSession.isPending ? (
+                    <><Loader2 size={14} className="animate-spin" /> Marking…</>
+                  ) : (
+                    'Mark as In Progress'
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Timeline */}
         <SessionTimeline session={data} />
       </div>
+
+      {/* Score breakdown */}
       {data.score_breakdown && (
-        <div className="rounded-xl border border-navy-800 bg-navy-900/50 p-5 text-sm text-text-secondary shadow-card">
-          <p className="font-medium text-text-primary">Score Breakdown</p>
-          <pre className="mt-3 whitespace-pre-wrap font-mono text-xs">
-            {JSON.stringify(data.score_breakdown, null, 2)}
-          </pre>
+        <div className="mt-5 overflow-hidden rounded-xl border border-navy-800">
+          <div className="bg-navy-900/80 px-4 py-3">
+            <p className="text-sm font-semibold text-text-primary">Score Breakdown</p>
+          </div>
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="border-t border-navy-800 bg-navy-950">
+                <th className="px-4 py-2 text-left text-xs text-text-secondary">Test</th>
+                <th className="px-4 py-2 text-left text-xs text-text-secondary">Status</th>
+                <th className="px-4 py-2 text-left text-xs text-text-secondary">Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(data.score_breakdown).map(([testId, result], i) => (
+                <tr key={testId} className={`border-t border-navy-800 ${i % 2 === 0 ? 'bg-navy-950' : 'bg-navy-900/30'}`}>
+                  <td className="px-4 py-2 font-mono text-xs text-text-primary">{testId}</td>
+                  <td className="px-4 py-2">
+                    {result.passed ? (
+                      <span className="inline-flex items-center gap-1 text-xs text-accent-teal">
+                        <CheckCircle2 size={12} /> Passed
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-xs text-status-danger">
+                        <XCircle size={12} /> Failed
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2 text-xs text-text-primary">{result.score.toFixed(1)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </PageWrapper>

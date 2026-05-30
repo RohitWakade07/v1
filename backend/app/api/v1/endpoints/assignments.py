@@ -5,7 +5,7 @@ from sqlmodel import select
 from app.db.session import get_db
 from app.models.models import Assignment, Student, Mentor
 from app.api.v1.dependencies import get_current_student, get_current_mentor
-from app.schemas.schemas import AssignmentPublic, AssignmentCreate, ErrorResponse
+from app.schemas.schemas import AssignmentPublic, AssignmentCreate, AssignmentUpdate, ErrorResponse
 
 router = APIRouter(prefix="/assignments", tags=["Assignments"])
 
@@ -19,10 +19,6 @@ async def list_assignments(
     current_student: Student = Depends(get_current_student),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Returns all published assignments.
-    The grader binary uses this list to show the student which assignment to pick.
-    """
     result = await db.execute(
         select(Assignment)
         .where(Assignment.is_published == True)
@@ -38,6 +34,11 @@ async def list_assignments(
             category=a.category,
             max_score=a.max_score,
             deadline=a.deadline,
+            is_published=a.is_published,
+            is_archived=a.is_archived,
+            created_by_id=a.created_by_id,
+            created_at=a.created_at,
+            updated_at=getattr(a, "updated_at", None),
         )
         for a in assignments
     ]
@@ -74,10 +75,13 @@ async def get_assignment(
         category=assignment.category,
         max_score=assignment.max_score,
         deadline=assignment.deadline,
+        is_published=assignment.is_published,
+        is_archived=assignment.is_archived,
+        created_by_id=assignment.created_by_id,
+        created_at=assignment.created_at,
+        updated_at=getattr(assignment, "updated_at", None),
     )
 
-
-# ── Mentor-only: create and publish assignments ───────────────────────
 
 @router.post(
     "/",
@@ -118,13 +122,19 @@ async def create_assignment(
         category=assignment.category,
         max_score=assignment.max_score,
         deadline=assignment.deadline,
+        is_published=assignment.is_published,
+        is_archived=assignment.is_archived,
+        created_by_id=assignment.created_by_id,
+        created_at=assignment.created_at,
+        updated_at=getattr(assignment, "updated_at", None),
     )
 
 
 @router.post(
     "/{assignment_id}/publish",
     response_model=AssignmentPublic,
-    summary="Publish an assignment (mentor only)",
+    summary="Publish an assignment (mentor only, owner only)",
+    responses={403: {"model": ErrorResponse}, 404: {"model": ErrorResponse}},
 )
 async def publish_assignment(
     assignment_id: str,
@@ -141,8 +151,19 @@ async def publish_assignment(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Assignment not found",
         )
+
+    # BUG FIX: Previously ANY mentor could publish ANY assignment.
+    # Now only the creating mentor (or an admin) may publish it.
+    from app.models.models import UserRole
+    if assignment.created_by_id != current_mentor.id and current_mentor.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only publish assignments you created",
+        )
+
     assignment.is_published = True
     db.add(assignment)
+    await db.flush()
     return AssignmentPublic(
         id=assignment.id,
         slug=assignment.slug,
@@ -151,4 +172,105 @@ async def publish_assignment(
         category=assignment.category,
         max_score=assignment.max_score,
         deadline=assignment.deadline,
+        is_published=assignment.is_published,
+        is_archived=assignment.is_archived,
+        created_by_id=assignment.created_by_id,
+        created_at=assignment.created_at,
+        updated_at=getattr(assignment, "updated_at", None),
+    )
+
+
+@router.post(
+    "/{assignment_id}/unpublish",
+    response_model=AssignmentPublic,
+    summary="Unpublish an assignment (owner only)",
+    responses={403: {"model": ErrorResponse}, 404: {"model": ErrorResponse}},
+)
+async def unpublish_assignment(
+    assignment_id: str,
+    current_mentor: Mentor = Depends(get_current_mentor),
+    db: AsyncSession = Depends(get_db),
+):
+    import uuid
+    result = await db.execute(
+        select(Assignment).where(
+            Assignment.id == uuid.UUID(assignment_id),
+            Assignment.created_by_id == current_mentor.id,
+        )
+    )
+    assignment = result.scalar_one_or_none()
+    if not assignment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Assignment not found or not owned by you",
+        )
+    assignment.is_published = False
+    db.add(assignment)
+    await db.flush()
+    return AssignmentPublic(
+        id=assignment.id,
+        slug=assignment.slug,
+        title=assignment.title,
+        description=assignment.description,
+        category=assignment.category,
+        max_score=assignment.max_score,
+        deadline=assignment.deadline,
+        is_published=assignment.is_published,
+        is_archived=assignment.is_archived,
+        created_by_id=assignment.created_by_id,
+        created_at=assignment.created_at,
+        updated_at=getattr(assignment, "updated_at", None),
+    )
+
+
+@router.patch(
+    "/{assignment_id}",
+    response_model=AssignmentPublic,
+    summary="Update an assignment (owner only)",
+    responses={403: {"model": ErrorResponse}, 404: {"model": ErrorResponse}},
+)
+async def update_assignment(
+    assignment_id: str,
+    body: AssignmentUpdate,
+    current_mentor: Mentor = Depends(get_current_mentor),
+    db: AsyncSession = Depends(get_db),
+):
+    import uuid
+    result = await db.execute(
+        select(Assignment).where(
+            Assignment.id == uuid.UUID(assignment_id),
+            Assignment.created_by_id == current_mentor.id,
+        )
+    )
+    assignment = result.scalar_one_or_none()
+    if not assignment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Assignment not found or not owned by you",
+        )
+
+    if body.title is not None:
+        assignment.title = body.title
+    if body.description is not None:
+        assignment.description = body.description
+    if body.max_score is not None:
+        assignment.max_score = body.max_score
+    if body.deadline is not None:
+        assignment.deadline = body.deadline
+
+    db.add(assignment)
+    await db.flush()
+    return AssignmentPublic(
+        id=assignment.id,
+        slug=assignment.slug,
+        title=assignment.title,
+        description=assignment.description,
+        category=assignment.category,
+        max_score=assignment.max_score,
+        deadline=assignment.deadline,
+        is_published=assignment.is_published,
+        is_archived=assignment.is_archived,
+        created_by_id=assignment.created_by_id,
+        created_at=assignment.created_at,
+        updated_at=getattr(assignment, "updated_at", None),
     )
