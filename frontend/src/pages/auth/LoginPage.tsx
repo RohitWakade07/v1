@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { loginSchema } from '@/lib/schemas'
-import { loginStudent } from '@/api/auth'
+import { loginStudent, getProfile } from '@/api/auth'
 import { useAuthStore } from '@/store/authStore'
 import { useNotificationStore } from '@/store/notificationStore'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { ShieldCheck, Eye, EyeOff, Loader2, GraduationCap, FlaskConical, Trophy } from 'lucide-react'
+import { Eye, EyeOff, Loader2, GraduationCap, FlaskConical, Trophy } from 'lucide-react'
 
 interface LoginFormValues {
   rollNumber: string
@@ -39,11 +39,14 @@ const LoginPage = () => {
       password: values.password,
     })
     setToken(response.access_token)
-    setProfile({
-      roll_number: response.roll_number,
-      student_uuid: response.student_uuid,
-      role: 'student',
-    })
+    
+    try {
+      const profileData = await getProfile()
+      setProfile(profileData)
+    } catch (error) {
+      console.error('Failed to fetch student profile details:', error)
+    }
+
     addNotification({
       type: 'success',
       title: 'Welcome back!',

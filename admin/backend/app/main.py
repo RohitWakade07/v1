@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.db.session import init_db
 from app.db.redis import get_redis, close_redis
-from app.api.v1.endpoints import auth, assignments, sessions, proof, results, admin, mentor
+from app.api.v1.endpoints import auth, assignments, sessions, proof, results, admin, mentor, students
 
 
 @asynccontextmanager
@@ -52,6 +52,7 @@ app.include_router(proof.router,       prefix=PREFIX)
 app.include_router(results.router,     prefix=PREFIX)
 app.include_router(admin.router,       prefix=PREFIX)
 app.include_router(mentor.router,      prefix=PREFIX)
+app.include_router(students.router,    prefix=PREFIX)
 
 
 @app.get("/health", tags=["Health"])

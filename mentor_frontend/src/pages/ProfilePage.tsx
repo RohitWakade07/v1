@@ -77,11 +77,7 @@ export const ProfilePage = () => {
             </div>
           </div>
           
-          <div className="mt-4 rounded-lg bg-status-warning/10 border border-status-warning/20 p-4">
-            <p className="text-xs text-status-warning">
-              This information is extracted directly from your current JWT payload. It is used to authorize your actions against the Phase 1 backend API.
-            </p>
-          </div>
+         
         </div>
       </div>
     </PageWrapper>

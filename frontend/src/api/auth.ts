@@ -14,7 +14,7 @@ export interface StudentRegisterRequest {
 }
 
 export const registerStudent = async (payload: StudentRegisterRequest) => {
-  const { data } = await apiClient.post<StudentAuthResponse>(
+  const { data } = await apiClient.post<any>(
     '/auth/student/register',
     payload,
   )

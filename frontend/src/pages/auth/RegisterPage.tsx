@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { registerSchema } from '@/lib/schemas'
-import { registerStudent } from '@/api/auth'
+import { registerStudent, loginStudent, getProfile } from '@/api/auth'
 import { useAuthStore } from '@/store/authStore'
 import { useNotificationStore } from '@/store/notificationStore'
 import { Link, useNavigate } from 'react-router-dom'
-import { ShieldCheck, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { Eye, EyeOff, Loader2 } from 'lucide-react'
 
 interface RegisterFormValues {
   fullName: string
@@ -29,20 +29,29 @@ const RegisterPage = () => {
   } = useForm<RegisterFormValues>({ resolver: zodResolver(registerSchema) })
 
   const onSubmit = handleSubmit(async (values) => {
-    const response = await registerStudent({
+    // 1. Register the student
+    await registerStudent({
       full_name: values.fullName,
       email: values.email,
       roll_number: values.rollNumber,
       password: values.password,
     })
-    setToken(response.access_token)
-    setProfile({
-      roll_number: response.roll_number,
-      student_uuid: response.student_uuid,
-      role: 'student',
-      email: values.email,
-      full_name: values.fullName,
+
+    // 2. Automatically log in to obtain the access token
+    const loginResponse = await loginStudent({
+      roll_number: values.rollNumber,
+      password: values.password,
     })
+    setToken(loginResponse.access_token)
+
+    // 3. Fetch the complete profile details
+    try {
+      const profileData = await getProfile()
+      setProfile(profileData)
+    } catch (error) {
+      console.error('Failed to fetch student profile after registration:', error)
+    }
+
     addNotification({
       type: 'success',
       title: 'Account created!',
@@ -56,7 +65,7 @@ const RegisterPage = () => {
       {/* ── Left branding panel ───────────────────────────────── */}
       <div
         className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 relative overflow-hidden"
-        style={{ background: 'linear-gradient(145deg, #0d1f2d 0%, #1A2D42 50%, #0e2236 100%)' }}
+        style={{ background: 'linear-gradient(145deg, #edf1f5ff 0%, #f5f7f9ff 50%, #f5f7f9ff 100%)' }}
       >
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-20 right-10 h-48 w-48 rounded-full bg-accent-teal/5 blur-3xl" />
@@ -75,19 +84,14 @@ const RegisterPage = () => {
           <h1 className="font-display text-4xl font-bold leading-tight">
             <span className="text-text-primary">Start your</span>
             <br />
-            <span className="gradient-text">verified journey</span>
+            <span className="gradient-text">journey</span>
             <br />
             <span className="text-text-primary">today.</span>
           </h1>
           <p className="text-sm leading-relaxed text-text-secondary max-w-sm">
-            Create your student account and get immediate access to assignments and the cryptographic grading pipeline.
+            Create your student account and get immediate access to assignments .
           </p>
-          <div className="rounded-xl border border-accent-teal/20 bg-accent-teal/5 p-4">
-            <p className="text-xs text-accent-teal font-medium">🔐 Your submissions are cryptographically signed</p>
-            <p className="mt-1 text-xs text-text-secondary">
-              The HMAC signature on each proof is verified by the backend — your scores are tamper-proof.
-            </p>
-          </div>
+          
         </div>
 
         <p className="relative text-xs text-text-secondary/60">

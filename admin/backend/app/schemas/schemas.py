@@ -59,6 +59,15 @@ class StudentPublic(BaseModel):
     created_at: datetime
 
 
+class StudentProfileResponse(BaseModel):
+    full_name: str
+    email: str
+    roll_number: str
+    student_uuid: uuid.UUID
+    role: UserRole = UserRole.STUDENT
+
+
+
 # ── Assignment ────────────────────────────────────────────────────────
 
 class AssignmentPublic(BaseModel):

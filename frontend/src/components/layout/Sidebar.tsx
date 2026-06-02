@@ -6,7 +6,6 @@ import {
   Trophy,
   User,
   LayoutDashboard,
-  ShieldCheck,
   LogOut,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
