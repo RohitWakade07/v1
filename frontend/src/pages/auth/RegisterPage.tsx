@@ -13,6 +13,7 @@ interface RegisterFormValues {
   email: string
   rollNumber: string
   password: string
+  classCode: string
 }
 
 const RegisterPage = () => {
@@ -35,6 +36,7 @@ const RegisterPage = () => {
       email: values.email,
       roll_number: values.rollNumber,
       password: values.password,
+      class_code: values.classCode,
     })
 
     // 2. Automatically log in to obtain the access token
@@ -164,6 +166,23 @@ const RegisterPage = () => {
               />
               {errors.rollNumber && (
                 <p className="mt-1.5 text-xs text-status-danger">{errors.rollNumber.message}</p>
+              )}
+            </div>
+
+            {/* Class Code */}
+            <div>
+              <label htmlFor="reg-classcode" className="mb-1.5 block text-sm font-medium text-text-secondary">
+                Class Code (provided by your Mentor)
+              </label>
+              <input
+                id="reg-classcode"
+                type="text"
+                placeholder="e.g. CLASS-A79B2D"
+                className="input-dark font-mono uppercase"
+                {...register('classCode')}
+              />
+              {errors.classCode && (
+                <p className="mt-1.5 text-xs text-status-danger">{errors.classCode.message}</p>
               )}
             </div>
 

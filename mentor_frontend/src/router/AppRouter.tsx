@@ -7,6 +7,7 @@ import AssignmentsPage from '@/pages/assignments/AssignmentsPage'
 import CreateAssignmentPage from '@/pages/assignments/CreateAssignmentPage'
 import AssignmentDetailPage from '@/pages/assignments/AssignmentDetailPage'
 import ProfilePage from '@/pages/ProfilePage'
+import ClassroomsPage from '@/pages/classrooms/ClassroomsPage'
 
 // Phase 2 Placeholders
 import StudentsPage from '@/pages/students/StudentsPage'
@@ -26,6 +27,9 @@ export const AppRouter = () => {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+
+          {/* Classrooms Module */}
+          <Route path="/classrooms" element={<ClassroomsPage />} />
 
           {/* Assignments Module */}
           <Route path="/assignments" element={<AssignmentsPage />} />

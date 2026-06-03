@@ -100,3 +100,21 @@ export interface MentorAnalytics {
   assignments_participation: Record<string, number>
   category_breakdown: Record<string, number>
 }
+
+export interface Classroom {
+  id: string
+  name: string
+  class_code: string
+  mentor_id: string
+  created_at: string
+}
+
+export interface ClassroomStudentEnrollment {
+  enrollment_id: string
+  student_id: string
+  student_name: string
+  student_roll: string
+  student_email: string
+  status: string
+  joined_at: string
+}

@@ -8,8 +8,17 @@ export type AssignmentCategory =
   | 'manual_review'
 
 export type SessionStatus =
+  | 'CREATED'
+  | 'CHALLENGE_ISSUED'
+  | 'RUNNING'
+  | 'ABORTED'
+  | 'PROOF_GENERATED'
+  | 'PROOF_SUBMITTED'
+  | 'VERIFIED'
+  | 'FAILED'
   | 'STARTED'
   | 'IN_PROGRESS'
+  | 'SUBMITTED'
   | 'COMPLETED'
   | 'REJECTED'
 
@@ -27,6 +36,9 @@ export interface StudentProfile {
   roll_number: string
   student_uuid: string
   role: 'student'
+  classroom_name?: string | null
+  classroom_status?: string | null
+  mentor_name?: string | null
 }
 
 export interface AssignmentSummary {
@@ -77,9 +89,12 @@ export interface ResultDetail extends ResultSummary {
 }
 
 export interface ProofTestResult {
+  test_id: string
   passed: boolean
-  score: number
   stdout_hash?: string | null
+  stderr_hash?: string | null
+  exit_code?: number
+  score: number
 }
 
 export interface ProofSubmitRequest {

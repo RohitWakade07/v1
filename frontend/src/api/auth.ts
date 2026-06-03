@@ -11,6 +11,7 @@ export interface StudentRegisterRequest {
   email: string
   roll_number: string
   password: string
+  class_code?: string
 }
 
 export const registerStudent = async (payload: StudentRegisterRequest) => {
@@ -31,5 +32,12 @@ export const loginStudent = async (payload: StudentLoginRequest) => {
 
 export const getProfile = async () => {
   const { data } = await apiClient.get<StudentProfile>('/students/me')
+  return data
+}
+
+export const joinClassroom = async (classCode: string) => {
+  const { data } = await apiClient.post<any>('/classrooms/join', {
+    class_code: classCode,
+  })
   return data
 }

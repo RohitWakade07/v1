@@ -25,35 +25,59 @@ apiClient.interceptors.response.use(
   (error) => {
     const status = error?.response?.status as number | undefined
     const notifier = useNotificationStore.getState()
+    const skipToast = error?.config?.headers?.['x-skip-error-toast'] === 'true'
+
     if (status === 401) {
-      notifier.addNotification({
-        type: 'warning',
-        title: 'Session expired',
-        message: 'Please log in again to continue.',
-      })
+      if (!skipToast) {
+        notifier.addNotification({
+          type: 'warning',
+          title: 'Session expired',
+          message: 'Please log in again to continue.',
+        })
+      }
       useAuthStore.getState().logout()
       const current = `${window.location.pathname}${window.location.search}`
       if (!current.startsWith('/login')) {
         window.location.href = `/login?redirect=${encodeURIComponent(current)}`
       }
     } else if (status === 429) {
-      notifier.addNotification({
-        type: 'warning',
-        title: 'Too many attempts',
-        message: 'Please wait 60 seconds and try again.',
-      })
+      if (!skipToast) {
+        notifier.addNotification({
+          type: 'warning',
+          title: 'Too many attempts',
+          message: 'Please wait 60 seconds and try again.',
+        })
+      }
     } else if (status) {
-      notifier.addNotification({
-        type: 'error',
-        title: 'Request failed',
-        message: 'We could not complete that request. Please try again.',
-      })
+      if (!skipToast) {
+        let message = 'We could not complete that request. Please try again.'
+        const detail = error.response?.data?.detail
+        if (detail) {
+          if (Array.isArray(detail)) {
+            message = detail
+              .map((err: any) => {
+                const field = err.loc && err.loc.length > 0 ? err.loc[err.loc.length - 1] : 'field'
+                return `"${field}" ${err.msg}`
+              })
+              .join(', ')
+          } else {
+            message = detail
+          }
+        }
+        notifier.addNotification({
+          type: 'error',
+          title: 'Request failed',
+          message,
+        })
+      }
     } else {
-      notifier.addNotification({
-        type: 'error',
-        title: 'Network error',
-        message: 'Unable to reach the server. Check your connection.',
-      })
+      if (!skipToast) {
+        notifier.addNotification({
+          type: 'error',
+          title: 'Network error',
+          message: 'Unable to reach the server. Check your connection.',
+        })
+      }
     }
     return Promise.reject(error)
   },

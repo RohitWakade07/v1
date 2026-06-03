@@ -1,0 +1,42 @@
+{
+  "session": {
+    "session_id": "dbbc50f6-c225-4fd6-9af9-23cc6e001984",
+    "student_id": "22BEC999",
+    "nonce": "ad2682a7-36cd-400f-92fd-ad05e09084fa",
+    "started_at": "2026-06-02T05:44:56.272389"
+  },
+  "assignment": {
+    "assignment_id": "22222222-2222-2222-2222-222222222222",
+    "slug": "demo-sync-lab",
+    "title": "Integration Sync Demonstration Lab",
+    "category": "artifact_validation",
+    "max_score": 100.0,
+    "deadline": null
+  },
+  "grader": {
+    "grader_id": "da05177d-0dc9-4c09-8c20-80238a1b27be",
+    "name": "Default Artifact Grader",
+    "version": "1.0.0",
+    "binary_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "execution_constraints": {
+    "timeout_seconds": 120
+  },
+  "validation_rules": [
+    {
+      "rule_id": "rule_file_exists",
+      "type": "file_exists",
+      "target": "sync_test.txt",
+      "points": 50.0
+    },
+    {
+      "rule_id": "rule_content_check",
+      "type": "content",
+      "target": "sync_test.txt",
+      "points": 50.0,
+      "metadata": {
+        "pattern": "EE-Yantra Sync Verified"
+      }
+    }
+  ]
+}

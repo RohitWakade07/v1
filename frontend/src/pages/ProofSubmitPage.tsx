@@ -1,13 +1,11 @@
-import { useEffect, useState } from 'react'
-import { useLocation } from 'react-router-dom'
-import { FileCheck2, Loader2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react'
+import { useState } from 'react'
+import { FileCheck2, Loader2, CheckCircle2, XCircle } from 'lucide-react'
 import { PageWrapper } from '@/components/layout/PageWrapper'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { ProofDropZone } from '@/components/proof/ProofDropZone'
 import { ProofHistoryTable } from '@/components/proof/ProofHistoryTable'
 import { useSessions } from '@/hooks/useSessions'
 import { useProofSubmit } from '@/hooks/useProofSubmit'
-import { useAssignments } from '@/hooks/useAssignments'
 import { proofFileSchema } from '@/lib/schemas'
 import type { ProofSubmitRequest } from '@/types/api'
 import { useNotificationStore } from '@/store/notificationStore'
@@ -18,8 +16,6 @@ type SubmitStatus = 'idle' | 'uploading' | 'success' | 'error'
 
 const ProofSubmitPage = () => {
   const { data: sessions, isLoading } = useSessions()
-  const { data: assignments } = useAssignments()
-  const [selectedSessionId, setSelectedSessionId] = useState('')
   const [fileName, setFileName] = useState('')
   const [parsedProof, setParsedProof] = useState<ProofSubmitRequest | null>(null)
   const [parseError, setParseError] = useState('')
@@ -28,23 +24,6 @@ const ProofSubmitPage = () => {
   const [submitScore, setSubmitScore] = useState<number | null>(null)
   const proofSubmit = useProofSubmit()
   const addNotification = useNotificationStore((s) => s.addNotification)
-  const location = useLocation()
-
-  const activeSessions = (sessions ?? []).filter((s) =>
-    ['STARTED', 'IN_PROGRESS'].includes(s.status),
-  )
-
-  const assignmentMap = Object.fromEntries(
-    (assignments ?? []).map((a) => [a.id, a.title]),
-  )
-
-  useEffect(() => {
-    const sessionId = new URLSearchParams(location.search).get('session_id')
-    if (sessionId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSelectedSessionId(sessionId)
-    }
-  }, [location.search])
 
   const handleFileSelected = (file: File) => {
     setParseError('')
@@ -60,7 +39,9 @@ const ProofSubmitPage = () => {
         const json = JSON.parse(reader.result as string)
         const result = proofFileSchema.safeParse(json)
         if (!result.success) {
-          setParseError('Proof file is missing required fields or has invalid structure.')
+          const firstError = result.error.issues[0]
+          const path = firstError.path.join('.')
+          setParseError(`Invalid proof file structure: "${path}" - ${firstError.message}`)
           return
         }
         setParsedProof(result.data as ProofSubmitRequest)
@@ -72,26 +53,47 @@ const ProofSubmitPage = () => {
   }
 
   const handleSubmit = async () => {
-    if (!parsedProof || !selectedSessionId) return
+    if (!parsedProof) return
     setSubmitStatus('uploading')
     setSubmitMessage('Submitting proof to the verification backend…')
     setSubmitScore(null)
     try {
       const response = await proofSubmit.mutateAsync(parsedProof)
-      setSubmitStatus(response.status === 'COMPLETED' ? 'success' : 'error')
+      const isSuccess = response.status === 'VERIFIED' || response.status === 'COMPLETED'
+      setSubmitStatus(isSuccess ? 'success' : 'error')
       setSubmitMessage(response.message)
       if (response.final_score !== null && response.final_score !== undefined) {
         setSubmitScore(response.final_score)
       }
       addNotification({
-        type: response.status === 'COMPLETED' ? 'success' : 'warning',
-        title: response.status === 'COMPLETED' ? 'Proof verified!' : 'Proof rejected',
+        type: isSuccess ? 'success' : 'warning',
+        title: isSuccess ? 'Proof verified!' : 'Proof rejected',
         message: response.message,
       })
-    } catch {
+    } catch (error: any) {
       setSubmitStatus('error')
-      setSubmitMessage('Submission failed. Please check your connection and try again.')
-      addNotification({ type: 'error', title: 'Submission failed', message: 'Check your connection.' })
+      let errMsg = 'Submission failed. Please check your connection and try again.'
+      const responseData = error?.response?.data
+      if (responseData) {
+        if (responseData.detail) {
+          if (Array.isArray(responseData.detail)) {
+            errMsg = responseData.detail
+              .map((err: any) => {
+                const field = err.loc && err.loc.length > 0 ? err.loc[err.loc.length - 1] : 'field'
+                return `"${field}" ${err.msg}`
+              })
+              .join(', ')
+          } else {
+            errMsg = responseData.detail
+          }
+        } else if (responseData.message) {
+          errMsg = responseData.message
+        }
+      } else if (error?.message) {
+        errMsg = error.message
+      }
+      setSubmitMessage(errMsg)
+      addNotification({ type: 'error', title: 'Submission failed', message: errMsg })
     }
   }
 
@@ -109,34 +111,6 @@ const ProofSubmitPage = () => {
         </div>
       ) : (
         <div className="space-y-5">
-          {/* Session selector */}
-          <div className="card-dark p-5">
-            <label htmlFor="session-select" className="mb-2 block text-sm font-medium text-text-secondary">
-              Select Session
-            </label>
-            {activeSessions.length === 0 ? (
-              <div className="flex items-center gap-2 rounded-lg border border-status-warning/30 bg-status-warning/10 px-4 py-3 text-sm text-status-warning">
-                <AlertCircle size={16} />
-                No active sessions. Start an assignment first.
-              </div>
-            ) : (
-              <select
-                id="session-select"
-                className="input-dark"
-                value={selectedSessionId}
-                onChange={(e) => setSelectedSessionId(e.target.value)}
-                aria-label="Select an active session"
-              >
-                <option value="">Select an active session…</option>
-                {activeSessions.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {assignmentMap[s.assignment_id] ?? 'Unknown Assignment'} — {s.id.slice(0, 12)}… ({s.status})
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-
           {/* Drop zone */}
           <ProofDropZone
             onFileSelected={handleFileSelected}
@@ -186,7 +160,7 @@ const ProofSubmitPage = () => {
             <button
               className="btn-primary"
               onClick={handleSubmit}
-              disabled={!parsedProof || !selectedSessionId || proofSubmit.isPending}
+              disabled={!parsedProof || proofSubmit.isPending}
               aria-label="Submit proof for verification"
             >
               {proofSubmit.isPending ? (
@@ -236,7 +210,9 @@ const ProofSubmitPage = () => {
             </h3>
             <ProofHistoryTable
               sessions={(sessions ?? []).filter(
-                (s) => s.id === selectedSessionId || s.status === 'COMPLETED' || s.status === 'REJECTED',
+                (s) =>
+                  (parsedProof && s.id === parsedProof.session_id) ||
+                  ['COMPLETED', 'VERIFIED', 'REJECTED', 'FAILED', 'ABORTED'].includes(s.status),
               )}
             />
           </div>
@@ -247,3 +223,4 @@ const ProofSubmitPage = () => {
 }
 
 export default ProofSubmitPage
+

@@ -2,18 +2,17 @@ import { useParams, Link } from 'react-router-dom'
 import { PageWrapper } from '@/components/layout/PageWrapper'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { useSession } from '@/hooks/useSessions'
-import { useStartSession } from '@/hooks/useSessions'
 import { useAssignment } from '@/hooks/useAssignments'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { SessionTimeline } from '@/components/sessions/SessionTimeline'
 import { SkeletonCard } from '@/components/shared/SkeletonCard'
 import { formatDate, formatScore, truncateHash } from '@/lib/utils'
-import { CheckCircle2, XCircle, Loader2, FileCheck2 } from 'lucide-react'
+import { CheckCircle2, XCircle, FileCheck2 } from 'lucide-react'
+import type { SessionStatus } from '@/types/api'
 
 const SessionDetailPage = () => {
   const { id } = useParams()
   const { data, isLoading } = useSession(id)
-  const startSession = useStartSession()
   const { data: assignment } = useAssignment(data?.assignment_id)
 
   if (isLoading) {
@@ -29,8 +28,8 @@ const SessionDetailPage = () => {
 
   if (!data) return null
 
-  const canSubmit = data.status === 'STARTED' || data.status === 'IN_PROGRESS'
-  const canMarkInProgress = data.status === 'STARTED'
+  const activeStatuses: SessionStatus[] = ['CREATED', 'STARTED', 'CHALLENGE_ISSUED', 'RUNNING', 'IN_PROGRESS', 'PROOF_GENERATED']
+  const canSubmit = activeStatuses.includes(data.status)
 
   return (
     <PageWrapper>
@@ -96,7 +95,7 @@ const SessionDetailPage = () => {
               </div>
             )}
 
-            {data.proof_nonce && data.status === 'COMPLETED' && (
+            {data.proof_nonce && (data.status === 'COMPLETED' || data.status === 'VERIFIED') && (
               <div>
                 <p className="text-xs text-text-secondary uppercase tracking-wide">Proof Nonce</p>
                 <p className="mt-0.5 font-mono text-xs text-text-primary break-all">
@@ -106,7 +105,7 @@ const SessionDetailPage = () => {
             )}
 
             {/* Status-specific messaging */}
-            {data.status === 'COMPLETED' && (
+            {(data.status === 'COMPLETED' || data.status === 'VERIFIED') && (
               <div className="flex items-start gap-3 rounded-lg border border-accent-teal/30 bg-accent-teal/10 px-4 py-3">
                 <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-accent-teal" />
                 <p className="text-sm text-accent-teal">
@@ -115,7 +114,7 @@ const SessionDetailPage = () => {
               </div>
             )}
 
-            {data.status === 'REJECTED' && (
+            {(data.status === 'REJECTED' || data.status === 'FAILED') && (
               <div className="flex items-start gap-3 rounded-lg border border-status-danger/30 bg-status-danger/10 px-4 py-3">
                 <XCircle size={16} className="mt-0.5 shrink-0 text-status-danger" />
                 <div>
@@ -127,25 +126,25 @@ const SessionDetailPage = () => {
               </div>
             )}
 
-            {canMarkInProgress && (
+            {data.status === 'ABORTED' && (
+              <div className="flex items-start gap-3 rounded-lg border border-navy-700/30 bg-navy-950 px-4 py-3">
+                <XCircle size={16} className="mt-0.5 shrink-0 text-text-secondary" />
+                <div>
+                  <p className="text-sm font-medium text-text-secondary">Session Aborted</p>
+                  <p className="mt-1 text-xs text-text-secondary">
+                    This evaluation session was aborted by the student and is now terminated. No proof can be submitted.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {canSubmit && (
               <div className="flex flex-col gap-3">
                 <div className="rounded-lg border border-accent-blue/30 bg-accent-blue/10 px-4 py-3">
                   <p className="text-sm text-accent-blue">
-                    Session started. Run the evaluator binary and submit the generated proof.json.
+                    This session is active. Run the evaluator CLI on your machine to start/continue the challenge, and submit the generated proof package here when complete.
                   </p>
                 </div>
-                <button
-                  className="btn-secondary self-start text-sm"
-                  disabled={startSession.isPending}
-                  onClick={() => id && startSession.mutate(id)}
-                  aria-label="Mark session as in progress"
-                >
-                  {startSession.isPending ? (
-                    <><Loader2 size={14} className="animate-spin" /> Marking…</>
-                  ) : (
-                    'Mark as In Progress'
-                  )}
-                </button>
               </div>
             )}
           </div>

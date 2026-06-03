@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ShieldCheck, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { mentorLoginSchema } from '@/lib/schemas'
 import { useAuth } from '@/hooks/useAuth'
 

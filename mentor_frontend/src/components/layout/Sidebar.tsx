@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
+  GraduationCap,
   BookOpen,
   Users,
   FlaskConical,
@@ -9,13 +10,13 @@ import {
   Award,
   BarChart3,
   Settings,
-  ShieldCheck,
   Lock
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/classrooms', label: 'Classrooms', icon: GraduationCap },
   { path: '/assignments', label: 'Assignments', icon: BookOpen },
   { path: '/students', label: 'Students', icon: Users },
   { path: '/sessions', label: 'Sessions', icon: FlaskConical },
