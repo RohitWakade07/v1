@@ -6,7 +6,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, func
 
 from app.db.session import get_db
-from app.models.models import Mentor, Assignment, GradingSession, Student, SessionStatus
+from app.models.models import (
+    Mentor,
+    Assignment,
+    GradingSession,
+    Student,
+    SessionStatus,
+    COMPLETED_RESULT_STATUSES,
+)
 from app.api.v1.dependencies import get_current_mentor
 from app.schemas.schemas import (
     AssignmentPublic,
@@ -134,7 +141,7 @@ async def list_mentor_results(
         .join(Assignment, GradingSession.assignment_id == Assignment.id)
         .where(
             Assignment.created_by_id == current_mentor.id,
-            GradingSession.status.in_([SessionStatus.VERIFIED, SessionStatus.COMPLETED]),
+            GradingSession.status.in_(COMPLETED_RESULT_STATUSES),
         )
         .order_by(GradingSession.completed_at.desc())
     )
@@ -173,7 +180,7 @@ async def get_mentor_analytics(
     rows = result.all()
     
     total_submissions = len(rows)
-    completed_sessions = [r for r in rows if r[0].status in (SessionStatus.VERIFIED, SessionStatus.COMPLETED)]
+    completed_sessions = [r for r in rows if r[0].status in COMPLETED_RESULT_STATUSES]
     
     completion_rate = (len(completed_sessions) / total_submissions * 100) if total_submissions > 0 else 0.0
     

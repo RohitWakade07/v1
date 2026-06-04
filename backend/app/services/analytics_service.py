@@ -3,7 +3,13 @@ from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
-from app.models.models import GradingSession, Assignment, SessionStatus, Mentor
+from app.models.models import (
+    GradingSession,
+    Assignment,
+    SessionStatus,
+    Mentor,
+    COMPLETED_RESULT_STATUSES,
+)
 from app.schemas.schemas import MentorAnalyticsSummary
 
 class AnalyticsService:
@@ -16,7 +22,7 @@ class AnalyticsService:
         rows = result.all()
         
         total_submissions = len(rows)
-        completed_sessions = [r for r in rows if r[0].status in (SessionStatus.VERIFIED, SessionStatus.COMPLETED)]
+        completed_sessions = [r for r in rows if r[0].status in COMPLETED_RESULT_STATUSES]
         
         completion_rate = (len(completed_sessions) / total_submissions * 100) if total_submissions > 0 else 0.0
         

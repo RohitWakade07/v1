@@ -6,7 +6,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.db.session import init_db
 from app.db.redis import get_redis, close_redis
-from app.api.v1.endpoints import auth, assignments, sessions, proof, results, admin, mentor, students, classrooms
+from app.api.v1.endpoints import (
+    auth,
+    assignments,
+    sessions,
+    proof,
+    proof_eep,
+    results,
+    admin,
+    mentor,
+    students,
+    classrooms,
+)
 
 
 @asynccontextmanager
@@ -49,6 +60,7 @@ app.include_router(auth.router,        prefix=PREFIX)
 app.include_router(assignments.router, prefix=PREFIX)
 app.include_router(sessions.router,    prefix=PREFIX)
 app.include_router(proof.router,       prefix=PREFIX)
+app.include_router(proof_eep.router,   prefix=PREFIX)
 app.include_router(results.router,     prefix=PREFIX)
 app.include_router(admin.router,       prefix=PREFIX)
 app.include_router(mentor.router,      prefix=PREFIX)
@@ -69,3 +81,4 @@ async def health():
     return {"status": "ok", "database": db_status, "version": settings.APP_VERSION}
 
 # Trivial comment to force uvicorn reload
+ 

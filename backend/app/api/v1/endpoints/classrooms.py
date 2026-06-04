@@ -260,6 +260,9 @@ async def join_classroom(
         # Clear out any stale pending/rejected enrollment requests
         await db.delete(e)
 
+    # Flush deletes first to avoid IntegrityError with the UniqueConstraint
+    await db.flush()
+
     # Create new PENDING enrollment
     enrollment = ClassroomEnrollment(
         classroom_id=classroom.id,

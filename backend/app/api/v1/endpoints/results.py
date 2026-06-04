@@ -8,7 +8,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 from app.db.session import get_db
-from app.models.models import GradingSession, SessionStatus, Student, Assignment
+from app.models.models import (
+    GradingSession,
+    SessionStatus,
+    Student,
+    Assignment,
+    COMPLETED_RESULT_STATUSES,
+)
 from app.api.v1.dependencies import get_current_student
 from app.schemas.schemas import ErrorResponse
 
@@ -51,6 +57,12 @@ class ResultDetail(BaseModel):
     response_model=list[ResultSummary],
     summary="Get all completed results for the authenticated student",
 )
+@router.get(
+    "/",
+    response_model=list[ResultSummary],
+    summary="Get all completed results for the authenticated student",
+    include_in_schema=False,
+)
 async def get_my_results(
     current_student: Student = Depends(get_current_student),
     db: AsyncSession = Depends(get_db),
@@ -60,7 +72,7 @@ async def get_my_results(
         .join(Assignment, GradingSession.assignment_id == Assignment.id)
         .where(
             GradingSession.student_id == current_student.id,
-            GradingSession.status.in_([SessionStatus.VERIFIED, SessionStatus.COMPLETED]),
+            GradingSession.status.in_(COMPLETED_RESULT_STATUSES),
         )
         .order_by(GradingSession.completed_at.desc())
     )

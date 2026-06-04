@@ -34,6 +34,13 @@ class SessionStatus(str, Enum):
     REJECTED    = "REJECTED"
 
 
+# Sessions that represent a finished, gradable outcome for results/analytics views.
+COMPLETED_RESULT_STATUSES = (
+    SessionStatus.VERIFIED,
+    SessionStatus.COMPLETED,
+)
+
+
 class GraderStatus(str, Enum):
     DRAFT    = "DRAFT"
     ACTIVE   = "ACTIVE"

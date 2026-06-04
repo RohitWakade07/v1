@@ -1,4 +1,8 @@
+import base64
 from functools import lru_cache
+from pathlib import Path
+
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -59,6 +63,20 @@ class Settings(BaseSettings):
 
     # Rate limiting
     LOGIN_RATE_LIMIT_PER_MINUTE: int = 10
+
+    # EEP verifier (.eep1 / .eep2 / .eep3) RSA decryption
+    RSA_PRIVATE_KEY_PATH: str = "keys/instructor_private.pem"
+    RSA_PRIVATE_KEY_B64: str = ""
+    EEP_MAX_UPLOAD_BYTES: int = 50000
+
+    @model_validator(mode="after")
+    def materialize_rsa_private_key(self) -> "Settings":
+        """Decode RSA_PRIVATE_KEY_B64 into /tmp for production deployments."""
+        if self.RSA_PRIVATE_KEY_B64 and self.RSA_PRIVATE_KEY_B64.strip():
+            key_path = Path("/tmp/instructor_private.pem")
+            key_path.write_bytes(base64.b64decode(self.RSA_PRIVATE_KEY_B64.strip()))
+            self.RSA_PRIVATE_KEY_PATH = str(key_path)
+        return self
 
 
 @lru_cache()
