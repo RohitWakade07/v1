@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>EEP Software — Project Submission</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-brand">⚡ EEP Software</div>
+    <div class="nav-links">
+      <a href="index.html" class="active">Submit</a>
+      <a href="dashboard.html">Dashboard</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <div class="hero">
+      <h1>EEP Software — Project Submission</h1>
+      <p class="subtitle">Select your week, download the verifier, run it, upload the encrypted report.</p>
+    </div>
+
+    <!-- Week selector -->
+    <div class="week-tabs" id="weekTabs">
+      <button class="week-tab active" data-week="1">Week 1</button>
+      <button class="week-tab" data-week="2">Week 2</button>
+      <button class="week-tab" data-week="3">Week 3</button>
+    </div>
+
+    <!-- Week 1 panel -->
+    <div class="week-panel" id="panel-1">
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div>
+            <div class="step-title">Download the verifier</div>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem">
+              <a href="/download/eep1_verifier" class="dl-btn">⬇ Binary (Linux)</a>
+              <a href="/download/eep1_verifier.sh" class="dl-btn" style="opacity:.7">⬇ Script</a>
+            </div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div>
+            <div class="step-title">Run it</div>
+            <pre class="code-block">chmod +x eep1_verifier
+./eep1_verifier</pre>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div><div class="step-title">Upload .eep1 file below</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Week 2 panel -->
+    <div class="week-panel" id="panel-2" style="display:none">
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div>
+            <div class="step-title">Download the verifier + sample log</div>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem">
+              <a href="/download/eep2_verifier" class="dl-btn">⬇ Binary (Linux)</a>
+              <a href="/download/eep2_verifier.sh" class="dl-btn" style="opacity:.7">⬇ Script</a>
+              <a href="/download/server.log" class="dl-btn" style="opacity:.7">📄 server.log</a>
+            </div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div>
+            <div class="step-title">Put server.log in ~/eep-software/week-02/, write analyze.sh, run verifier</div>
+            <pre class="code-block">chmod +x eep2_verifier
+./eep2_verifier</pre>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div><div class="step-title">Upload .eep2 file below</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Week 3 panel -->
+    <div class="week-panel" id="panel-3" style="display:none">
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div>
+            <div class="step-title">Download the verifier</div>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem">
+              <a href="/download/eep3_verifier" class="dl-btn">⬇ Binary (Linux)</a>
+              <a href="/download/eep3_verifier.sh" class="dl-btn" style="opacity:.7">⬇ Script</a>
+            </div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div>
+            <div class="step-title">Write organize.sh in ~/eep-software/week-03/, create a messy test folder, run verifier</div>
+            <pre class="code-block">chmod +x eep3_verifier
+./eep3_verifier
+# It generates random files and tests your script</pre>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div><div class="step-title">Upload .eep3 file below</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upload -->
+    <div class="card">
+      <h2>Upload Report</h2>
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="fileInput" accept=".eep1,.eep2,.eep3"/>
+        <div class="drop-icon">📄</div>
+        <div class="drop-text">Drop your <span>.eep1</span>, <span>.eep2</span>, or <span>.eep3</span> file here</div>
+        <div class="file-name" id="fileName"></div>
+      </div>
+      <button id="submitBtn" disabled>Submit & Grade →</button>
+      <div class="error-msg" id="errorMsg" style="display:none"></div>
+    </div>
+
+    <!-- Loading -->
+    <div class="card loading-card" id="loadingCard" style="display:none">
+      <div class="spinner"></div>
+      <p>Decrypting and grading…</p>
+    </div>
+
+    <!-- Result -->
+    <div id="resultSection" style="display:none">
+      <div class="grade-banner" id="gradeBanner">
+        <div class="grade-circle" id="gradeCircle"></div>
+        <div class="grade-info">
+          <div class="grade-student" id="gradeStudent"></div>
+          <div class="grade-score" id="gradeScore"></div>
+          <div class="grade-time" id="gradeTime"></div>
+        </div>
+      </div>
+      <div class="card" id="passedCard">
+        <h3 class="section-title pass-title">✅ Passed Checks</h3>
+        <div id="passedList"></div>
+      </div>
+      <div class="card" id="failedCard" style="display:none">
+        <h3 class="section-title fail-title">❌ Failed Checks — What to Fix</h3>
+        <div id="failedList"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+  <script>
+    // Week tab switching
+    document.querySelectorAll('.week-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.week-tab').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.week-panel').forEach(p => p.style.display = 'none');
+        btn.classList.add('active');
+        document.getElementById('panel-' + btn.dataset.week).style.display = 'block';
+      });
+    });
+  </script>
+</body>
+</html>

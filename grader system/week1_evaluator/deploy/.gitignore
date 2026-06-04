@@ -1,0 +1,14 @@
+# Security — never commit these
+keys/instructor_private.pem
+.env
+
+# Runtime
+uploads/
+*.eep1
+__pycache__/
+*.pyc
+*.pyo
+*.c
+
+# OS
+.DS_Store

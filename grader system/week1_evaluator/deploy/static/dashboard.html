@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>EEP Software — Instructor Dashboard</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-brand">⚡ EEP Software</div>
+    <div class="nav-links">
+      <a href="index.html">Submit</a>
+      <a href="dashboard.html" class="active">Dashboard</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <div class="hero">
+      <h1>Instructor Dashboard</h1>
+      <p class="subtitle">Batch-grade multiple <code>.eep1</code> submissions at once.</p>
+    </div>
+
+    <div class="card">
+      <div class="drop-zone multi" id="dropZone">
+        <input type="file" id="fileInput" accept=".eep1" multiple/>
+        <div class="drop-icon">📦</div>
+        <div class="drop-text">Drop multiple <span>.eep1</span> files or <span>click to browse</span></div>
+        <div class="file-name" id="fileName"></div>
+      </div>
+      <button id="batchBtn" disabled>Grade All Submissions →</button>
+    </div>
+
+    <div class="stats-row" id="statsRow" style="display:none">
+      <div class="stat-card"><div class="stat-num" id="sTotal">0</div><div class="stat-label">Total</div></div>
+      <div class="stat-card green"><div class="stat-num" id="sPass">0</div><div class="stat-label">All Pass</div></div>
+      <div class="stat-card red"><div class="stat-num" id="sFail">0</div><div class="stat-label">Has Fails</div></div>
+      <div class="stat-card yellow"><div class="stat-num" id="sError">0</div><div class="stat-label">Errors</div></div>
+    </div>
+
+    <div id="tableWrap" style="display:none">
+      <table class="table">
+        <thead><tr>
+          <th>Student ID</th><th>Submitted</th>
+          <th>Score</th><th>Grade</th><th>Overall</th>
+        </tr></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
