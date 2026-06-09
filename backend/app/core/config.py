@@ -67,10 +67,29 @@ class Settings(BaseSettings):
     # Rate limiting
     LOGIN_RATE_LIMIT_PER_MINUTE: int = 10
 
+    # Kafka
+    KAFKA_BOOTSTRAP_SERVERS: str = "localhost:9092"
+
+    # MinIO / S3
+    MINIO_ENDPOINT: str = "localhost:9000"
+    MINIO_ACCESS_KEY: str = "minioadmin"
+    MINIO_SECRET_KEY: str = "minioadmin"
+    MINIO_BUCKET_SUBMISSIONS: str = "submissions"
+    MINIO_BUCKET_ASSETS: str = "grader-assets"
+    MINIO_USE_SSL: bool = False
+
     # EEP verifier (.eep1 / .eep2 / .eep3) RSA decryption
     RSA_PRIVATE_KEY_PATH: str = "keys/instructor_private.pem"
     RSA_PRIVATE_KEY_B64: str = ""
     EEP_MAX_UPLOAD_BYTES: int = 50000
+
+    # Instructor files directory (replace hardcoded paths)
+    INSTRUCTOR_FILES_DIR: str = "/app/instructor_files"
+
+    # AI Feedback — disabled by default
+    ENABLE_AI_FEEDBACK: bool = False
+    AI_FEEDBACK_MODEL: str = "claude-sonnet-4-20250514"
+    AI_FEEDBACK_MAX_TOKENS: int = 500
 
     @model_validator(mode="after")
     def materialize_rsa_private_key(self) -> "Settings":

@@ -4,7 +4,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.db.session import init_db
 from app.db.redis import get_redis, close_redis
 from app.api.v1.endpoints import (
     auth,
@@ -23,10 +22,11 @@ from app.api.v1.endpoints import (
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print(f"[startup] {settings.APP_NAME} v{settings.APP_VERSION}")
-    await init_db()
+    # NOTE: Database schema creation/migrations are handled via Alembic.
+    # Do NOT call SQLModel.metadata.create_all() in production startup.
     redis = await get_redis()
     await redis.ping()
-    print("[startup] PostgreSQL and Redis connected")
+    print("[startup] Redis connected")
     yield
     await close_redis()
     print("[shutdown] connections closed")
