@@ -17,7 +17,7 @@ export const AssignmentSummaryWidget = ({ assignments }: AssignmentSummaryWidget
   <div className="card-dark p-5">
     <div className="mb-4 flex items-center justify-between">
       <h3 className="font-display text-base font-semibold text-text-primary">Recent Assignments</h3>
-      <Link to="/assignments" className="text-xs text-accent-blue hover:text-accent-teal transition-colors">
+      <Link to="/student/assignments" className="text-xs text-accent-blue hover:text-accent-teal transition-colors">
         View all →
       </Link>
     </div>
@@ -30,7 +30,7 @@ export const AssignmentSummaryWidget = ({ assignments }: AssignmentSummaryWidget
           return (
             <Link
               key={a.id}
-              to={`/assignments/${a.id}`}
+              to={`/student/assignments/${a.id}`}
               className="flex items-center justify-between gap-3 rounded-lg p-2 transition-colors hover:bg-navy-800/40"
             >
               <div className="min-w-0">

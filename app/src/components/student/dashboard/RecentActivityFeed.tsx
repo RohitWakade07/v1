@@ -12,7 +12,7 @@ export const RecentActivityFeed = ({ sessions }: RecentActivityFeedProps) => (
   <div className="card-dark p-5">
     <div className="mb-4 flex items-center justify-between">
       <h3 className="font-display text-base font-semibold text-text-primary">Active Sessions</h3>
-      <Link to="/sessions" className="text-xs text-accent-blue hover:text-accent-teal transition-colors">
+      <Link to="/student/sessions" className="text-xs text-accent-blue hover:text-accent-teal transition-colors">
         View all →
       </Link>
     </div>
@@ -23,7 +23,7 @@ export const RecentActivityFeed = ({ sessions }: RecentActivityFeedProps) => (
         {sessions.map((session) => (
           <Link
             key={session.id}
-            to={`/sessions/${session.id}`}
+            to={`/student/sessions/${session.id}`}
             className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-navy-800/40"
           >
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent-blue/10 text-accent-blue">

@@ -81,7 +81,7 @@ export const DashboardPage = () => {
             <div className="card-dark h-full p-5 flex flex-col">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="font-display text-base font-semibold text-text-primary">Recent Assignments</h3>
-                <Link to="/assignments" className="text-xs text-accent-blue hover:text-accent-teal transition-colors">
+                <Link to="/mentor/assignments" className="text-xs text-accent-blue hover:text-accent-teal transition-colors">
                   View all →
                 </Link>
               </div>
@@ -102,7 +102,7 @@ export const DashboardPage = () => {
                       ) : (
                         <span className="text-xs font-semibold text-status-warning bg-status-warning/10 px-2 py-0.5 rounded border border-status-warning/20">Draft</span>
                       )}
-                      <Link to={`/assignments/${a.id}`} className="text-text-secondary hover:text-accent-blue p-1">
+                      <Link to={`/mentor/assignments/${a.id}`} className="text-text-secondary hover:text-accent-blue p-1">
                         <ArrowRight size={16} />
                       </Link>
                     </div>
@@ -120,13 +120,13 @@ export const DashboardPage = () => {
           <div className="card-dark h-full p-5">
             <h3 className="mb-4 font-display text-base font-semibold text-text-primary">Quick Actions</h3>
             <div className="space-y-3">
-              <Link to="/assignments/create" className="btn-primary w-full justify-center">
+              <Link to="/mentor/assignments/create" className="btn-primary w-full justify-center">
                 <PlusCircle size={16} /> Create New Assignment
               </Link>
-              <Link to="/assignments" className="btn-secondary w-full justify-center">
+              <Link to="/mentor/assignments" className="btn-secondary w-full justify-center">
                 <BookOpen size={16} /> View All Assignments
               </Link>
-              <Link to="/analytics" className="btn-secondary w-full justify-center">
+              <Link to="/mentor/analytics" className="btn-secondary w-full justify-center">
                 <Activity size={16} /> Platform Status
               </Link>
             </div>

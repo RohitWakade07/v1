@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getSession, listSessions, startSession } from '@/api/student/sessions'
+import { getSession, listSessions, startSession, createSession } from '@/api/student/sessions'
 
-export const useSessions = () =>
+export const useSessions = (options?: { refetchInterval?: number | false }) =>
   useQuery({
     queryKey: ['sessions'],
     queryFn: listSessions,
+    ...options,
   })
 
 export const useSession = (id?: string) =>
@@ -21,6 +22,16 @@ export const useStartSession = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['sessions'] })
       queryClient.setQueryData(['sessions', data.id], data)
+    },
+  })
+}
+
+export const useCreateSession = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (assignmentId: string) => createSession(assignmentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sessions'] })
     },
   })
 }

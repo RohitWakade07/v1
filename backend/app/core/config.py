@@ -61,6 +61,9 @@ class Settings(BaseSettings):
     # Proof signing — same key must be embedded in the grader binary
     PROOF_SIGNING_KEY: str = "CHANGE_THIS"
 
+    # Evaluator bootstrap (used by start-evaluator endpoint)
+    EVALUATOR_SHARED_KEY: str = ""
+
     # Rate limiting
     LOGIN_RATE_LIMIT_PER_MINUTE: int = 10
 

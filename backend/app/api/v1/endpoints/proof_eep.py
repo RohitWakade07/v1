@@ -28,6 +28,8 @@ from app.services.eep_grading_service import (
 router = APIRouter(prefix="/proof", tags=["Proof EEP"])
 
 _SUBMITTABLE_STATUSES = (
+    SessionStatus.CREATED,
+    SessionStatus.CHALLENGE_ISSUED,
     SessionStatus.STARTED,
     SessionStatus.IN_PROGRESS,
     SessionStatus.RUNNING,
@@ -118,6 +120,65 @@ async def submit_eep_proof(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Session is not in a submittable state",
+        )
+
+    # Step 7a — Check pending payload
+    if not session.pending_payload:
+        session.status = SessionStatus.FAILED
+        session.rejection_reason = "No evaluator payload was received for this session. Did you run the CLI tool?"
+        db.add(session)
+        await db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No evaluator payload was received for this session. Please run the evaluator tool first.",
+        )
+
+    try:
+        pending_plaintext = decrypt_eep_file(
+            session.pending_payload,
+            settings.RSA_PRIVATE_KEY_PATH,
+        )
+        pending_report = parse_eep_report(pending_plaintext)
+    except Exception:
+        pending_report = None
+
+    is_valid = True
+    rejection_reason = None
+
+    if not pending_report:
+        is_valid = False
+        rejection_reason = "Saved evaluator payload is corrupted or invalid."
+    else:
+        # Compare session_id
+        if str(report.get("session_id", "")).strip() != str(pending_report.get("session_id", "")).strip():
+            is_valid = False
+            rejection_reason = f"Session ID in proof ({report.get('session_id')}) does not match session payload ({pending_report.get('session_id')})."
+        # Compare student_id
+        elif str(report.get("student_id", "")).strip().upper() != str(pending_report.get("student_id", "")).strip().upper():
+            is_valid = False
+            rejection_reason = "Student ID in proof does not match session payload."
+        # Compare checks
+        else:
+            checks_a = report.get("checks", [])
+            checks_b = pending_report.get("checks", [])
+            if len(checks_a) != len(checks_b):
+                is_valid = False
+                rejection_reason = "Number of checks in proof does not match evaluator payload."
+            else:
+                for c_a, c_b in zip(checks_a, checks_b):
+                    if c_a.get("id") != c_b.get("id") or c_a.get("passed") != c_b.get("passed") or c_a.get("score") != c_b.get("score"):
+                        is_valid = False
+                        rejection_reason = "Check results in proof do not match evaluator payload."
+                        break
+
+    if not is_valid:
+        session.status = SessionStatus.FAILED
+        session.rejection_reason = rejection_reason
+        db.add(session)
+        await db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Verification failed: {rejection_reason}",
         )
 
     # Step 8 — assignment

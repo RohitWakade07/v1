@@ -51,7 +51,7 @@ export const ResultCard = ({ result }: ResultCardProps) => {
 
       <div className="mt-4 flex justify-end border-t border-navy-800 pt-4">
         <Link
-          to={`/results/${result.id}`}
+          to={`/student/results/${result.id}`}
           className="inline-flex items-center gap-1 text-sm font-medium text-accent-blue hover:text-accent-teal transition-colors"
           aria-label={`View full result for ${result.assignment_title}`}
         >

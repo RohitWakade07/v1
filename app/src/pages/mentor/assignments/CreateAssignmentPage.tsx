@@ -80,7 +80,7 @@ export const CreateAssignmentPage = () => {
       }
 
       // 3. Navigate to detail
-      navigate(`/assignments/${newAssignment.id}`)
+      navigate(`/mentor/assignments/${newAssignment.id}`)
     } catch (error: unknown) {
       // Errors handled by API client globally, but we could set form errors here if it's a 422
       const err = error as { response?: { status?: number } };
@@ -97,7 +97,7 @@ export const CreateAssignmentPage = () => {
       <PageHeader
         title="Create Assignment"
         description="Configure a new assignment. You can save it as a draft or publish it immediately."
-        backTo="/assignments"
+        backTo="/mentor/assignments"
         backLabel="Back to Assignments"
       />
 
@@ -134,7 +134,7 @@ export const CreateAssignmentPage = () => {
                   </label>
                   <div className="flex items-center gap-2">
                     <span className="text-text-secondary bg-navy-950 px-3 py-2 rounded-lg border border-navy-800 font-mono text-sm hidden sm:block">
-                      /assignments/
+                      /mentor/assignments/
                     </span>
                     <input
                       id="slug"

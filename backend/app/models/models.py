@@ -200,6 +200,11 @@ class GradingSession(SQLModel, table=True):
         default=None, sa_column=Column(Text)
     )
 
+    # CLI uploaded payload
+    pending_payload: Optional[str] = Field(
+        default=None, sa_column=Column(Text)
+    )
+
 
 # ── Proof Submission (immutable audit record) ─────────────────────────
 

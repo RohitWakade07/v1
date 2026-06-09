@@ -64,7 +64,7 @@ const SessionsPage = () => {
               ? 'Start an assignment to generate your first session.'
               : `No sessions with status "${statusFilter.replace('_', ' ')}".`
           }
-          actionTo="/assignments"
+          actionTo="/student/assignments"
           actionLabel="Browse Assignments"
         />
       ) : (
@@ -88,7 +88,7 @@ const SessionsPage = () => {
                       'cursor-pointer border-t border-navy-800 transition-colors hover:bg-navy-800/60',
                       i % 2 === 0 ? 'bg-navy-950' : 'bg-navy-900/30',
                     )}
-                    onClick={() => navigate(`/sessions/${session.id}`)}
+                    onClick={() => navigate(`/student/sessions/${session.id}`)}
                   >
                     <td className="px-4 py-3 max-w-[200px]">
                       <p className="truncate font-medium text-text-primary">

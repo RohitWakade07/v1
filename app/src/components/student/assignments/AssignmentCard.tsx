@@ -47,7 +47,7 @@ export const AssignmentCard = ({ assignment }: AssignmentCardProps) => {
           {assignment.deadline ? formatRelative(assignment.deadline) : 'No deadline'}
         </span>
         <Link
-          to={`/assignments/${assignment.id}`}
+          to={`/student/assignments/${assignment.id}`}
           className="inline-flex items-center gap-1 text-sm font-medium text-accent-blue hover:text-accent-teal transition-colors"
           aria-label={`View details for ${assignment.title}`}
         >

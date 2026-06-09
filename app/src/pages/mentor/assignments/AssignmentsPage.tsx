@@ -67,7 +67,7 @@ export const AssignmentsPage = () => {
       <span key="created" className="text-xs text-text-secondary">{formatDate(a.created_at)}</span>,
       <div key="actions" className="flex items-center justify-end gap-2">
         <Link
-          to={`/assignments/${a.id}`}
+          to={`/mentor/assignments/${a.id}`}
           className="flex items-center gap-1 rounded p-1 text-xs text-text-secondary transition-colors hover:bg-navy-800 hover:text-accent-blue"
           title="View Details"
         >
@@ -102,7 +102,7 @@ export const AssignmentsPage = () => {
         title="Assignments"
         description="Manage platform assignments, drafts, and publication status."
         actions={
-          <Link to="/assignments/create" className="btn-primary">
+          <Link to="/mentor/assignments/create" className="btn-primary">
             <PlusCircle size={16} /> Create Assignment
           </Link>
         }
@@ -141,7 +141,7 @@ export const AssignmentsPage = () => {
             icon={<BookOpen size={24} />}
             title="No assignments found"
             message={searchTerm ? "Try adjusting your search or filters." : "Create your first assignment to get started."}
-            action={!searchTerm && <Link to="/assignments/create" className="btn-primary mt-4">Create Assignment</Link>}
+            action={!searchTerm && <Link to="/mentor/assignments/create" className="btn-primary mt-4">Create Assignment</Link>}
           />
         ) : (
           <DataTable headers={headers} rows={rows} />

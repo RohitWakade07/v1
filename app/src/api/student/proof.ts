@@ -18,7 +18,12 @@ export const submitEepProof = async (
   const { data } = await apiClient.post<ProofSubmitResponse>(
     '/proof/submit-eep',
     formData,
-    { headers: { 'x-skip-error-toast': 'true' } },
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        'x-skip-error-toast': 'true',
+      },
+    },
   )
   return data
 }

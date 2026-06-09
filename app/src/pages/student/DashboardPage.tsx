@@ -33,7 +33,19 @@ const DashboardPage = () => {
   const sessions = sessionsQuery.data ?? []
   const results = resultsQuery.data ?? []
   const activeSessions = sessions.filter((s) => ['STARTED', 'IN_PROGRESS'].includes(s.status))
-  const totalScore = results.reduce((sum, r) => sum + r.final_score, 0)
+  
+  // Group results by assignment_id and find the maximum final_score for each assignment
+  const bestScoresByAssignment: Record<string, number> = {}
+  results.forEach((r) => {
+    const score = r.final_score ?? 0
+    if (
+      bestScoresByAssignment[r.assignment_id] === undefined ||
+      score > bestScoresByAssignment[r.assignment_id]
+    ) {
+      bestScoresByAssignment[r.assignment_id] = score
+    }
+  })
+  const totalScore = Object.values(bestScoresByAssignment).reduce((sum, val) => sum + val, 0)
 
   return (
     <PageWrapper>
@@ -114,7 +126,7 @@ const DashboardPage = () => {
             <div className="card-dark p-5 h-full">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="font-display text-base font-semibold text-text-primary">Recent Results</h3>
-                <Link to="/results" className="text-xs text-accent-blue hover:text-accent-teal transition-colors">
+                <Link to="/student/results" className="text-xs text-accent-blue hover:text-accent-teal transition-colors">
                   View all →
                 </Link>
               </div>
@@ -129,7 +141,7 @@ const DashboardPage = () => {
                   {results.slice(0, 3).map((result) => (
                     <Link
                       key={result.id}
-                      to={`/results/${result.id}`}
+                      to={`/student/results/${result.id}`}
                       className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-navy-800/40"
                     >
                       <CheckCircle2 size={16} className="shrink-0 text-accent-teal" />

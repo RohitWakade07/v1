@@ -33,7 +33,7 @@ export const AssignmentDetailPage = () => {
         <PageHeader title="Assignment Not Found" />
         <div className="card-dark p-8 text-center text-text-secondary">
           <p>The assignment you are looking for does not exist or you don't have permission to view it.</p>
-          <Link to="/assignments" className="btn-primary mt-4 mx-auto w-fit">
+          <Link to="/mentor/assignments" className="btn-primary mt-4 mx-auto w-fit">
             <ArrowLeft size={16} /> Back to Assignments
           </Link>
         </div>
@@ -46,7 +46,7 @@ export const AssignmentDetailPage = () => {
       <PageHeader
         title={assignment.title}
         description={`Manage details and publishing status for this assignment.`}
-        backTo="/assignments"
+        backTo="/mentor/assignments"
         backLabel="Back to Assignments"
         actions={
           assignment.is_published ? (

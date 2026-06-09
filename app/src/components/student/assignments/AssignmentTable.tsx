@@ -54,7 +54,7 @@ export const AssignmentTable = ({ assignments }: AssignmentTableProps) => {
                   <td className="px-4 py-3 text-text-primary">{a.max_score.toFixed(1)}</td>
                   <td className="px-4 py-3 text-right">
                     <Link
-                      to={`/assignments/${a.id}`}
+                      to={`/student/assignments/${a.id}`}
                       className="inline-flex items-center gap-1 rounded-lg bg-accent-blue/10 px-3 py-1 text-xs font-medium text-accent-blue transition-colors hover:bg-accent-blue hover:text-white"
                     >
                       View

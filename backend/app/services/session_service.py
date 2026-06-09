@@ -42,6 +42,7 @@ class SessionService:
         student_id: uuid.UUID,
         request: SessionCreateRequest,
         db: AsyncSession,
+        allow_existing: bool = False,
     ) -> SessionCreateResponse:
 
         # 1. Assignment must exist and be published
@@ -66,14 +67,17 @@ class SessionService:
             )
 
         # 3. No duplicate active session for same student + assignment
-        existing = await db.execute(
+        existing_result = await db.execute(
             select(GradingSession).where(
                 GradingSession.student_id == student_id,
                 GradingSession.assignment_id == request.assignment_id,
                 GradingSession.status.in_(ACTIVE_STATUSES),
             )
         )
-        if existing.scalar_one_or_none():
+        existing_session = existing_result.scalar_one_or_none()
+        if existing_session:
+            if allow_existing:
+                return SessionService._to_create_response(existing_session, assignment)
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="You already have an active session for this assignment",
@@ -87,13 +91,7 @@ class SessionService:
         db.add(session)
         await db.flush()
 
-        return SessionCreateResponse(
-            session_id=session.id,
-            assignment_id=assignment.id,
-            assignment_title=assignment.title,
-            status=session.status,
-            started_at=session.started_at,
-        )
+        return SessionService._to_create_response(session, assignment)
 
     @staticmethod
     async def mark_in_progress(
@@ -117,6 +115,47 @@ class SessionService:
         db.add(session)
         await db.flush()
         return SessionService._to_status_response(session)
+
+    @staticmethod
+    async def save_payload(
+        session_id: uuid.UUID,
+        student_id: uuid.UUID,
+        payload_content: str,
+        db: AsyncSession,
+    ) -> SessionStatusResponse:
+        session = await SessionService._get_owned_session(
+            session_id, student_id, db
+        )
+        # Allow payload upload if session is CREATED, STARTED, RUNNING, CHALLENGE_ISSUED, or IN_PROGRESS
+        if session.status not in (
+            SessionStatus.CREATED,
+            SessionStatus.STARTED,
+            SessionStatus.RUNNING,
+            SessionStatus.CHALLENGE_ISSUED,
+            SessionStatus.IN_PROGRESS,
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Cannot upload payload to session in status {session.status}",
+            )
+        session.pending_payload = payload_content
+        session.status = SessionStatus.PROOF_GENERATED
+        db.add(session)
+        await db.flush()
+        return SessionService._to_status_response(session)
+
+    @staticmethod
+    def _to_create_response(
+        session: GradingSession,
+        assignment: Assignment,
+    ) -> SessionCreateResponse:
+        return SessionCreateResponse(
+            session_id=session.id,
+            assignment_id=assignment.id,
+            assignment_title=assignment.title,
+            status=session.status,
+            started_at=session.started_at,
+        )
 
     @staticmethod
     async def get_status(

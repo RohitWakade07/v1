@@ -45,7 +45,7 @@ export const SessionCard = ({ session, assignmentTitle }: SessionCardProps) => (
 
     <div className="mt-4 flex justify-end">
       <Link
-        to={`/sessions/${session.id}`}
+        to={`/student/sessions/${session.id}`}
         className="inline-flex items-center gap-1 text-sm font-medium text-accent-blue hover:text-accent-teal transition-colors"
       >
         View Details <ArrowRight size={14} />

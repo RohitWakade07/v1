@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import {
   Users, UserCheck, BookOpen, Globe, Activity, FileText, HeartPulse,
 } from 'lucide-react'
@@ -114,9 +115,9 @@ export const DashboardPage = () => {
             <div className="card-dark p-5">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="font-display text-base font-semibold text-text-primary">Recent Assignments</h3>
-                <a href="/assignments" className="text-xs text-accent-blue hover:text-accent-teal transition-colors">
+                <Link to="/admin/assignments" className="text-xs text-accent-blue hover:text-accent-teal transition-colors">
                   View all →
-                </a>
+                </Link>
               </div>
               <div className="space-y-4 relative before:absolute before:inset-0 before:ml-2 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-navy-800 before:to-transparent">
                 {recentAssignments.map((a) => (

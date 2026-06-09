@@ -1,4 +1,4 @@
-import { CheckCircle2, Circle, Loader2 } from 'lucide-react'
+import { CheckCircle2, Circle, Loader2, XCircle } from 'lucide-react'
 import type { SessionDetail } from '@/types/api'
 import { formatDate } from '@/lib/utils'
 import { cn } from '@/lib/utils'
@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 interface TimelineStep {
   label: string
   timestamp?: string
-  status: 'completed' | 'active' | 'pending'
+  status: 'completed' | 'active' | 'pending' | 'failed'
   color: string
 }
 
@@ -15,45 +15,74 @@ interface SessionTimelineProps {
 }
 
 export const SessionTimeline = ({ session }: SessionTimelineProps) => {
+  const status = session.status
+
+  const isCompletedState = (s: string) => ['VERIFIED', 'COMPLETED', 'FAILED', 'REJECTED', 'ABORTED'].includes(s)
+  const isSubmittedState = (s: string) => ['PROOF_SUBMITTED', 'SUBMITTED', 'VERIFIED', 'COMPLETED', 'FAILED', 'REJECTED', 'ABORTED'].includes(s)
+  const isGeneratedState = (s: string) => ['PROOF_GENERATED', 'PROOF_SUBMITTED', 'SUBMITTED', 'VERIFIED', 'COMPLETED', 'FAILED', 'REJECTED', 'ABORTED'].includes(s)
+  const isInProgressState = (s: string) => ['CHALLENGE_ISSUED', 'RUNNING', 'IN_PROGRESS', 'PROOF_GENERATED', 'PROOF_SUBMITTED', 'SUBMITTED', 'VERIFIED', 'COMPLETED', 'FAILED', 'REJECTED', 'ABORTED'].includes(s)
+
   const steps: TimelineStep[] = [
     {
       label: 'Session Created',
       timestamp: session.started_at,
       status: 'completed',
-      color: 'text-accent-blue',
+      color: 'text-accent-teal',
     },
     {
       label: 'Evaluation In Progress',
       timestamp: undefined,
-      status:
-        session.status === 'IN_PROGRESS' || session.status === 'COMPLETED' || session.status === 'REJECTED'
-          ? 'completed'
-          : session.status === 'STARTED'
-          ? 'active'
-          : 'pending',
-      color: 'text-status-warning',
+      status: isGeneratedState(status)
+        ? 'completed'
+        : isInProgressState(status)
+        ? 'active'
+        : 'pending',
+      color: isGeneratedState(status) ? 'text-accent-teal' : 'text-accent-blue',
     },
     {
-      label: 'Proof Submitted',
+      label: 'Proof Generated (Local File)',
+      timestamp: undefined,
+      status: isSubmittedState(status)
+        ? 'completed'
+        : status === 'PROOF_GENERATED'
+        ? 'active'
+        : 'pending',
+      color: isSubmittedState(status) ? 'text-accent-teal' : 'text-accent-blue',
+    },
+    {
+      label: 'Proof Submitted to Platform',
       timestamp: session.submitted_at,
-      status:
-        session.status === 'COMPLETED' || session.status === 'REJECTED'
-          ? 'completed'
-          : 'pending',
-      color: 'text-accent-blue',
+      status: isCompletedState(status)
+        ? 'completed'
+        : ['PROOF_SUBMITTED', 'SUBMITTED'].includes(status)
+        ? 'active'
+        : 'pending',
+      color: isCompletedState(status) ? 'text-accent-teal' : 'text-accent-blue',
     },
     {
       label:
-        session.status === 'REJECTED' ? 'Verification Failed' : 'Verification Complete',
+        status === 'FAILED' || status === 'REJECTED'
+          ? 'Verification Failed'
+          : status === 'ABORTED'
+          ? 'Session Aborted'
+          : 'Verification Complete',
       timestamp: session.completed_at,
       status:
-        session.status === 'COMPLETED'
+        status === 'VERIFIED' || status === 'COMPLETED'
           ? 'completed'
-          : session.status === 'REJECTED'
+          : status === 'FAILED' || status === 'REJECTED' || status === 'ABORTED'
+          ? 'failed'
+          : ['PROOF_SUBMITTED', 'SUBMITTED'].includes(status)
           ? 'active'
           : 'pending',
       color:
-        session.status === 'REJECTED' ? 'text-status-danger' : 'text-accent-teal',
+        status === 'VERIFIED' || status === 'COMPLETED'
+          ? 'text-accent-teal'
+          : status === 'FAILED' || status === 'REJECTED'
+          ? 'text-status-danger'
+          : status === 'ABORTED'
+          ? 'text-text-secondary'
+          : 'text-accent-blue',
     },
   ]
 
@@ -62,7 +91,7 @@ export const SessionTimeline = ({ session }: SessionTimelineProps) => {
       <h3 className="mb-5 font-display text-base font-semibold text-text-primary">
         Session Timeline
       </h3>
-      <ol className="relative space-y-5 pl-6">
+      <ol className="relative space-y-6 pl-6">
         <div className="absolute left-2.5 top-0 h-full w-px bg-navy-800" />
         {steps.map((step, i) => (
           <li key={i} className="relative flex flex-col">
@@ -72,6 +101,8 @@ export const SessionTimeline = ({ session }: SessionTimelineProps) => {
                 <CheckCircle2 size={12} />
               ) : step.status === 'active' ? (
                 <Loader2 size={12} className="animate-spin" />
+              ) : step.status === 'failed' ? (
+                <XCircle size={12} />
               ) : (
                 <Circle size={12} className="text-navy-800" />
               )}

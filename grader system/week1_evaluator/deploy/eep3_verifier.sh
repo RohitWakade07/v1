@@ -8,19 +8,129 @@
 set -uo pipefail
 
 PUBLIC_KEY='-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsILIw0+S8v0dAZwsZqC1
-pwkLh32OJeAPgV4rzJZDEt5EvepfvfcbIzt721jE101KEtYwbSHtFM+1/puKyO1/
-zE9ds4wV7LBPC7I+Y48b22YHsi6EYz4woPCT9A0mAQKAxQjL7TyQBRTELcBJvZ40
-b2I9TJZZapzUU6Mk0V0/+InMwe61VVtJKqSUIvyyvBu7xm2uGXUVHLE4hHu926OP
-FSbFIMDjCPUuPzavsvQfUiiINSl776GwfPx7FaOZxjvr6u4WGjK/KATRKk0pPEuD
-OGLvkZpmEJg3Jqol/DlusLqcYfGQ60FNXqK2Ad6pebExD+Lm24RQ6DAIac8oYPCL
-hwIDAQAB
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApYmNjG2L7Ci4MLlkGmAh
+gbzdFNBpaF6dDfcilzfE8n77Y0tPJclieRdlqjBp4mV5nZWJt6HkI/wbGLir7n6E
+tx6odtUikrEbkcgYmQ2Ey+MygkxgaEUqJjCow+Sp0tluwnu0Ul/IupUeptDD3xcH
+t4oEXadeCozB5W1U4hqlU24VW2O/RIs++ggY78H7fAez/3KFlwL7+Nc2n+RqotEI
+xP3k2OH7Ko8YjSS1CdbzOPsQXaCqXwlUN/bxDZca2te6rlogjUw2zkWh8MvH821Z
+VBSgsKerVguUmaONJo3UZjqJQ9pBKhOWX84vrKwyHlIXe8JOnIdZTJlk+14xw27Z
+bQIDAQAB
 -----END PUBLIC KEY-----'
 
 WORKSPACE="$HOME/eep-software/week-03"
 SCRIPT="$WORKSPACE/organize.sh"
 
+API_BASE_URL="${EEP_API_BASE_URL:-http://localhost:5173}"
+ASSIGNMENT_SLUG="${EEP_ASSIGNMENT_SLUG:-eep-week3}"
+EVALUATOR_KEY="${EEP_EVALUATOR_KEY:-}"
+STUDENT_TOKEN="${EEP_STUDENT_TOKEN:-}"
+AUTO_UPLOAD="${EEP_AUTO_UPLOAD:-0}"
+AUTO_LOGIN="${EEP_AUTO_LOGIN:-0}"
+STUDENT_PASSWORD="${EEP_STUDENT_PASSWORD:-}"
+
 trim() { echo "$1" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'; }
+
+start_evaluator_session() {
+    if [[ -z "$EVALUATOR_KEY" ]]; then
+        echo "[warn] EEP_EVALUATOR_KEY is not set; skipping session bootstrap."
+        return
+    fi
+    if ! command -v curl >/dev/null 2>&1; then
+        echo "[warn] curl not found; skipping session bootstrap."
+        return
+    fi
+
+    local payload
+    payload=$(printf '{"student_roll":"%s","assignment_slug":"%s"}' "$STUDENT_ID" "$ASSIGNMENT_SLUG")
+    local response
+    response=$(curl -s -X POST "${API_BASE_URL}/api/v1/sessions/start-evaluator" \
+        -H "Content-Type: application/json" \
+        -H "X-Evaluator-Key: ${EVALUATOR_KEY}" \
+        -d "$payload")
+    echo "[info] Session bootstrap response: $response"
+
+    if command -v python3 >/dev/null 2>&1; then
+        export EEP_SESSION_RESPONSE="$response"
+        SESSION_ID=$(python3 - <<'PY'
+import json
+import os
+import sys
+
+data = os.environ.get("EEP_SESSION_RESPONSE", "")
+try:
+    payload = json.loads(data)
+    print(payload.get("session_id", "") or "")
+except Exception:
+    sys.stderr.write("[warn] Could not parse JSON from evaluator bootstrap response.\n")
+    sys.exit(1)
+PY
+        )
+        unset EEP_SESSION_RESPONSE
+    else
+        SESSION_ID=$(echo "$response" | sed -n 's/.*"session_id":"\([^"]*\)".*/\1/p')
+    fi
+
+    if [[ -z "${SESSION_ID:-}" ]]; then
+        echo "[warn] Could not extract session_id; evaluator bootstrap may have failed."
+    fi
+}
+
+authenticate_student_early() {
+    if [[ "$AUTO_LOGIN" != "1" ]]; then
+        return
+    fi
+    if ! command -v curl >/dev/null 2>&1; then
+        echo "[warn] curl not found; skipping login validation."
+        return
+    fi
+
+    if [[ -z "${STUDENT_PASSWORD:-}" ]]; then
+        read -rsp "Enter student password for ${STUDENT_ID}: " STUDENT_PASSWORD
+        echo ""
+    fi
+
+    echo "Authenticating student..."
+    local login_resp
+    login_resp=$(curl -s -X POST "${API_BASE_URL}/api/v1/auth/student/login" \
+        -H "Content-Type: application/json" \
+        -d "{\"roll_number\":\"${STUDENT_ID}\",\"password\":\"${STUDENT_PASSWORD}\"}")
+
+    STUDENT_TOKEN=$(echo "$login_resp" | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
+
+    if [[ -z "${STUDENT_TOKEN:-}" ]]; then
+        local error_msg
+        error_msg=$(echo "$login_resp" | sed -n 's/.*"detail":"\([^"]*\)".*/\1/p')
+        [[ -z "$error_msg" ]] && error_msg="Authentication failed. Please check your credentials."
+        echo "Error: $error_msg" >&2
+        exit 1
+    fi
+    echo "Authentication successful."
+}
+
+upload_report_file() {
+    if [[ "$AUTO_UPLOAD" != "1" ]]; then
+        return
+    fi
+    if [[ -z "$STUDENT_TOKEN" ]]; then
+        echo "[warn] EEP_STUDENT_TOKEN is not set; skipping auto-upload."
+        return
+    fi
+    if [[ -z "${SESSION_ID:-}" ]]; then
+        echo "[warn] session_id missing; skipping auto-upload."
+        return
+    fi
+    if ! command -v curl >/dev/null 2>&1; then
+        echo "[warn] curl not found; skipping auto-upload."
+        return
+    fi
+
+    local upload_resp
+    upload_resp=$(curl -s -X POST "${API_BASE_URL}/api/v1/sessions/${SESSION_ID}/payload" \
+        -H "Authorization: Bearer ${STUDENT_TOKEN}" \
+        -F "file=@${OUTPUT_FILE}")
+    echo "[info] Auto-upload response: $upload_resp"
+}
+
 RESULTS=()
 add_check() { RESULTS+=("$1: $2"); }
 
@@ -199,14 +309,20 @@ echo "║  EEP Software — Week 3 Project Verifier  ║"
 echo "╚══════════════════════════════════════════╝"
 echo ""
 
-read -rp "Enter your Student ID: " RAW_ID
-STUDENT_ID="$(trim "$RAW_ID")"
+if [[ -z "${STUDENT_ID:-}" ]]; then
+    read -rp "Enter your Student ID: " RAW_ID
+    STUDENT_ID="$(trim "$RAW_ID")"
+fi
 [[ -z "$STUDENT_ID" ]] && echo "Error: Student ID cannot be empty." >&2 && exit 1
+
+authenticate_student_early
 
 echo ""
 echo "Verifying Week 3 assignment for: $STUDENT_ID"
 echo "Testing with randomly generated files..."
 echo ""
+
+start_evaluator_session
 
 check_files_exist
 check_input_validation
@@ -234,6 +350,8 @@ REPORT_BODY+="Overall: ${OVERALL}"
 
 OUTPUT_FILE="${STUDENT_ID}_EEP3_Week3.eep3"
 encrypt_report "$REPORT_BODY" "$OUTPUT_FILE"
+
+upload_report_file
 
 echo "Report written to: $OUTPUT_FILE"
 echo "Upload this file to the course website."

@@ -115,6 +115,11 @@ class SessionCreateRequest(BaseModel):
     assignment_id: uuid.UUID
 
 
+class EvaluatorSessionCreateRequest(BaseModel):
+    student_roll: str
+    assignment_slug: str
+
+
 class SessionCreateResponse(BaseModel):
     session_id: uuid.UUID
     assignment_id: uuid.UUID

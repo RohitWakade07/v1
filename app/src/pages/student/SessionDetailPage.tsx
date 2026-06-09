@@ -36,12 +36,12 @@ const SessionDetailPage = () => {
       <PageHeader
         title="Session Detail"
         description={assignment?.title ?? 'Evaluation session details and status.'}
-        backTo="/sessions"
+        backTo="/student/sessions"
         backLabel="All Sessions"
         actions={
           canSubmit ? (
             <Link
-              to={`/proof/submit?session_id=${data.id}`}
+              to={`/student/proof/submit?session_id=${data.id}`}
               className="btn-primary"
               aria-label="Submit proof for this session"
             >
@@ -67,7 +67,7 @@ const SessionDetailPage = () => {
               <div>
                 <p className="text-xs text-text-secondary uppercase tracking-wide">Assignment</p>
                 <Link
-                  to={`/assignments/${data.assignment_id}`}
+                  to={`/student/assignments/${data.assignment_id}`}
                   className="mt-0.5 font-medium text-accent-blue hover:text-accent-teal transition-colors"
                 >
                   {assignment.title}
