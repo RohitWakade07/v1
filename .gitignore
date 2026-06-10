@@ -57,5 +57,6 @@ secrets.json
 node_modules/
 
 
-# Ignore embedded nested grader deploy repo
+# Ignore accidental duplicate project copy and nested grader deploy repo
+Copy of EEP Software final _ /
 Copy of EEP Software final _ /autograder-system/week1_evaluator/deploy/
