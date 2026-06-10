@@ -16,6 +16,7 @@ from app.api.v1.endpoints import (
     mentor,
     students,
     classrooms,
+    submissions,
 )
 
 
@@ -59,6 +60,7 @@ PREFIX = "/api/v1"
 app.include_router(auth.router,        prefix=PREFIX)
 app.include_router(assignments.router, prefix=PREFIX)
 app.include_router(sessions.router,    prefix=PREFIX)
+app.include_router(submissions.router, prefix=PREFIX)
 app.include_router(proof.router,       prefix=PREFIX)
 app.include_router(proof_eep.router,   prefix=PREFIX)
 app.include_router(results.router,     prefix=PREFIX)

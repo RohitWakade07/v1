@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from enum import Enum
 from typing import Optional
 from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 
@@ -107,6 +108,47 @@ class AssignmentUpdate(BaseModel):
     description: Optional[str] = None
     max_score: Optional[float] = None
     deadline: Optional[datetime] = None
+
+
+class SubmissionSourceType(str, Enum):
+    github = "github"
+    zip = "zip"
+
+
+class SubmissionStatus(str, Enum):
+    PENDING = "PENDING"
+    QUEUED = "QUEUED"
+    RUNNING = "RUNNING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+    TIMEOUT = "TIMEOUT"
+    CANCELLED = "CANCELLED"
+    VALIDATION_ERROR = "VALIDATION_ERROR"
+
+
+class SubmissionCreateResponse(BaseModel):
+    submission_id: uuid.UUID
+    assignment_id: uuid.UUID
+    student_id: uuid.UUID
+    status: SubmissionStatus
+    source_type: SubmissionSourceType
+    repo_url: Optional[str] = None
+    zip_object_key: Optional[str] = None
+    submitted_at: datetime
+    attempt_number: int
+
+
+class SubmissionPublic(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    assignment_id: uuid.UUID
+    student_id: uuid.UUID
+    status: SubmissionStatus
+    source_type: SubmissionSourceType
+    repo_url: Optional[str] = None
+    zip_object_key: Optional[str] = None
+    submitted_at: datetime
+    attempt_number: int
 
 
 # ── Session ───────────────────────────────────────────────────────────

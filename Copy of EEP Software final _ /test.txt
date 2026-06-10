@@ -1,0 +1,19 @@
+#!/bin/bash
+
+echo "Starting sandbox execution test..."
+echo "---------------------------------"
+
+echo "1. Basic output test:"
+echo "Hello from inside the secure sandbox!"
+
+echo -e "\n2. Environment information:"
+uname -a
+pwd
+
+echo -e "\n3. Testing file system restrictions (Should fail if restricted):"
+touch /root/hacked.txt 2>/dev/null || echo "Success: Cannot write to /root"
+
+echo -e "\n4. Displaying current directory contents:"
+ls -la
+
+echo -e "\nExecution finished successfully."

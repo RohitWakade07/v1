@@ -1,0 +1,11 @@
+assignment_slug: "week2"
+docker_image: "grading-bash:latest"
+execution_command: "bash analyze.sh"
+working_dir: "week-02"
+timeout_seconds: 30
+memory_limit_mb: 512
+cpu_limit: 1.0
+network_disabled: true
+assets:
+  - source: "server.log"
+    target: "week-02/server.log"

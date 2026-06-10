@@ -3,7 +3,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-from sqlalchemy import String, Text, UniqueConstraint, Index
+from sqlalchemy import String, Text, Integer, UniqueConstraint, Index
 from sqlmodel import Field, SQLModel, Column
 
 
@@ -359,6 +359,83 @@ class Classroom(SQLModel, table=True):
     class_code: str = Field(sa_column=Column(String(50), unique=True, nullable=False, index=True))
     mentor_id: uuid.UUID = Field(foreign_key="mentors.id", index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class SubmissionSourceType(str, Enum):
+    GITHUB = "github"
+    ZIP = "zip"
+
+
+class SubmissionStatus(str, Enum):
+    PENDING = "PENDING"
+    QUEUED = "QUEUED"
+    RUNNING = "RUNNING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+    TIMEOUT = "TIMEOUT"
+    CANCELLED = "CANCELLED"
+    VALIDATION_ERROR = "VALIDATION_ERROR"
+
+
+class Submission(SQLModel, table=True):
+    __tablename__ = "submissions"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
+    student_id: uuid.UUID = Field(foreign_key="students.id", index=True)
+    assignment_id: uuid.UUID = Field(foreign_key="assignments.id", index=True)
+    status: SubmissionStatus = Field(default=SubmissionStatus.PENDING)
+    source_type: SubmissionSourceType = Field(default=SubmissionSourceType.ZIP)
+    repo_url: Optional[str] = Field(default=None, sa_column=Column(String(500), nullable=True))
+    zip_object_key: Optional[str] = Field(default=None, sa_column=Column(String(500), nullable=True))
+    submitted_at: datetime = Field(default_factory=datetime.utcnow)
+    started_at: Optional[datetime] = Field(default=None)
+    completed_at: Optional[datetime] = Field(default=None)
+    score: Optional[float] = Field(default=None)
+    max_score: Optional[float] = Field(default=None)
+    passed: Optional[bool] = Field(default=None)
+    attempt_number: int = Field(default=1)
+    worker_id: Optional[str] = Field(default=None, sa_column=Column(String(100), nullable=True))
+    kafka_offset: Optional[int] = Field(default=None, sa_column=Column(Integer, nullable=True))
+    validation_error: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class SubmissionResult(SQLModel, table=True):
+    __tablename__ = "submission_results"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
+    submission_id: uuid.UUID = Field(foreign_key="submissions.id", unique=True, index=True)
+    checks_json: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
+    feedback: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
+    stdout: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
+    stderr: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
+    execution_command: Optional[str] = Field(default=None, sa_column=Column(String(500), nullable=True))
+    exit_code: Optional[int] = Field(default=None)
+    execution_time_ms: Optional[int] = Field(default=None)
+    timed_out: bool = Field(default=False)
+    oom_killed: bool = Field(default=False)
+    container_id: Optional[str] = Field(default=None, sa_column=Column(String(100), nullable=True))
+    grader_logs: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
+    ai_feedback: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class DeadLetterRecord(SQLModel, table=True):
+    __tablename__ = "dead_letter_records"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
+    topic: str = Field(sa_column=Column(String(200), nullable=False))
+    partition: int = Field(default=0)
+    offset: int = Field(default=0)
+    message_key: Optional[str] = Field(default=None, sa_column=Column(String(200), nullable=True))
+    message_value: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
+    error_reason: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
+    retry_count: int = Field(default=0)
+    first_failed_at: datetime = Field(default_factory=datetime.utcnow)
+    last_failed_at: datetime = Field(default_factory=datetime.utcnow)
+    resolved: bool = Field(default=False)
+    resolved_at: Optional[datetime] = Field(default=None)
 
 
 class ClassroomEnrollment(SQLModel, table=True):
