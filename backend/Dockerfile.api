@@ -20,6 +20,8 @@ USER app
 
 # Railway overrides PORT at runtime
 ENV PORT=8000
+# Needed so 'import app' works when alembic runs from /app
+ENV PYTHONPATH=/app
 
 CMD alembic upgrade head && \
     gunicorn app.main:app \
