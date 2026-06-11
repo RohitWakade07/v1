@@ -1,13 +1,18 @@
 import base64
 from functools import lru_cache
 from pathlib import Path
+from typing import Optional
 
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",  # ignore Railway-injected vars that aren't declared here
+    )
 
     # App
     APP_NAME: str = "E-Yantra EEP Platform"
@@ -20,15 +25,27 @@ class Settings(BaseSettings):
     PORT: int = 8000
     WORKERS: int = 4
 
-    # Database
+    # Database — individual components (used for local dev / docker-compose)
     POSTGRES_HOST: str = "localhost"
     POSTGRES_PORT: int = 5432
     POSTGRES_USER: str = "grading_user"
     POSTGRES_PASSWORD: str = "changeme"
     POSTGRES_DB: str = "grading_db"
 
+    # Railway injects a single DATABASE_URL — takes precedence when set
+    DATABASE_URL_OVERRIDE: Optional[str] = None
+    # Railway injects a single REDIS_URL — takes precedence when set
+    REDIS_URL_OVERRIDE: Optional[str] = None
+
     @property
     def DATABASE_URL(self) -> str:
+        if self.DATABASE_URL_OVERRIDE:
+            url = self.DATABASE_URL_OVERRIDE
+            if url.startswith("postgres://"):
+                return url.replace("postgres://", "postgresql+asyncpg://", 1)
+            if url.startswith("postgresql://") and "+" not in url.split("://")[0]:
+                return url.replace("postgresql://", "postgresql+asyncpg://", 1)
+            return url
         return (
             f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
@@ -36,6 +53,13 @@ class Settings(BaseSettings):
 
     @property
     def DATABASE_URL_SYNC(self) -> str:
+        if self.DATABASE_URL_OVERRIDE:
+            url = self.DATABASE_URL_OVERRIDE
+            for prefix in ["postgres://", "postgresql://", "postgresql+asyncpg://"]:
+                if url.startswith(prefix):
+                    base = "postgresql://" if prefix == "postgres://" else url[: url.index("://") + 3].replace("+asyncpg", "")
+                    return url.replace(prefix, "postgresql+psycopg2://", 1)
+            return url
         return (
             f"postgresql+psycopg2://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
@@ -49,6 +73,8 @@ class Settings(BaseSettings):
 
     @property
     def REDIS_URL(self) -> str:
+        if self.REDIS_URL_OVERRIDE:
+            return self.REDIS_URL_OVERRIDE
         if self.REDIS_PASSWORD:
             return f"redis://:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
         return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
@@ -63,6 +89,19 @@ class Settings(BaseSettings):
 
     # Evaluator bootstrap (used by start-evaluator endpoint)
     EVALUATOR_SHARED_KEY: str = ""
+
+    # CORS — comma-separated list of allowed origins for production
+    # e.g. "https://app.example.com,https://admin.example.com"
+    ALLOWED_ORIGINS: str = ""
+
+    @property
+    def cors_origins(self) -> list[str]:
+        """Returns parsed list of allowed CORS origins.
+        Empty string → no origins allowed in production.
+        """
+        if not self.ALLOWED_ORIGINS.strip():
+            return []
+        return [o.strip() for o in self.ALLOWED_ORIGINS.split(",") if o.strip()]
 
     # Rate limiting
     LOGIN_RATE_LIMIT_PER_MINUTE: int = 10
