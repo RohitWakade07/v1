@@ -1,0 +1,55 @@
+# Root-level .dockerignore — used by the root Dockerfile (Railway deployment)
+
+.git/
+.github/
+.vscode/
+
+# Frontend — not needed in backend image
+app/node_modules/
+app/dist/
+app/.env
+app/src/
+app/public/
+app/index.html
+app/package*.json
+app/tsconfig*.json
+app/vite.config.ts
+app/tailwind.config.js
+app/postcss.config.js
+
+# Backend scratch files
+backend/.venv/
+backend/venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/**/*.pyc
+backend/.pytest_cache/
+backend/.env
+backend/backend_log*.txt
+backend/sync_test.txt
+backend/challenge.json
+backend/proof.json
+backend/check_db.py
+backend/alter_db.py
+backend/seed.py
+backend/seed_admin.py
+backend/*.zip
+backend/week4_100_marks/
+backend/week4_partial_marks/
+backend/keys/
+backend/*.pem
+backend/tests/
+backend/.vscode/
+
+# Docs and misc at root
+*.md
+*.pdf
+*.xlsx
+*.mjs
+*.spec
+img/
+postman/
+.postman/
+grader system/
+build/
+dist/
