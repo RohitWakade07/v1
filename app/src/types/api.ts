@@ -55,6 +55,7 @@ export interface AssignmentSummary {
 }
 
 export interface AssignmentDetail extends AssignmentSummary {
+  slug?: string
   instructions?: string
 }
 
