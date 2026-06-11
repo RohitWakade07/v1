@@ -5,12 +5,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.db.redis import get_redis, close_redis
-from app.api.v1.endpoints import (
+from app.api.v1.routes import (
     auth,
     assignments,
     sessions,
-    proof,
-    proof_eep,
     results,
     admin,
     mentor,
@@ -48,7 +46,7 @@ app.add_middleware(
         "http://localhost:5173",
         "http://localhost:5174",
         "http://localhost:5175",
-    ] if settings.DEBUG else [],
+    ] if settings.DEBUG else settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -61,8 +59,6 @@ app.include_router(auth.router,        prefix=PREFIX)
 app.include_router(assignments.router, prefix=PREFIX)
 app.include_router(sessions.router,    prefix=PREFIX)
 app.include_router(submissions.router, prefix=PREFIX)
-app.include_router(proof.router,       prefix=PREFIX)
-app.include_router(proof_eep.router,   prefix=PREFIX)
 app.include_router(results.router,     prefix=PREFIX)
 app.include_router(admin.router,       prefix=PREFIX)
 app.include_router(mentor.router,      prefix=PREFIX)
@@ -73,6 +69,7 @@ app.include_router(classrooms.router,  prefix=PREFIX)
 @app.get("/health", tags=["Health"])
 async def health():
     db_status = "ok"
+    redis_status = "ok"
     try:
         from sqlalchemy import text
         from app.db.session import AsyncSessionLocal
@@ -80,7 +77,18 @@ async def health():
             await session.execute(text("SELECT 1"))
     except Exception:
         db_status = "error"
-    return {"status": "ok", "database": db_status, "version": settings.APP_VERSION}
+    try:
+        r = await get_redis()
+        await r.ping()
+    except Exception:
+        redis_status = "error"
+    overall = "ok" if db_status == "ok" and redis_status == "ok" else "degraded"
+    return {
+        "status": overall,
+        "database": db_status,
+        "redis": redis_status,
+        "version": settings.APP_VERSION,
+    }
 
 # Trivial comment to force uvicorn reload
  
