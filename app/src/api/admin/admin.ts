@@ -11,6 +11,19 @@ export const listMentors = async (): Promise<AdminMentor[]> => {
   return data
 }
 
+export interface CreateMentorPayload {
+  username: string
+  full_name: string
+  email: string
+  password: string
+  role: 'mentor' | 'admin'
+}
+
+export const createMentor = async (payload: CreateMentorPayload): Promise<AdminMentor> => {
+  const { data } = await apiClient.post<AdminMentor>('/admin/mentors', payload)
+  return data
+}
+
 export const listAllAssignments = async (): Promise<Assignment[]> => {
   const { data } = await apiClient.get<Assignment[]>('/admin/assignments/all')
   return data
