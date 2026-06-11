@@ -166,7 +166,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('classroom_id', sa.Uuid(), nullable=False),
     sa.Column('student_id', sa.Uuid(), nullable=False),
-    sa.Column('status', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('status', sa.String(), nullable=False),
     sa.Column('joined_at', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['classroom_id'], ['classrooms.id'], ),
     sa.ForeignKeyConstraint(['student_id'], ['students.id'], ),
