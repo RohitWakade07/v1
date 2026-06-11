@@ -9,10 +9,11 @@ RUN addgroup --system app && adduser --system --group app
 
 WORKDIR /app
 
-COPY requirements.txt .
+# Railway build context is always repo root, so paths are relative to repo root
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY backend/ .
 
 RUN chown -R app:app /app
 USER app
@@ -20,8 +21,6 @@ USER app
 # Railway overrides PORT at runtime
 ENV PORT=8000
 
-# Run Alembic migrations then start Gunicorn
-# Shell form so $PORT expands at runtime
 CMD alembic upgrade head && \
     gunicorn app.main:app \
     --worker-class uvicorn.workers.UvicornWorker \
