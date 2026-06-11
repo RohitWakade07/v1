@@ -23,10 +23,10 @@ def upgrade() -> None:
     # ── Create final_results ──────────────────────────────────────────
     op.create_table(
         'final_results',
-        sa.Column('id', sqlmodel.sql.sqltypes.GUID(), nullable=False),
-        sa.Column('session_id', sqlmodel.sql.sqltypes.GUID(), nullable=False),
-        sa.Column('student_id', sqlmodel.sql.sqltypes.GUID(), nullable=False),
-        sa.Column('assignment_id', sqlmodel.sql.sqltypes.GUID(), nullable=False),
+        sa.Column('id', sa.Uuid(), nullable=False),
+        sa.Column('session_id', sa.Uuid(), nullable=False),
+        sa.Column('student_id', sa.Uuid(), nullable=False),
+        sa.Column('assignment_id', sa.Uuid(), nullable=False),
         sa.Column('score', sa.Float(), nullable=False),
         sa.Column('passed', sa.Boolean(), nullable=False),
         sa.Column('score_breakdown', sa.Text(), nullable=True),
@@ -44,10 +44,10 @@ def upgrade() -> None:
     # ── Create certificates ───────────────────────────────────────────
     op.create_table(
         'certificates',
-        sa.Column('id', sqlmodel.sql.sqltypes.GUID(), nullable=False),
-        sa.Column('student_id', sqlmodel.sql.sqltypes.GUID(), nullable=False),
-        sa.Column('assignment_id', sqlmodel.sql.sqltypes.GUID(), nullable=False),
-        sa.Column('final_result_id', sqlmodel.sql.sqltypes.GUID(), nullable=False),
+        sa.Column('id', sa.Uuid(), nullable=False),
+        sa.Column('student_id', sa.Uuid(), nullable=False),
+        sa.Column('assignment_id', sa.Uuid(), nullable=False),
+        sa.Column('final_result_id', sa.Uuid(), nullable=False),
         sa.Column('certificate_code', sa.String(length=100), nullable=False),
         sa.Column('issued_at', sa.DateTime(), nullable=False),
         sa.PrimaryKeyConstraint('id'),
