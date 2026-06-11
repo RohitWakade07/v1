@@ -53,8 +53,32 @@ secrets.json
 # Jupyter
 **/.ipynb_checkpoints/
 
-# Optional frontend (if added later)
+# Frontend build artifacts
+app/node_modules/
+app/dist/
+app/.env
+app/.env.*
+!app/.env.example
 node_modules/
+dist/
+
+# Scratch / test files that must not be committed
+backend/backend_log*.txt
+backend/sync_test.txt
+backend/challenge.json
+backend/proof.json
+backend/check_db.py
+backend/alter_db.py
+backend/seed.py
+backend/seed_admin.py
+backend/*.zip
+backend/week4_100_marks/
+backend/week4_partial_marks/
+
+# RSA private key — NEVER commit
+backend/keys/
+*.pem
+*.key
 
 
 # Ignore accidental duplicate project copy and nested grader deploy repo
