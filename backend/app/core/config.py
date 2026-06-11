@@ -3,7 +3,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 
-from pydantic import model_validator
+from pydantic import AliasChoices, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -33,9 +33,13 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "grading_db"
 
     # Railway injects a single DATABASE_URL — takes precedence when set
-    DATABASE_URL_OVERRIDE: Optional[str] = None
+    DATABASE_URL_OVERRIDE: Optional[str] = Field(
+        default=None, validation_alias=AliasChoices("DATABASE_URL", "DATABASE_URL_OVERRIDE")
+    )
     # Railway injects a single REDIS_URL — takes precedence when set
-    REDIS_URL_OVERRIDE: Optional[str] = None
+    REDIS_URL_OVERRIDE: Optional[str] = Field(
+        default=None, validation_alias=AliasChoices("REDIS_URL", "REDIS_URL_OVERRIDE")
+    )
 
     @property
     def DATABASE_URL(self) -> str:
