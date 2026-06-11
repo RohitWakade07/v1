@@ -45,6 +45,6 @@ export const listAllSessions = async (): Promise<GradingSession[]> => {
 }
 
 export const getHealth = async (): Promise<HealthResponse> => {
-  const { data } = await apiClient.get<HealthResponse>('/health', { baseURL: '' })
+  const { data } = await apiClient.get<HealthResponse>('/health')
   return data
 }
