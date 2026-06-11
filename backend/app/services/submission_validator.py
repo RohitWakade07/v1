@@ -67,11 +67,11 @@ class SubmissionValidator:
         normalized = {path.lower() for path in files}
 
         if "week4" in assignment_slug.lower():
-            git_dir = workspace_dir / ".git"
-            if not git_dir.exists() or not git_dir.is_dir():
+            found_git = list(workspace_dir.rglob(".git"))
+            if not found_git:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Week4 submissions must include a .git repository at the root",
+                    detail="Week4 submissions must include a .git repository anywhere inside the zip",
                 )
 
         if "week5" in assignment_slug.lower():

@@ -113,7 +113,55 @@ export interface ResultDetail extends ResultSummary {
   certificate_available?: boolean
 }
 
-// ─── Proof ─────────────────────────────────────────────────────────
+// ─── Submission & V2 Result ──────────────────────────────────────────
+export type SubmissionSourceType = 'github' | 'zip'
+
+export type SubmissionStatus =
+  | 'PENDING' | 'QUEUED' | 'RUNNING' | 'COMPLETED'
+  | 'FAILED' | 'TIMEOUT' | 'CANCELLED' | 'VALIDATION_ERROR'
+
+export interface SubmissionPublic {
+  id: string
+  assignment_id: string
+  student_id: string
+  status: SubmissionStatus
+  source_type: SubmissionSourceType
+  repo_url?: string | null
+  zip_object_key?: string | null
+  submitted_at: string
+  attempt_number: number
+}
+
+export interface SubmissionCreateResponse extends SubmissionPublic {}
+
+export interface CheckResult {
+  name: string
+  passed: boolean
+  marks: number
+  max_marks: number
+  reason: string
+  hint: string
+}
+
+export interface SubmissionResultDetail {
+  id: string
+  submission_id: string
+  checks_json: string | null
+  feedback: string | null
+  stdout: string | null
+  stderr: string | null
+  execution_command: string | null
+  exit_code: number | null
+  execution_time_ms: number | null
+  timed_out: boolean
+  oom_killed: boolean
+  container_id: string | null
+  grader_logs: string | null
+  ai_feedback: string | null
+  created_at: string
+}
+
+// ─── Proof (Legacy, Keep for now if needed by other components) ─────
 export interface ProofTestResult {
   test_id: string
   passed: boolean
@@ -137,7 +185,7 @@ export interface ProofSubmitRequest {
 
 export interface ProofSubmitResponse {
   session_id: string
-  status: SessionStatus
+  status: string
   final_score?: number | null
   message: string
 }

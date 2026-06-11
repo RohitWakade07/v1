@@ -1,22 +1,47 @@
+"""
+Week 2 Grader: Command-Line Log Analyzer
+=========================================
+Test harness approach:
+  1. A known server.log is injected as an asset (we know its exact contents).
+  2. The student's analyze.sh is executed against that log.
+  3. The generated report.txt is checked for EXACT expected values
+     that we pre-computed from the same log.
+
+Expected values from the injected server.log:
+  - Total requests       : 20
+  - Top IP               : 192.168.1.100  (8 hits)
+  - Second IP            : 10.0.0.5       (7 hits)
+  - Top URL              : /index.html     (8 hits)
+  - Status code 200 count: 14
+  - Status code 404 count: 3
+  - Status code 500 count: 3
+"""
 import re
 from pathlib import Path
 from graders.base_grader import BaseGrader, CheckResult, GradingResult
 
 
 class Week2Grader(BaseGrader):
+
+    # ── Pre-computed expected values from the injected server.log ──────────
+    EXPECTED_TOTAL = 20
+    EXPECTED_TOP_IP = "192.168.1.100"
+    EXPECTED_SECOND_IP = "10.0.0.5"
+    EXPECTED_TOP_URL = "/index.html"
+    EXPECTED_STATUS_200 = 14
+    EXPECTED_STATUS_404 = 3
+    EXPECTED_STATUS_500 = 3
+
     def grade(self) -> GradingResult:
         checks = []
 
-        # Get execution results from config
         exec_res = self.config.get("execution_result", {})
         exit_code = exec_res.get("exit_code")
         timed_out = exec_res.get("timed_out", False)
         oom_killed = exec_res.get("oom_killed", False)
 
-        # Check 1: script exits with code 0 (1 mark)
+        # ── Check 1: Script ran successfully ──────────────────────────────
         exit_passed = (exit_code == 0 and not timed_out and not oom_killed)
-        exit_marks = 1.0 if exit_passed else 0.0
-        exit_reason = "Script exited successfully."
         if timed_out:
             exit_reason = "Script execution timed out."
         elif oom_killed:
@@ -25,138 +50,137 @@ class Week2Grader(BaseGrader):
             exit_reason = f"Script exited with non-zero exit code: {exit_code}."
         elif exit_code is None:
             exit_reason = "Script was not executed or crashed during startup."
+        else:
+            exit_reason = "Script exited successfully."
 
-        checks.append(
-            CheckResult(
-                name="Script Exit Status Check",
-                passed=exit_passed,
-                marks=exit_marks,
-                max_marks=1.0,
-                reason=exit_reason,
-                hint="Make sure the script runs and exits cleanly (exit code 0).",
-            )
-        )
+        checks.append(CheckResult(
+            name="Script Exit Status",
+            passed=exit_passed,
+            marks=1.0 if exit_passed else 0.0,
+            max_marks=1.0,
+            reason=exit_reason,
+            hint="Ensure analyze.sh runs and exits with code 0.",
+        ))
 
-        # Check 2: report.txt is created (1 mark)
-        report_path = self.workspace / "week-02" / "report.txt"
+        # ── Check 2: report.txt was created ───────────────────────────────
+        report_path = self.workspace / "report.txt"
         report_exists = report_path.exists() and report_path.is_file()
-        report_marks = 1.0 if report_exists else 0.0
-        checks.append(
-            CheckResult(
-                name="Report Creation Check",
-                passed=report_exists,
-                marks=report_marks,
-                max_marks=1.0,
-                reason="report.txt was created successfully." if report_exists else "report.txt was not found.",
-                hint="Ensure that your analyze.sh script redirects output to a file named report.txt inside week-02/.",
-            )
-        )
+        checks.append(CheckResult(
+            name="Report File Created",
+            passed=report_exists,
+            marks=0.5 if report_exists else 0.0,
+            max_marks=0.5,
+            reason="report.txt found." if report_exists else "report.txt not found.",
+            hint="Redirect your analysis output to report.txt.",
+        ))
 
-        # Read report and script contents for pattern analysis
         report_content = ""
         if report_exists:
             try:
-                with open(report_path, "r", errors="ignore") as f:
-                    report_content = f.read()
-            except Exception as e:
-                report_content = ""
+                report_content = report_path.read_text(errors="ignore")
+            except Exception:
+                pass
 
-        script_path = self.workspace / "week-02" / "analyze.sh"
+        if not report_exists:
+            # Fill remaining checks as failed so totals are consistent
+            for _ in range(5):
+                checks.append(CheckResult(
+                    name="(skipped)", passed=False, marks=0.0, max_marks=0.5,
+                    reason="report.txt missing; cannot verify output.",
+                    hint="Create report.txt first.",
+                ))
+        else:
+            # ── Check 3: Total request count is correct (exact) ───────────
+            total_numbers = re.findall(r"\b(\d+)\b", report_content)
+            found_total = str(self.EXPECTED_TOTAL) in total_numbers
+            checks.append(CheckResult(
+                name=f"Total Request Count (expected {self.EXPECTED_TOTAL})",
+                passed=found_total,
+                marks=0.5 if found_total else 0.0,
+                max_marks=0.5,
+                reason=f"Found '{self.EXPECTED_TOTAL}' in report." if found_total
+                       else f"'{self.EXPECTED_TOTAL}' not found in report. Numbers present: {total_numbers[:10]}",
+                hint=f"Your report should contain the total request count: {self.EXPECTED_TOTAL}.",
+            ))
+
+            # ── Check 4: Top IP address is correct ───────────────────────
+            top_ip_found = self.EXPECTED_TOP_IP in report_content
+            checks.append(CheckResult(
+                name=f"Top IP Address (expected {self.EXPECTED_TOP_IP})",
+                passed=top_ip_found,
+                marks=0.5 if top_ip_found else 0.0,
+                max_marks=0.5,
+                reason=f"'{self.EXPECTED_TOP_IP}' found in report." if top_ip_found
+                       else f"'{self.EXPECTED_TOP_IP}' not found in report.",
+                hint=f"The most frequent IP in the log is {self.EXPECTED_TOP_IP} with 8 requests.",
+            ))
+
+            # ── Check 5: Top URL path is correct ─────────────────────────
+            top_url_found = self.EXPECTED_TOP_URL in report_content
+            checks.append(CheckResult(
+                name=f"Top URL Path (expected {self.EXPECTED_TOP_URL})",
+                passed=top_url_found,
+                marks=0.5 if top_url_found else 0.0,
+                max_marks=0.5,
+                reason=f"'{self.EXPECTED_TOP_URL}' found in report." if top_url_found
+                       else f"'{self.EXPECTED_TOP_URL}' not found in report.",
+                hint=f"The most requested URL is {self.EXPECTED_TOP_URL} with 8 hits.",
+            ))
+
+            # ── Check 6: Status code 200 count is correct ─────────────────
+            status_200_ok = str(self.EXPECTED_STATUS_200) in report_content
+            checks.append(CheckResult(
+                name=f"HTTP 200 Count (expected {self.EXPECTED_STATUS_200})",
+                passed=status_200_ok,
+                marks=0.5 if status_200_ok else 0.0,
+                max_marks=0.5,
+                reason=f"Found '{self.EXPECTED_STATUS_200}' in report." if status_200_ok
+                       else f"Expected count {self.EXPECTED_STATUS_200} for HTTP 200 not found in report.",
+                hint=f"There are {self.EXPECTED_STATUS_200} HTTP 200 responses in the log.",
+            ))
+
+            # ── Check 7: Both 4xx and 5xx codes appear ────────────────────
+            has_404 = "404" in report_content
+            has_500 = "500" in report_content
+            error_codes_ok = has_404 and has_500
+            checks.append(CheckResult(
+                name="Error HTTP Status Codes Present (404 and 500)",
+                passed=error_codes_ok,
+                marks=0.5 if error_codes_ok else 0.0,
+                max_marks=0.5,
+                reason="Both 404 and 500 status codes reported." if error_codes_ok
+                       else f"Missing: {'404 ' if not has_404 else ''}{'500' if not has_500 else ''}",
+                hint="Your report should include 404 (3 occurrences) and 500 (3 occurrences) codes.",
+            ))
+
+        # ── Bonus: pipe and redirection technique checks ──────────────────
+        script_path = self.workspace / "analyze.sh"
         script_content = ""
-        if script_path.exists() and script_path.is_file():
+        if script_path.exists():
             try:
-                with open(script_path, "r", errors="ignore") as f:
-                    script_content = f.read()
-            except Exception as e:
-                script_content = ""
+                script_content = script_path.read_text(errors="ignore")
+            except Exception:
+                pass
 
-        # Check 3: report contains a number near 'total' or 'count' (0.5 marks)
-        total_pattern = re.compile(r"(total|count)[^\d]{0,30}\b\d+\b", re.IGNORECASE)
-        total_passed = bool(total_pattern.search(report_content))
-        total_marks = 0.5 if total_passed else 0.0
-        checks.append(
-            CheckResult(
-                name="Total Request Count Pattern Check",
-                passed=total_passed,
-                marks=total_marks,
-                max_marks=0.5,
-                reason="Found request count output." if total_passed else "Could not find a line containing 'total' or 'count' followed by a number.",
-                hint="Make sure report.txt contains the total requests count with labels like 'Total Requests' or 'Count'.",
-            )
-        )
-
-        # Check 4: report contains IP address pattern (0.5 marks)
-        ip_pattern = re.compile(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}")
-        ip_passed = bool(ip_pattern.search(report_content))
-        ip_marks = 0.5 if ip_passed else 0.0
-        checks.append(
-            CheckResult(
-                name="IP Address Output Check",
-                passed=ip_passed,
-                marks=ip_marks,
-                max_marks=0.5,
-                reason="Found IP addresses in report." if ip_passed else "No IP address patterns found in report.",
-                hint="Ensure your script extracts and displays the top IP addresses in the log.",
-            )
-        )
-
-        # Check 5: report contains URL path pattern (0.5 marks)
-        url_pattern = re.compile(r"/[a-zA-Z]")
-        url_passed = bool(url_pattern.search(report_content))
-        url_marks = 0.5 if url_passed else 0.0
-        checks.append(
-            CheckResult(
-                name="URL Path Output Check",
-                passed=url_passed,
-                marks=url_marks,
-                max_marks=0.5,
-                reason="Found URL paths in report." if url_passed else "No URL paths found in report.",
-                hint="Ensure your script extracts and displays the top URL paths requested.",
-            )
-        )
-
-        # Check 6: report contains HTTP status code pattern (0.5 marks)
-        status_pattern = re.compile(r"\b(200|40\d|50\d)\b")
-        status_passed = bool(status_pattern.search(report_content))
-        status_marks = 0.5 if status_passed else 0.0
-        checks.append(
-            CheckResult(
-                name="HTTP Status Code Output Check",
-                passed=status_passed,
-                marks=status_marks,
-                max_marks=0.5,
-                reason="Found HTTP status code distribution in report." if status_passed else "No HTTP status code distribution found in report.",
-                hint="Ensure your script counts and prints HTTP status codes like 200, 404, 500, etc.",
-            )
-        )
-
-        # Check 7: script source contains pipe character (0.5 marks)
         pipe_passed = "|" in script_content
-        pipe_marks = 0.5 if pipe_passed else 0.0
-        checks.append(
-            CheckResult(
-                name="Source Code Pipe Character Check",
-                passed=pipe_passed,
-                marks=pipe_marks,
-                max_marks=0.5,
-                reason="Found pipeline character '|' in analyze.sh." if pipe_passed else "No pipeline character '|' found in analyze.sh.",
-                hint="Use piping to chain commands like awk, sort, uniq, and head.",
-            )
-        )
+        checks.append(CheckResult(
+            name="Uses Pipe Operator in Script",
+            passed=pipe_passed,
+            marks=0.3 if pipe_passed else 0.0,
+            max_marks=0.3,
+            reason="Found '|' in analyze.sh." if pipe_passed else "No pipe '|' found in analyze.sh.",
+            hint="Chain commands with pipes: awk | sort | uniq | head.",
+        ))
 
-        # Check 8: script source contains redirection (0.5 marks)
-        redir_passed = (">" in script_content or ">>" in script_content)
-        redir_marks = 0.5 if redir_passed else 0.0
-        checks.append(
-            CheckResult(
-                name="Source Code Redirection Check",
-                passed=redir_passed,
-                marks=redir_marks,
-                max_marks=0.5,
-                reason="Found redirection operator '>' or '>>' in analyze.sh." if redir_passed else "No redirection operator found in analyze.sh.",
-                hint="Use redirection to write or append output to report.txt.",
-            )
-        )
+        redir_passed = (">" in script_content)
+        checks.append(CheckResult(
+            name="Uses Output Redirection in Script",
+            passed=redir_passed,
+            marks=0.2 if redir_passed else 0.0,
+            max_marks=0.2,
+            reason="Found '>' redirection in analyze.sh." if redir_passed else "No '>' found in analyze.sh.",
+            hint="Use '>' or '>>' to write output to report.txt.",
+        ))
 
         total_score = sum(c.marks for c in checks)
         total_max = sum(c.max_marks for c in checks)
@@ -168,5 +192,5 @@ class Week2Grader(BaseGrader):
             max_score=round(total_max, 2),
             passed=passed,
             checks=checks,
-            feedback=f"Completed log analyzer checks. Score: {total_score}/{total_max}",
+            feedback=f"Log analyzer checks complete. Score: {total_score:.2f}/{total_max:.2f}",
         )

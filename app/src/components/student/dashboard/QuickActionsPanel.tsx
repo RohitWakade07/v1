@@ -31,7 +31,7 @@ export const QuickActionsPanel = () => (
     <div className="space-y-2">
       {actions.map(({ label, description, to, icon: Icon, accent }) => (
         <Link
-          key={to}
+          key={label}
           to={to}
           className="group flex items-center gap-3 rounded-lg border border-navy-800 p-3 transition-all hover:border-accent-blue/40 hover:bg-navy-800/40"
         >

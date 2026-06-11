@@ -10,8 +10,8 @@ from sqlmodel import select
 from app.api.v1.dependencies import get_approved_student
 from app.core.config import settings
 from app.db.session import get_db
-from app.models.models import Student, Submission, SubmissionSourceType, SubmissionStatus
-from app.schemas.schemas import SubmissionCreateResponse, SubmissionPublic, ErrorResponse
+from app.models.models import Student, Submission, SubmissionSourceType, SubmissionStatus, SubmissionResult
+from app.schemas.schemas import SubmissionCreateResponse, SubmissionPublic, ErrorResponse, SubmissionResultDetail
 from app.services.submission_service import SubmissionService
 
 router = APIRouter(prefix="/submissions", tags=["Submissions"])
@@ -44,10 +44,19 @@ async def create_submission(
 
     zip_bytes = None
     if file:
-        if file.content_type != "application/zip":
+        valid_content_types = [
+            "application/zip",
+            "application/x-zip-compressed",
+            "application/zip-compressed",
+            "application/x-zip",
+            "application/octet-stream",
+            "application/x-compressed"
+        ]
+        
+        if file.content_type not in valid_content_types and not (file.filename and file.filename.lower().endswith(".zip")):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Only ZIP archives are accepted for uploads",
+                detail=f"Only ZIP archives are accepted for uploads. Got content_type={file.content_type}, filename={file.filename}",
             )
         zip_bytes = await file.read()
         if len(zip_bytes) > settings.EEP_MAX_UPLOAD_BYTES:
@@ -107,6 +116,44 @@ async def get_submission_detail(
             detail="Submission not found",
         )
     return submission
+
+
+@router.get(
+    "/{submission_id}/result",
+    response_model=SubmissionResultDetail,
+    summary="Get the execution result and logs for a specific submission",
+    responses={404: {"model": ErrorResponse}},
+)
+async def get_submission_result(
+    submission_id: uuid.UUID,
+    current_student: Student = Depends(get_approved_student),
+    db: AsyncSession = Depends(get_db),
+):
+    # First verify the submission belongs to the student
+    sub_res = await db.execute(
+        select(Submission).where(
+            Submission.id == submission_id,
+            Submission.student_id == current_student.id,
+        )
+    )
+    if not sub_res.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Submission not found",
+        )
+
+    result = await db.execute(
+        select(SubmissionResult).where(
+            SubmissionResult.submission_id == submission_id
+        )
+    )
+    sub_result = result.scalar_one_or_none()
+    if not sub_result:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Result not ready or not found",
+        )
+    return sub_result
 
 
 @router.post(

@@ -17,6 +17,7 @@ const StudentAssignments   = lazy(() => import('@/pages/student/AssignmentsPage'
 const StudentAssignmentDetail = lazy(() => import('@/pages/student/AssignmentDetailPage'))
 const StudentSessions      = lazy(() => import('@/pages/student/SessionsPage'))
 const StudentSessionDetail = lazy(() => import('@/pages/student/SessionDetailPage'))
+const StudentSubmissionDetail = lazy(() => import('@/pages/student/SubmissionDetailPage'))
 const StudentProofSubmit   = lazy(() => import('@/pages/student/ProofSubmitPage'))
 const StudentResults       = lazy(() => import('@/pages/student/ResultsPage'))
 const StudentResultDetail  = lazy(() => import('@/pages/student/ResultDetailPage'))
@@ -27,6 +28,7 @@ const MentorDashboard    = lazy(() => import('@/pages/mentor/DashboardPage'))
 const MentorProfile      = lazy(() => import('@/pages/mentor/ProfilePage'))
 const MentorClassrooms   = lazy(() => import('@/pages/mentor/classrooms/ClassroomsPage'))
 const MentorAssignments  = lazy(() => import('@/pages/mentor/assignments/AssignmentsPage'))
+const MentorManageAssignments = lazy(() => import('@/pages/mentor/assignments/AssignmentManagePage'))
 const MentorCreateAssignment = lazy(() => import('@/pages/mentor/assignments/CreateAssignmentPage'))
 const MentorAssignmentDetail = lazy(() => import('@/pages/mentor/assignments/AssignmentDetailPage'))
 const MentorStudents     = lazy(() => import('@/pages/mentor/students/StudentsPage'))
@@ -79,6 +81,7 @@ export const AppRouter = () => (
           <Route path="assignments/:id"  element={<StudentAssignmentDetail />} />
           <Route path="sessions"         element={<StudentSessions />} />
           <Route path="sessions/:id"     element={<StudentSessionDetail />} />
+          <Route path="submissions/:id"  element={<StudentSubmissionDetail />} />
           <Route path="proof/submit"     element={<StudentProofSubmit />} />
           <Route path="results"          element={<StudentResults />} />
           <Route path="results/:id"      element={<StudentResultDetail />} />
@@ -93,6 +96,7 @@ export const AppRouter = () => (
           <Route path="profile"              element={<MentorProfile />} />
           <Route path="classrooms"           element={<MentorClassrooms />} />
           <Route path="assignments"          element={<MentorAssignments />} />
+          <Route path="assignments/manage"   element={<MentorManageAssignments />} />
           <Route path="assignments/create"   element={<MentorCreateAssignment />} />
           <Route path="assignments/:id"      element={<MentorAssignmentDetail />} />
           <Route path="students"             element={<MentorStudents />} />

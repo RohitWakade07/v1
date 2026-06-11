@@ -1,74 +1,129 @@
 # Next Steps
 
-## If Resuming a Session
-1. Read `PROGRESS.md` — see what was completed
-2. Read `DEPLOYMENT_STATUS.md` — current deployment readiness
-3. Run `git log --oneline -10` to see recent commits
+## Current State
+All code fixes are committed and pushed. The repo is clean and deployment-ready.
+Next action is purely infrastructure configuration — no more code changes needed
+before the first deploy.
 
-## Immediate: Commit All Changes
+---
 
-These files were modified/created and need to be committed:
+## Step 1 — Deploy the API on Railway (do this first)
+
+1. Go to https://railway.app → New Project → Deploy from GitHub → select this repo
+2. Railway will detect `railway.toml` automatically
+
+3. Add **PostgreSQL** plugin: New → Database → Add PostgreSQL
+
+4. Add **Redis** plugin: New → Database → Add Redis
+
+5. In your API service → **Variables** tab, add these (copy exact names):
+
+   ```
+   DATABASE_URL_OVERRIDE    = <paste Railway Postgres URL>
+   REDIS_URL_OVERRIDE       = <paste Railway Redis URL>
+   JWT_SECRET_KEY           = <generate: python -c "import secrets; print(secrets.token_hex(64))">
+   PROOF_SIGNING_KEY        = <generate: python -c "import secrets; print(secrets.token_hex(64))">
+   ALLOWED_ORIGINS          = https://your-frontend.vercel.app
+   KAFKA_BOOTSTRAP_SERVERS  = <from Upstash or Confluent — see Step 2>
+   MINIO_ENDPOINT           = <from your storage provider — see Step 3>
+   MINIO_ACCESS_KEY         = <your key>
+   MINIO_SECRET_KEY         = <your secret>
+   ENVIRONMENT              = production
+   DEBUG                    = false
+   ```
+
+6. Push any commit to trigger deploy, or click **Deploy** in Railway UI
+
+7. Verify:
+   ```bash
+   curl https://your-api.railway.app/health
+   # {"status":"ok","database":"ok","redis":"ok","version":"1.0.0"}
+   ```
+
+---
+
+## Step 2 — Set up Kafka (free tier options)
+
+**Option A — Upstash Kafka** (easiest, no credit card for free tier):
+- https://upstash.com → Create Kafka cluster → copy bootstrap server URL
+- Set `KAFKA_BOOTSTRAP_SERVERS` in Railway
+
+**Option B — Confluent Cloud** (more generous free tier):
+- https://confluent.io → free cluster → copy bootstrap servers
+
+---
+
+## Step 3 — Set up Object Storage for MinIO
+
+**Option A — Keep MinIO, deploy it on Railway**:
+- In your Railway project → New → Docker Image → `minio/minio:latest`
+- Set env vars: `MINIO_ROOT_USER=minioadmin`, `MINIO_ROOT_PASSWORD=<strong-password>`
+- Set start command: `server /data --console-address :9001`
+- Copy the internal Railway URL → use as `MINIO_ENDPOINT`
+
+**Option B — Cloudflare R2** (S3-compatible, generous free tier):
+- https://cloudflare.com → R2 → Create bucket
+- Get endpoint URL, access key, secret key
+- Set `MINIO_USE_SSL=true` in Railway
+
+---
+
+## Step 4 — Deploy the Frontend on Vercel
+
+1. https://vercel.com → New Project → Import from GitHub → select this repo
+2. Framework: **Vite**
+3. Root directory: `app`
+4. Build command: `npm run build`
+5. Output directory: `dist`
+6. Add env var: `VITE_API_BASE_URL=https://your-api.railway.app/api/v1`
+7. Deploy → copy the Vercel URL
+
+8. Go back to Railway → update `ALLOWED_ORIGINS` to the Vercel URL
+
+---
+
+## Step 5 — Deploy the Worker (requires Docker-in-Docker)
+
+Railway's shared runtime cannot run Docker containers inside containers.
+The grading worker **must** run on a machine with Docker access.
+
+**Recommended: DigitalOcean Droplet ($6/mo) or Hetzner CX11 (~€4/mo)**
 
 ```bash
-cd A:\eysip\v1
-
-git add backend/.env.example
-git commit -m "fix: security — replace real secrets in .env.example with placeholders"
-
-git add .gitignore
-git commit -m "chore: harden root .gitignore for frontend artifacts, scratch files, and keys"
-
-git add backend/app/core/config.py
-git commit -m "fix: config — Railway URL overrides, extra=ignore, ALLOWED_ORIGINS + cors_origins"
-
-git add backend/app/main.py
-git commit -m "fix: main — dynamic CORS from settings, Redis health check in /health"
-
-git add backend/Dockerfile.api
-git commit -m "feat: Dockerfile.api — Alembic migration step, non-root user, PORT env var"
-
-git add backend/.dockerignore
-git commit -m "feat: add backend .dockerignore"
-
-git add railway.toml RAILWAY_DEPLOYMENT.md
-git commit -m "feat: add railway.toml and deployment guide"
-
-git add app/.env.example
-git commit -m "docs: add frontend .env.example"
-
-git add REPOSITORY_AUDIT.md PROGRESS.md DEPLOYMENT_STATUS.md NEXT_STEPS.md
-git commit -m "docs: add audit, progress tracking, and deployment status files"
+# On the VPS
+git clone https://github.com/your-org/your-repo.git
+cd your-repo/backend
+cp .env.example .env
+# Edit .env with the same secrets you used in Railway
+docker build -f Dockerfile.worker -t grading-worker .
+docker run -d \
+  --env-file .env \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  --restart unless-stopped \
+  grading-worker
 ```
 
-## Before First Railway Deploy
+---
 
-- [ ] Provision PostgreSQL plugin in Railway → copy `DATABASE_URL`
-- [ ] Provision Redis plugin in Railway → copy `REDIS_URL`
-- [ ] Set `DATABASE_URL_OVERRIDE` in Railway API service variables
-- [ ] Set `REDIS_URL_OVERRIDE` in Railway API service variables
-- [ ] Generate and set `JWT_SECRET_KEY`: `python -c "import secrets; print(secrets.token_hex(64))"`
-- [ ] Generate and set `PROOF_SIGNING_KEY`: `python -c "import secrets; print(secrets.token_hex(64))"`
-- [ ] Set `ALLOWED_ORIGINS` to your frontend URL (e.g. `https://your-app.vercel.app`)
-- [ ] Set up Kafka (Upstash or Confluent Cloud) and set `KAFKA_BOOTSTRAP_SERVERS`
-- [ ] Set up MinIO or S3-compatible storage and set `MINIO_*` vars
-- [ ] Set `ENVIRONMENT=production` and `DEBUG=false`
-- [ ] Verify `/health` returns `{"status":"ok",...}` after deploy
+## Step 6 — Seed the database (first deploy only)
 
-## Before Deploying the Frontend
+In Railway → your API service → Settings → one-off command:
+```bash
+python create_mentor.py
+```
 
-- [ ] Create `app/.env.production` with `VITE_API_BASE_URL=https://your-api.railway.app/api/v1`
-  (do NOT commit this file — it contains the real API URL)
-- [ ] Run `cd app && npm run build` locally to verify the build succeeds
-- [ ] Deploy to Vercel: connect repo, set build command `cd app && npm run build`, output `app/dist`
+Or via Railway CLI:
+```bash
+npm install -g @railway/cli
+railway login
+railway run python create_mentor.py
+```
 
-## For the Worker (Docker-in-Docker)
+---
 
-- [ ] Provision a VPS (DigitalOcean / Hetzner) with Docker installed
-- [ ] Copy `.env` to the VPS
-- [ ] Run: `cd backend && docker build -f Dockerfile.worker -t grading-worker . && docker run --env-file .env -v /var/run/docker.sock:/var/run/docker.sock grading-worker`
+## Optional Improvements (do after first deploy is working)
 
-## Optional Improvements
-
-- [ ] Split `requirements.txt` → move pytest/aiosqlite to `requirements-dev.txt`
-- [ ] Add GitHub Actions CI (lint + docker build check) — see original plan Phase 9
+- [ ] Split `requirements.txt` — move `pytest`, `pytest-asyncio`, `aiosqlite` to `requirements-dev.txt`
+- [ ] Add GitHub Actions CI (lint + docker build check)
 - [ ] Add `LICENSE` file before making repo public
+- [ ] Add `CONTRIBUTING.md`

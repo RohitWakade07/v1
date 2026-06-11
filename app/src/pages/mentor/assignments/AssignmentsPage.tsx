@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { PlusCircle, Eye, Send, Pencil, Globe, Lock, BookOpen } from 'lucide-react'
+import { PlusCircle, Eye, Send, Pencil, Globe, Lock, BookOpen, LayoutDashboard } from 'lucide-react'
 import { PageWrapper } from '@/components/shared/PageWrapper'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { DataTable } from '@/components/shared/DataTable'
@@ -102,9 +102,14 @@ export const AssignmentsPage = () => {
         title="Assignments"
         description="Manage platform assignments, drafts, and publication status."
         actions={
-          <Link to="/mentor/assignments/create" className="btn-primary">
-            <PlusCircle size={16} /> Create Assignment
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link to="/mentor/assignments/manage" className="btn-secondary">
+              <LayoutDashboard size={16} /> Manage Weeks
+            </Link>
+            <Link to="/mentor/assignments/create" className="btn-primary">
+              <PlusCircle size={16} /> Create Assignment
+            </Link>
+          </div>
         }
       />
 

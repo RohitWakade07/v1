@@ -1,7 +1,8 @@
 assignment_slug: "week1"
-docker_image: "grading-bash:latest"
-execution_command: "true"
-timeout_seconds: 10
+target_file: "commands.txt"
+docker_image: "bash:5"
+execution_command: "bash commands.txt"
+timeout_seconds: 15
 memory_limit_mb: 128
 cpu_limit: 0.5
 network_disabled: true

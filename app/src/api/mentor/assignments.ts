@@ -23,7 +23,7 @@ export const fetchAssignments = (): Promise<Assignment[]> =>
 export const fetchMentorAssignments = fetchAssignments
 
 export const fetchAssignment = (id: string): Promise<Assignment> =>
-  apiGet<Assignment>(`/assignments/${id}`)
+  apiGet<Assignment>(`/mentor/assignments/${id}`)
 
 export const createAssignment = (data: AssignmentCreate): Promise<Assignment> =>
   apiPost<Assignment, AssignmentCreate>('/assignments', data)

@@ -14,9 +14,10 @@ class StorageService:
         self.endpoint_url = settings.MINIO_ENDPOINT
         self.access_key = settings.MINIO_ACCESS_KEY
         self.secret_key = settings.MINIO_SECRET_KEY
-        self.bucket_name = settings.MINIO_BUCKET_NAME
+        self.bucket_name = settings.MINIO_BUCKET_SUBMISSIONS
+        self.bucket_submissions = settings.MINIO_BUCKET_SUBMISSIONS
         self.use_ssl = settings.MINIO_USE_SSL
-        self.region_name = settings.MINIO_REGION
+        self.region_name = getattr(settings, "MINIO_REGION", "us-east-1")
         self.config = Config(signature_version="s3v4")
 
     async def _create_client(self):
@@ -57,3 +58,10 @@ class StorageService:
                 Params={"Bucket": self.bucket_name, "Key": key},
                 ExpiresIn=expires,
             )
+
+    async def download_file(self, bucket: str, key: str, local_path: str) -> None:
+        async with await self._create_client() as client:
+            response = await client.get_object(Bucket=bucket, Key=key)
+            with open(local_path, 'wb') as f:
+                async for chunk in response['Body']:
+                    f.write(chunk)

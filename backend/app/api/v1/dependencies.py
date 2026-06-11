@@ -9,15 +9,29 @@ from app.core.security import decode_access_token
 from app.db.session import get_db
 from app.models.models import Student, Mentor, UserRole
 
-bearer_scheme = HTTPBearer()
+bearer_scheme = HTTPBearer(auto_error=False)
+
+async def get_token_from_request(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    token: str | None = None,
+) -> str:
+    if credentials:
+        return credentials.credentials
+    if token:
+        return token
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Not authenticated",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
 
 
 async def get_current_student(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    token: str = Depends(get_token_from_request),
     db: AsyncSession = Depends(get_db),
 ) -> Student:
     try:
-        payload = decode_access_token(credentials.credentials)
+        payload = decode_access_token(token)
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

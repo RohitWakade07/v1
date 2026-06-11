@@ -88,6 +88,18 @@ class DockerExecutor:
                         if not str(dest).startswith(str(submission_dir.resolve())):
                             raise ValueError(f"Path traversal detected in ZIP archive: {member}")
                     archive.extractall(path=submission_dir)
+                
+                # Recursively flatten top-level directory if it's the only item
+                while True:
+                    items = list(submission_dir.iterdir())
+                    if len(items) == 1 and items[0].is_dir():
+                        top_dir = items[0]
+                        logger.info(f"Flattening nested directory: {top_dir.name}")
+                        for child in top_dir.iterdir():
+                            shutil.move(str(child), str(submission_dir / child.name))
+                        top_dir.rmdir()
+                    else:
+                        break
             elif source_type == "github":
                 if not repo_url:
                     raise ValueError("Missing repo_url for github source type")
@@ -109,6 +121,14 @@ class DockerExecutor:
 
             with open(config_path, "r") as f:
                 config = yaml.safe_load(f)
+
+            # --- SMART TARGET DISCOVERY ---
+            target_file = config.get("target_file")
+            if target_file:
+                found_paths = list(submission_dir.rglob(target_file))
+                if found_paths:
+                    submission_dir = found_paths[0].parent
+                    logger.info(f"Target {target_file} found deep in tree. Updated effective workspace to {submission_dir}")
 
             exec_metadata["execution_command"] = config.get("execution_command", "")
 
@@ -164,15 +184,39 @@ class DockerExecutor:
 
             # ── PHASE 3: EXECUTION ────────────────────────────────────────────
             logger.info("Phase 3: Spawning Docker sandbox container")
+
+            # The worker writes job files into /tmp/autograder_jobs (backed by the
+            # shared "grader_jobs" Docker volume).  We mount the same named volume
+            # into the grading container and point at the correct sub-paths.
+            #
+            # Detect the docker-compose project name so we can reference the
+            # volume as "<project>_grader_jobs".
+            project_name = os.environ.get("COMPOSE_PROJECT_NAME", "backend")
+            volume_name = f"{project_name}_grader_jobs"
+
+            # Relative path inside the volume for this job
+            job_rel = str(Path(submission_id))
+            
+            # Since submission_dir may have been deep-discovered, we calculate its relative path
+            base_submission_dir = job_dir / "submission"
+            rel_path = submission_dir.relative_to(base_submission_dir)
+            submission_vol_path = f"{job_rel}/submission"
+            if str(rel_path) != ".":
+                # Ensure posix paths for docker volumes
+                submission_vol_path = f"{job_rel}/submission/{rel_path}".replace("\\", "/")
+                
+            assets_vol_path = f"{job_rel}/assets"
+
             volumes = {
-                str(submission_dir): {"bind": "/workspace/submission", "mode": "rw"},
-                str(assets_dir):     {"bind": "/workspace/assets",     "mode": "ro"},
+                volume_name: {"bind": "/tmp/autograder_jobs", "mode": "rw"},
             }
 
             # Support optional working_dir relative to /workspace/submission
-            container_workdir = "/workspace/submission"
+            container_submission = f"/tmp/autograder_jobs/{submission_vol_path}"
+            container_assets = f"/tmp/autograder_jobs/{assets_vol_path}"
+            container_workdir = container_submission
             if config.get("working_dir"):
-                container_workdir = f"/workspace/submission/{config['working_dir']}"
+                container_workdir = f"{container_submission}/{config['working_dir']}"
 
             container = self.docker_client.containers.run(
                 image=image_name,
@@ -181,8 +225,8 @@ class DockerExecutor:
                 volumes=volumes,
                 working_dir=container_workdir,
                 environment={
-                    "WORKSPACE": "/workspace/submission",
-                    "ASSETS":    "/workspace/assets",
+                    "WORKSPACE": container_submission,
+                    "ASSETS":    container_assets,
                 },
                 network_disabled=config.get("network_disabled", True),
                 mem_limit=f"{config.get('memory_limit_mb', 512)}m",

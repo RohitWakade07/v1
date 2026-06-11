@@ -59,6 +59,31 @@ class SubmissionService:
         else:
             await validator.validate_github(repo_url, assignment.slug)
 
+        # Ensure active GradingSession exists
+        from app.models.models import GradingSession, SessionStatus
+        active_statuses = [
+            SessionStatus.CREATED, SessionStatus.CHALLENGE_ISSUED,
+            SessionStatus.RUNNING, SessionStatus.PROOF_GENERATED,
+            SessionStatus.STARTED, SessionStatus.IN_PROGRESS
+        ]
+        session_query = await db.execute(
+            select(GradingSession).where(
+                GradingSession.student_id == student.id,
+                GradingSession.assignment_id == assignment.id,
+                GradingSession.status.in_(active_statuses),
+            )
+        )
+        active_session = session_query.scalar_one_or_none()
+        
+        if not active_session:
+            active_session = GradingSession(
+                student_id=student.id,
+                assignment_id=assignment.id,
+                status=SessionStatus.CREATED,
+            )
+            db.add(active_session)
+            await db.flush()
+
         submission = Submission(
             student_id=student.id,
             assignment_id=assignment.id,

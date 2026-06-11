@@ -11,7 +11,14 @@ from confluent_kafka import Consumer, KafkaError
 from app.core.config import settings
 from app.db.sync_session import SyncSessionLocal
 from app.kafka import producer as kafka_producer
-from app.models.models import Submission, SubmissionResult, SubmissionStatus
+from app.models.models import (
+    Submission, 
+    SubmissionResult, 
+    SubmissionStatus,
+    GradingSession,
+    FinalResult,
+    SessionStatus,
+)
 from workers.docker_executor import DockerExecutor
 
 logging.basicConfig(level=logging.INFO)
@@ -166,6 +173,43 @@ def process_message(msg_val: bytes):
             result_record.ai_feedback = ""
 
             session.add(result_record)
+            
+            # --- UPDATE GRADING SESSION & FINAL RESULT ---
+            # Find the active grading session for this assignment
+            active_grading_session = session.query(GradingSession).filter(
+                GradingSession.student_id == uuid.UUID(student_id),
+                GradingSession.assignment_id == uuid.UUID(assignment_id),
+                GradingSession.status.in_([
+                    SessionStatus.CREATED, SessionStatus.CHALLENGE_ISSUED,
+                    SessionStatus.RUNNING, SessionStatus.PROOF_GENERATED,
+                    SessionStatus.STARTED, SessionStatus.IN_PROGRESS
+                ])
+            ).first()
+
+            if active_grading_session:
+                active_grading_session.status = SessionStatus.COMPLETED
+                active_grading_session.final_score = grading_res.score
+                active_grading_session.score_breakdown = json.dumps(checks_list)
+                active_grading_session.completed_at = datetime.utcnow()
+                session.add(active_grading_session)
+
+                # Upsert FinalResult
+                final_res_record = session.query(FinalResult).filter_by(
+                    session_id=active_grading_session.id
+                ).first()
+                if not final_res_record:
+                    final_res_record = FinalResult(
+                        session_id=active_grading_session.id,
+                        student_id=active_grading_session.student_id,
+                        assignment_id=active_grading_session.assignment_id,
+                    )
+                
+                final_res_record.score = grading_res.score
+                final_res_record.passed = grading_res.passed
+                final_res_record.score_breakdown = json.dumps(checks_list)
+                final_res_record.verified_at = datetime.utcnow()
+                session.add(final_res_record)
+                
             session.commit()
 
             # Publish status and results

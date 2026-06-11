@@ -61,6 +61,46 @@ async def list_mentor_assignments(
 
 
 @router.get(
+    "/assignments/{assignment_id}",
+    response_model=AssignmentPublic,
+    summary="Get a specific assignment for the mentor",
+)
+async def get_mentor_assignment(
+    assignment_id: str,
+    current_mentor: Mentor = Depends(get_current_mentor),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Assignment).where(
+            Assignment.id == uuid.UUID(assignment_id),
+            Assignment.created_by_id == current_mentor.id
+        )
+    )
+    assignment = result.scalar_one_or_none()
+    if not assignment:
+        from fastapi import HTTPException, status
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Assignment not found or not owned by you",
+        )
+    return AssignmentPublic(
+        id=assignment.id,
+        slug=assignment.slug,
+        title=assignment.title,
+        description=assignment.description,
+        category=assignment.category,
+        max_score=assignment.max_score,
+        deadline=assignment.deadline,
+        is_published=assignment.is_published,
+        is_archived=assignment.is_archived,
+        created_by_id=assignment.created_by_id,
+        created_at=assignment.created_at,
+        updated_at=getattr(assignment, "updated_at", None),
+    )
+
+
+
+@router.get(
     "/students",
     response_model=List[MentorStudentPublic],
     summary="List students participating in this mentor's assignments",

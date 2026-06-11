@@ -1,10 +1,11 @@
 assignment_slug: "week3"
-docker_image: "grading-bash:latest"
-execution_command: "bash week-03/organize.sh week-03/test_mixed"
+target_file: "organize.sh"
+docker_image: "bash:5"
+execution_command: "bash organize.sh test_mixed"
 timeout_seconds: 30
 memory_limit_mb: 512
 cpu_limit: 1.0
 network_disabled: true
 assets:
   - source: "test_mixed"
-    target: "week-03/test_mixed"
+    target: "test_mixed"

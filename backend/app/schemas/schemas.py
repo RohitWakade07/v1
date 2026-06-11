@@ -151,6 +151,26 @@ class SubmissionPublic(BaseModel):
     attempt_number: int
 
 
+class SubmissionResultDetail(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    submission_id: uuid.UUID
+    checks_json: Optional[str] = None
+    feedback: Optional[str] = None
+    stdout: Optional[str] = None
+    stderr: Optional[str] = None
+    execution_command: Optional[str] = None
+    exit_code: Optional[int] = None
+    execution_time_ms: Optional[int] = None
+    timed_out: bool = False
+    oom_killed: bool = False
+    container_id: Optional[str] = None
+    grader_logs: Optional[str] = None
+    ai_feedback: Optional[str] = None
+    created_at: datetime
+
+
+
 # ── Session ───────────────────────────────────────────────────────────
 
 class SessionCreateRequest(BaseModel):
