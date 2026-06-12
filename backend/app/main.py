@@ -26,6 +26,12 @@ async def lifespan(app: FastAPI):
     redis = await get_redis()
     await redis.ping()
     print("[startup] Redis connected")
+
+    # Start Celery Outbox Poller
+    import asyncio
+    from app.celery_outbox_poller import poll_outbox
+    poller_task = asyncio.create_task(poll_outbox())
+
     yield
     await close_redis()
     print("[shutdown] connections closed")

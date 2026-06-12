@@ -117,30 +117,9 @@ class Settings(BaseSettings):
     # Rate limiting
     LOGIN_RATE_LIMIT_PER_MINUTE: int = 10
 
-    # Kafka
-    KAFKA_BOOTSTRAP_SERVERS: str = "localhost:9092"
-    # SASL auth — required for Upstash/Confluent Cloud. Leave blank for local Kafka.
-    KAFKA_SASL_USERNAME: str = ""
-    KAFKA_SASL_PASSWORD: str = ""
-    KAFKA_SECURITY_PROTOCOL: str = "PLAINTEXT"  # set to SASL_SSL for Upstash
-    KAFKA_SASL_MECHANISM: str = "PLAIN"  # SCRAM-SHA-256 for Upstash
-
-    @property
-    def kafka_client_config(self) -> dict:
-        """Returns base Kafka client config dict, with SASL auth if configured."""
-        config: dict = {"bootstrap.servers": self.KAFKA_BOOTSTRAP_SERVERS.strip()}
-        
-        username = self.KAFKA_SASL_USERNAME.strip() if self.KAFKA_SASL_USERNAME else ""
-        password = self.KAFKA_SASL_PASSWORD.strip() if self.KAFKA_SASL_PASSWORD else ""
-        
-        if username and password:
-            config.update({
-                "security.protocol": self.KAFKA_SECURITY_PROTOCOL.strip(),
-                "sasl.mechanism": self.KAFKA_SASL_MECHANISM.strip(),
-                "sasl.username": username,
-                "sasl.password": password,
-            })
-        return config
+    # Celery & Redis
+    CELERY_BROKER_URL: str = "redis://localhost:6379/0"
+    CELERY_RESULT_BACKEND: str = "redis://localhost:6379/1"
 
     # MinIO / S3
     MINIO_ENDPOINT: str = "localhost:9000"

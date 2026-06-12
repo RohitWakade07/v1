@@ -9,9 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 from app.core.config import settings
-from app.kafka import producer as kafka_producer
-from app.kafka.topics import GRADING_JOBS_TOPIC
-from app.models.models import Assignment, Student, Submission, SubmissionSourceType, SubmissionStatus
+from app.models.models import Assignment, Student, Submission, SubmissionOutbox, GradingJob, JobStatus, SubmissionSourceType, SubmissionStatus
 from app.schemas.schemas import SubmissionCreateResponse
 from app.services.storage_service import StorageService
 from app.services.submission_validator import SubmissionValidator
@@ -101,10 +99,8 @@ class SubmissionService:
             submission.zip_object_key = key
 
         db.add(submission)
-        await db.commit()
-        await db.refresh(submission)
-
-        kafka_payload = {
+        import json
+        payload = {
             "submission_id": str(submission.id),
             "student_id": str(student.id),
             "assignment_id": str(assignment.id),
@@ -113,12 +109,26 @@ class SubmissionService:
             "repo_url": repo_url,
             "zip_object_key": submission.zip_object_key,
             "submitted_at": submission.submitted_at.isoformat(),
+            "priority": 5, # default
         }
-        kafka_producer.publish(
-            GRADING_JOBS_TOPIC,
-            key=str(submission.id),
-            payload=kafka_payload,
+
+        # Create grading job record
+        job = GradingJob(
+            submission_id=submission.id,
+            status=JobStatus.PENDING,
+            queue_name="normal"
         )
+        db.add(job)
+
+        # Create outbox record
+        outbox_msg = SubmissionOutbox(
+            submission_id=submission.id,
+            payload=json.dumps(payload),
+        )
+        db.add(outbox_msg)
+
+        await db.commit()
+
 
         return SubmissionCreateResponse(
             submission_id=submission.id,

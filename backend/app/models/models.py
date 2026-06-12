@@ -450,3 +450,62 @@ class ClassroomEnrollment(SQLModel, table=True):
     status: str = Field(default="PENDING")  # PENDING, APPROVED, REJECTED
     joined_at: datetime = Field(default_factory=datetime.utcnow)
 
+
+class SubmissionOutbox(SQLModel, table=True):
+    __tablename__ = "submission_outbox"
+
+    id: int = Field(default=None, primary_key=True)
+    submission_id: uuid.UUID = Field(foreign_key="submissions.id", index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    dispatched_at: Optional[datetime] = Field(default=None, index=True)
+    retry_count: int = Field(default=0)
+    payload: str = Field(sa_column=Column(Text, nullable=False))
+
+
+class JobStatus(str, Enum):
+    PENDING = "pending"
+    CLAIMED = "claimed"
+    PROCESSING = "processing"
+    DONE = "done"
+    FAILED = "failed"
+    DEAD_LETTER = "dead_letter"
+
+
+class GradingJob(SQLModel, table=True):
+    __tablename__ = "grading_jobs"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
+    submission_id: uuid.UUID = Field(foreign_key="submissions.id", unique=True, index=True)
+    status: JobStatus = Field(default=JobStatus.PENDING, index=True)
+    worker_id: Optional[str] = Field(default=None, sa_column=Column(String(255), nullable=True))
+    celery_task_id: Optional[str] = Field(default=None, sa_column=Column(String(255), nullable=True))
+    queued_at: datetime = Field(default_factory=datetime.utcnow)
+    started_at: Optional[datetime] = Field(default=None)
+    completed_at: Optional[datetime] = Field(default=None)
+    attempt_count: int = Field(default=0)
+    max_attempts: int = Field(default=3)
+    queue_name: str = Field(default="normal", sa_column=Column(String(50)))
+
+
+class ExecutionMetrics(SQLModel, table=True):
+    __tablename__ = "execution_metrics"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
+    submission_id: uuid.UUID = Field(foreign_key="submissions.id", unique=True, index=True)
+    container_id: str = Field(sa_column=Column(String(100), nullable=False))
+    wall_time_ms: int = Field(default=0)
+    cpu_time_ms: int = Field(default=0)
+    peak_memory_mb: float = Field(default=0.0)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class ExecutionLogs(SQLModel, table=True):
+    __tablename__ = "execution_logs"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
+    submission_id: uuid.UUID = Field(foreign_key="submissions.id", index=True)
+    log_level: str = Field(sa_column=Column(String(20), nullable=False))
+    message: str = Field(sa_column=Column(Text, nullable=False))
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
