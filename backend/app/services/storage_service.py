@@ -42,9 +42,11 @@ class StorageService:
         # Strip trailing slash from endpoint to avoid signature mismatch
         self.endpoint_url = self.endpoint_url.rstrip("/")
                 
-        # Use default addressing style (virtual-hosted) which B2 prefers for restricted keys
-        self.config = Config(signature_version="s3v4")
-
+        # Path-style addressing is sometimes required by B2 depending on the client version
+        self.config = Config(
+            signature_version="s3v4",
+            s3={"addressing_style": "path"}
+        )
 
     async def _create_client(self):
         session = get_session()
@@ -86,6 +88,19 @@ class StorageService:
     async def upload_submission_zip(self, key: str, contents: bytes) -> str:
         async with await self._create_client() as client:
             await self.ensure_bucket()
+            
+            logger.info(
+                "S3 Upload Debug | endpoint=%s region=%s bucket=%s key=%s",
+                self.endpoint_url,
+                self.region_name,
+                self.bucket_name,
+                key,
+            )
+            logger.info(
+                "Access key prefix: %s",
+                str(self.access_key)[:8] if self.access_key else "None"
+            )
+            
             await client.put_object(
                 Bucket=self.bucket_name,
                 Key=key,
