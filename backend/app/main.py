@@ -39,14 +39,20 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+_LOCAL_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:5175",
+]
+
+# Always union local + configured origins so a stale DEBUG=true on the server
+# never silently blocks the production frontend.
+_allowed_origins = list(dict.fromkeys(_LOCAL_ORIGINS + settings.cors_origins))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://localhost:5175",
-    ] if settings.DEBUG else settings.cors_origins,
+    allow_origins=_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
