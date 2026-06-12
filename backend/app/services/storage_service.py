@@ -18,7 +18,16 @@ class StorageService:
         self.bucket_submissions = settings.MINIO_BUCKET_SUBMISSIONS
         self.use_ssl = settings.MINIO_USE_SSL
         self.region_name = getattr(settings, "MINIO_REGION", "us-east-1")
-        self.config = Config(signature_version="s3v4")
+        
+        # Auto-detect region for Backblaze B2 if user forgot to set MINIO_REGION
+        if "backblazeb2.com" in self.endpoint_url and self.region_name == "us-east-1":
+            import re
+            match = re.search(r's3\.([^.]+)\.backblazeb2\.com', self.endpoint_url)
+            if match:
+                self.region_name = match.group(1)
+                
+        # Some S3 compatibles (like MinIO/B2) work best with path-style addressing
+        self.config = Config(signature_version="s3v4", s3={'addressing_style': 'path'})
 
         # Boto3 requires the scheme (http/https) in the endpoint URL.
         # If the user only provided a hostname (e.g., 's3.us-east-005.backblazeb2.com'),
