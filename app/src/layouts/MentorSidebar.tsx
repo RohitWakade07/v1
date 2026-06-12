@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, GraduationCap, BookOpen, Users, FlaskConical,
-  ClipboardCheck, BarChart3, Cpu, Award, Lock,
+  ClipboardCheck, BarChart3,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -13,11 +13,6 @@ const navItems = [
   { path: '/mentor/sessions',    label: 'Sessions',     icon: FlaskConical },
   { path: '/mentor/results',     label: 'Results',      icon: ClipboardCheck },
   { path: '/mentor/analytics',   label: 'Analytics',    icon: BarChart3 },
-]
-
-const phase2Items = [
-  { label: 'Evaluators',    icon: Cpu },
-  { label: 'Certificates',  icon: Award },
 ]
 
 export const MentorSidebar = () => {
@@ -50,23 +45,6 @@ export const MentorSidebar = () => {
             </NavLink>
           )
         })}
-
-        <div className="mt-8 mb-4 px-4 text-xs font-semibold uppercase tracking-wider text-text-secondary/60">
-          Phase 2
-        </div>
-        {phase2Items.map(({ label, icon: Icon }) => (
-          <div
-            key={label}
-            title="Coming in Phase 2"
-            className="group flex cursor-not-allowed items-center justify-between rounded-lg px-4 py-2.5 text-sm font-medium text-text-secondary/50 opacity-60 border-l-4 border-transparent"
-          >
-            <div className="flex items-center gap-3">
-              <Icon size={18} />
-              {label}
-            </div>
-            <Lock size={14} className="text-text-secondary/40" />
-          </div>
-        ))}
       </nav>
 
       <div className="border-t border-navy-800 p-4 flex items-center justify-center">

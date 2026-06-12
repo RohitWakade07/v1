@@ -4,12 +4,10 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { SkeletonCard } from '@/components/shared/SkeletonCard'
 import { useAssignment } from '@/hooks/student/useAssignments'
 import { AssignmentDetailPanel } from '@/components/student/assignments/AssignmentDetailPanel'
-import { useSubmissions, useSubmitAssignment } from '@/hooks/student/useSubmissions'
-import { SubmissionForm } from '@/components/student/submissions/SubmissionForm'
+import { useSubmissions } from '@/hooks/student/useSubmissions'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { formatDate } from '@/lib/utils'
-import { Activity, UploadCloud, ChevronRight } from 'lucide-react'
-import type { SubmissionSourceType } from '@/types/api'
+import { Activity, ChevronRight } from 'lucide-react'
 
 const AssignmentDetailPage = () => {
   const { id } = useParams<{ id: string }>()
@@ -17,22 +15,10 @@ const AssignmentDetailPage = () => {
   const { data: allSubmissions, isLoading: submissionsLoading } = useSubmissions({
     refetchInterval: 5000,
   })
-  
-  const submitAssignmentMutation = useSubmitAssignment()
 
   const assignmentSubmissions = (allSubmissions ?? []).filter(
     (s) => s.assignment_id?.toLowerCase() === id?.toLowerCase()
   )
-
-  const handleSubmission = (sourceType: SubmissionSourceType, repoUrl?: string, file?: File) => {
-    if (!id) return
-    submitAssignmentMutation.mutate({
-      assignmentId: id,
-      sourceType,
-      repoUrl,
-      file,
-    })
-  }
 
   if (assignmentLoading) {
     return (
@@ -62,23 +48,10 @@ const AssignmentDetailPage = () => {
           <AssignmentDetailPanel assignment={assignment} />
         </div>
 
-        {/* Right column: submission and history (1/3 width) */}
+        {/* Right column: submission history (1/3 width) */}
         <div className="lg:col-span-1 space-y-6">
-          
-          {/* Card 1: Submit Work */}
-          <div className="card-dark p-5">
-            <h3 className="font-display text-base font-semibold text-text-primary flex items-center gap-2 mb-4">
-              <UploadCloud size={18} className="text-accent-teal" />
-              New Submission
-            </h3>
-            
-            <SubmissionForm
-              onSubmit={handleSubmission}
-              isSubmitting={submitAssignmentMutation.isPending}
-            />
-          </div>
 
-          {/* Card 2: Submission History */}
+          {/* Submission History */}
           <div className="card-dark p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-display text-base font-semibold text-text-primary flex items-center gap-2">
@@ -95,7 +68,7 @@ const AssignmentDetailPage = () => {
             ) : assignmentSubmissions.length === 0 ? (
               <div className="text-center py-6 border border-dashed border-navy-800 rounded-lg bg-navy-950/40">
                 <p className="text-sm text-text-secondary">No submissions yet.</p>
-                <p className="text-xs text-text-muted mt-1">Submit your repository or ZIP above.</p>
+                <p className="text-xs text-text-muted mt-1">Submission uploads will open once available.</p>
               </div>
             ) : (
               <div className="space-y-2.5 max-h-[400px] overflow-y-auto pr-1">
