@@ -19,6 +19,19 @@ class StorageService:
         self.use_ssl = settings.MINIO_USE_SSL
         self.region_name = getattr(settings, "MINIO_REGION", "us-east-1")
         
+        # Force SSL for known cloud S3 providers regardless of default config
+        if "backblazeb2.com" in self.endpoint_url or "amazonaws.com" in self.endpoint_url or "r2.cloudflarestorage.com" in self.endpoint_url:
+            self.use_ssl = True
+            
+        # Sync SSL setting with URL scheme
+        if self.endpoint_url.startswith("https://"):
+            self.use_ssl = True
+        elif self.endpoint_url.startswith("http://") and self.use_ssl:
+            self.endpoint_url = self.endpoint_url.replace("http://", "https://", 1)
+        elif not self.endpoint_url.startswith("http"):
+            scheme = "https://" if self.use_ssl else "http://"
+            self.endpoint_url = f"{scheme}{self.endpoint_url}"
+
         # Auto-detect region for Backblaze B2 if user forgot to set MINIO_REGION
         if "backblazeb2.com" in self.endpoint_url and self.region_name == "us-east-1":
             import re
@@ -28,13 +41,6 @@ class StorageService:
                 
         # Some S3 compatibles (like MinIO/B2) work best with path-style addressing
         self.config = Config(signature_version="s3v4", s3={'addressing_style': 'path'})
-
-        # Boto3 requires the scheme (http/https) in the endpoint URL.
-        # If the user only provided a hostname (e.g., 's3.us-east-005.backblazeb2.com'),
-        # add the appropriate scheme based on MINIO_USE_SSL.
-        if not self.endpoint_url.startswith("http"):
-            scheme = "https://" if self.use_ssl else "http://"
-            self.endpoint_url = f"{scheme}{self.endpoint_url}"
 
 
     async def _create_client(self):
