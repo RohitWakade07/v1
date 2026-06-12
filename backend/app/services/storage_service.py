@@ -11,11 +11,11 @@ logger = logging.getLogger(__name__)
 
 class StorageService:
     def __init__(self) -> None:
-        self.endpoint_url = settings.MINIO_ENDPOINT
-        self.access_key = settings.MINIO_ACCESS_KEY
-        self.secret_key = settings.MINIO_SECRET_KEY
-        self.bucket_name = settings.MINIO_BUCKET_SUBMISSIONS
-        self.bucket_submissions = settings.MINIO_BUCKET_SUBMISSIONS
+        self.endpoint_url = settings.MINIO_ENDPOINT.strip() if settings.MINIO_ENDPOINT else ""
+        self.access_key = settings.MINIO_ACCESS_KEY.strip() if settings.MINIO_ACCESS_KEY else ""
+        self.secret_key = settings.MINIO_SECRET_KEY.strip() if settings.MINIO_SECRET_KEY else ""
+        self.bucket_name = settings.MINIO_BUCKET_SUBMISSIONS.strip() if settings.MINIO_BUCKET_SUBMISSIONS else ""
+        self.bucket_submissions = settings.MINIO_BUCKET_SUBMISSIONS.strip() if settings.MINIO_BUCKET_SUBMISSIONS else ""
         self.use_ssl = settings.MINIO_USE_SSL
         self.region_name = getattr(settings, "MINIO_REGION", "us-east-1")
         
