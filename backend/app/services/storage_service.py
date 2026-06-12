@@ -39,8 +39,11 @@ class StorageService:
             if match:
                 self.region_name = match.group(1)
                 
-        # Some S3 compatibles (like MinIO/B2) work best with path-style addressing
-        self.config = Config(signature_version="s3v4", s3={'addressing_style': 'path'})
+        # Strip trailing slash from endpoint to avoid signature mismatch
+        self.endpoint_url = self.endpoint_url.rstrip("/")
+                
+        # Use default addressing style (virtual-hosted) which B2 prefers for restricted keys
+        self.config = Config(signature_version="s3v4")
 
 
     async def _create_client(self):
