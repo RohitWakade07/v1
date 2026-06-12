@@ -128,13 +128,17 @@ class Settings(BaseSettings):
     @property
     def kafka_client_config(self) -> dict:
         """Returns base Kafka client config dict, with SASL auth if configured."""
-        config: dict = {"bootstrap.servers": self.KAFKA_BOOTSTRAP_SERVERS}
-        if self.KAFKA_SASL_USERNAME and self.KAFKA_SASL_PASSWORD:
+        config: dict = {"bootstrap.servers": self.KAFKA_BOOTSTRAP_SERVERS.strip()}
+        
+        username = self.KAFKA_SASL_USERNAME.strip() if self.KAFKA_SASL_USERNAME else ""
+        password = self.KAFKA_SASL_PASSWORD.strip() if self.KAFKA_SASL_PASSWORD else ""
+        
+        if username and password:
             config.update({
-                "security.protocol": self.KAFKA_SECURITY_PROTOCOL,
-                "sasl.mechanism": self.KAFKA_SASL_MECHANISM,
-                "sasl.username": self.KAFKA_SASL_USERNAME,
-                "sasl.password": self.KAFKA_SASL_PASSWORD,
+                "security.protocol": self.KAFKA_SECURITY_PROTOCOL.strip(),
+                "sasl.mechanism": self.KAFKA_SASL_MECHANISM.strip(),
+                "sasl.username": username,
+                "sasl.password": password,
             })
         return config
 
