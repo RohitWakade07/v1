@@ -17,6 +17,11 @@ const genericStyles: Record<string, string> = {
   VERIFIED:        'bg-accent-teal/15 text-accent-teal border border-accent-teal/30',
   FAILED:          'bg-status-danger/15 text-status-danger border border-status-danger/30',
   ABORTED:         'bg-status-danger/15 text-status-danger border border-status-danger/30',
+  QUEUED:          'bg-accent-blue/15 text-accent-blue border border-accent-blue/30',
+  RUNNING:         'bg-status-warning/15 text-status-warning border border-status-warning/30',
+  TIMEOUT:         'bg-status-danger/15 text-status-danger border border-status-danger/30',
+  CANCELLED:       'bg-navy-800/60 text-text-secondary border border-navy-800',
+  VALIDATION_ERROR: 'bg-status-danger/15 text-status-danger border border-status-danger/30',
 }
 
 interface StatusBadgeProps { status: string; className?: string }

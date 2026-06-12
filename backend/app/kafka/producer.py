@@ -14,12 +14,13 @@ _producer: Producer | None = None
 def get_producer() -> Producer:
     global _producer
     if _producer is None:
-        _producer = Producer({
-            "bootstrap.servers": settings.KAFKA_BOOTSTRAP_SERVERS,
+        config = settings.kafka_client_config
+        config.update({
             "queue.buffering.max.messages": 100000,
             "queue.buffering.max.kbytes": 1048576,
             "batch.num.messages": 1000,
         })
+        _producer = Producer(config)
     return _producer
 
 

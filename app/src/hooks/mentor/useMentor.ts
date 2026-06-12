@@ -3,6 +3,7 @@ import {
   fetchMentorStudents,
   fetchMentorSessions,
   fetchMentorResults,
+  fetchMentorSubmissions,
   fetchMentorAnalytics,
   fetchClassrooms,
   createClassroom,
@@ -11,7 +12,7 @@ import {
   rejectEnrollment,
 } from '@/api/mentor/mentor'
 import { useAuthStore } from '@/store/authStore'
-import type { MentorStudent, MentorSession, MentorResult, MentorAnalytics, Classroom, ClassroomStudentEnrollment } from '@/types/api'
+import type { MentorStudent, MentorSession, MentorResult, MentorSubmission, MentorAnalytics, Classroom, ClassroomStudentEnrollment } from '@/types/api'
 
 export function useMentorStudents() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
@@ -37,6 +38,16 @@ export function useMentorResults() {
     queryKey: ['mentor-results'],
     queryFn: fetchMentorResults,
     enabled: isAuthenticated,
+  })
+}
+
+export function useMentorSubmissions() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  return useQuery<MentorSubmission[], Error>({
+    queryKey: ['mentor-submissions'],
+    queryFn: fetchMentorSubmissions,
+    enabled: isAuthenticated,
+    refetchInterval: 10_000, // auto-refresh every 10s for live queue view
   })
 }
 

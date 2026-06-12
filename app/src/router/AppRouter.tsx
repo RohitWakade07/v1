@@ -33,6 +33,7 @@ const MentorCreateAssignment = lazy(() => import('@/pages/mentor/assignments/Cre
 const MentorAssignmentDetail = lazy(() => import('@/pages/mentor/assignments/AssignmentDetailPage'))
 const MentorStudents     = lazy(() => import('@/pages/mentor/students/StudentsPage'))
 const MentorSessions     = lazy(() => import('@/pages/mentor/sessions/SessionsPage'))
+const MentorSubmissions  = lazy(() => import('@/pages/mentor/submissions/SubmissionsPage'))
 const MentorResults      = lazy(() => import('@/pages/mentor/results/ResultsPage'))
 const MentorAnalytics    = lazy(() => import('@/pages/mentor/analytics/AnalyticsPage'))
 const MentorEvaluators   = lazy(() => import('@/pages/mentor/evaluators/EvaluatorsPage'))
@@ -101,6 +102,7 @@ export const AppRouter = () => (
           <Route path="assignments/:id"      element={<MentorAssignmentDetail />} />
           <Route path="students"             element={<MentorStudents />} />
           <Route path="sessions"             element={<MentorSessions />} />
+          <Route path="submissions"          element={<MentorSubmissions />} />
           <Route path="results"              element={<MentorResults />} />
           <Route path="analytics"            element={<MentorAnalytics />} />
           <Route path="evaluators"           element={<MentorEvaluators />} />

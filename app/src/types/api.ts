@@ -227,6 +227,25 @@ export interface MentorResult {
   completed_at: string
 }
 
+export interface MentorSubmission {
+  id: string
+  student_id: string
+  student_name: string
+  student_roll: string
+  assignment_id: string
+  assignment_title: string
+  assignment_slug: string
+  status: SubmissionStatus
+  source_type: SubmissionSourceType
+  attempt_number: number
+  score?: number | null
+  max_score?: number | null
+  passed?: boolean | null
+  submitted_at: string
+  started_at?: string | null
+  completed_at?: string | null
+}
+
 export interface MentorAnalytics {
   total_students: number
   approved_students?: number
@@ -298,13 +317,36 @@ export interface AdminMentor {
 export interface GradingSession {
   id: string
   student_id: string
+  student_name: string
+  student_roll: string
   assignment_id: string
+  assignment_title: string
+  assignment_slug: string
   status: string
   started_at: string
   submitted_at?: string
   completed_at?: string
   final_score?: number
   rejection_reason?: string
+}
+
+export interface AdminSubmission {
+  id: string
+  student_id: string
+  student_name: string
+  student_roll: string
+  assignment_id: string
+  assignment_title: string
+  assignment_slug: string
+  status: SubmissionStatus
+  source_type: SubmissionSourceType
+  attempt_number: number
+  score?: number | null
+  max_score?: number | null
+  passed?: boolean | null
+  submitted_at: string
+  started_at?: string | null
+  completed_at?: string | null
 }
 
 export interface HealthResponse {

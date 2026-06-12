@@ -6,7 +6,7 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { SkeletonRow } from '@/components/shared/SkeletonCard'
 import { listAllSessions } from '@/api/admin/admin'
-import { formatDateTime, shortId } from '@/lib/utils'
+import { formatDateTime } from '@/lib/utils'
 
 export const SessionsPage = () => {
   const [search, setSearch] = useState('')
@@ -23,9 +23,9 @@ export const SessionsPage = () => {
   const filtered = sessions.filter((s) => {
     const matchStatus = statusFilter === 'ALL' || s.status === statusFilter
     const matchSearch =
-      s.id.toLowerCase().includes(search.toLowerCase()) ||
-      s.student_id.toLowerCase().includes(search.toLowerCase()) ||
-      s.assignment_id.toLowerCase().includes(search.toLowerCase())
+      s.student_name.toLowerCase().includes(search.toLowerCase()) ||
+      s.student_roll.toLowerCase().includes(search.toLowerCase()) ||
+      s.assignment_title.toLowerCase().includes(search.toLowerCase())
     return matchStatus && matchSearch
   })
 
@@ -44,7 +44,7 @@ export const SessionsPage = () => {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search session or student ID…"
+            placeholder="Search by student or assignment…"
             className="input-dark pl-9 w-72"
           />
         </div>
@@ -70,7 +70,7 @@ export const SessionsPage = () => {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-navy-800">
-                {['Session ID', 'Student ID', 'Assignment ID', 'Status', 'Score', 'Started At', 'Completed At'].map((h) => (
+                {['Student', 'Assignment', 'Status', 'Score', 'Started At', 'Completed At'].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold tracking-widest text-text-secondary uppercase">
                     {h}
                   </th>
@@ -82,22 +82,27 @@ export const SessionsPage = () => {
                 Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
               ) : error ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-text-secondary text-sm">
+                  <td colSpan={6} className="px-4 py-12 text-center text-text-secondary text-sm">
                     Could not load sessions — admin API endpoint not yet available.
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-text-secondary text-sm">
+                  <td colSpan={6} className="px-4 py-12 text-center text-text-secondary text-sm">
                     No sessions found.
                   </td>
                 </tr>
               ) : (
                 filtered.map((session) => (
                   <tr key={session.id} className="border-b border-navy-800/50 hover:bg-navy-900/40 transition-colors">
-                    <td className="px-4 py-3 font-mono text-xs text-accent-blue">{shortId(session.id)}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-text-secondary">{shortId(session.student_id)}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-text-secondary">{shortId(session.assignment_id)}</td>
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-text-primary">{session.student_name}</p>
+                      <p className="font-mono text-xs text-text-secondary">{session.student_roll}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="text-text-primary">{session.assignment_title}</p>
+                      <p className="font-mono text-xs text-text-secondary">{session.assignment_slug}</p>
+                    </td>
                     <td className="px-4 py-3">
                       <StatusBadge status={session.status.toLowerCase()} />
                     </td>

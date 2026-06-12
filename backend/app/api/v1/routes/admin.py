@@ -42,13 +42,36 @@ class AdminMentorPublic(BaseModel):
 class AdminSessionPublic(BaseModel):
     id: str
     student_id: str
+    student_name: str
+    student_roll: str
     assignment_id: str
+    assignment_title: str
+    assignment_slug: str
     status: str
     started_at: datetime
     submitted_at: Optional[datetime]
     completed_at: Optional[datetime]
     final_score: Optional[float]
     rejection_reason: Optional[str]
+
+
+class AdminSubmissionPublic(BaseModel):
+    id: str
+    student_id: str
+    student_name: str
+    student_roll: str
+    assignment_id: str
+    assignment_title: str
+    assignment_slug: str
+    status: str
+    source_type: str
+    attempt_number: int
+    score: Optional[float]
+    max_score: Optional[float]
+    passed: Optional[bool]
+    submitted_at: datetime
+    started_at: Optional[datetime]
+    completed_at: Optional[datetime]
 
 
 # ── Students ──────────────────────────────────────────────────────────
@@ -116,14 +139,21 @@ async def list_all_sessions(
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
-        select(GradingSession).order_by(GradingSession.started_at.desc())
+        select(GradingSession, Student, Assignment)
+        .join(Student, GradingSession.student_id == Student.id)
+        .join(Assignment, GradingSession.assignment_id == Assignment.id)
+        .order_by(GradingSession.started_at.desc())
     )
-    sessions = result.scalars().all()
+    rows = result.all()
     return [
         AdminSessionPublic(
             id=str(s.id),
             student_id=str(s.student_id),
+            student_name=student.full_name,
+            student_roll=student.roll_number,
             assignment_id=str(s.assignment_id),
+            assignment_title=assignment.title,
+            assignment_slug=assignment.slug,
             status=s.status,
             started_at=s.started_at,
             submitted_at=s.submitted_at,
@@ -131,7 +161,49 @@ async def list_all_sessions(
             final_score=s.final_score,
             rejection_reason=s.rejection_reason,
         )
-        for s in sessions
+        for s, student, assignment in rows
+    ]
+
+
+# ── Submissions (raw queue/processing records) ────────────────────────
+
+@router.get(
+    "/submissions",
+    response_model=list[AdminSubmissionPublic],
+    summary="List all submissions across all students (admin only)",
+)
+async def list_all_submissions_admin(
+    _: Mentor = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    from app.models.models import Submission
+    result = await db.execute(
+        select(Submission, Student, Assignment)
+        .join(Student, Submission.student_id == Student.id)
+        .join(Assignment, Submission.assignment_id == Assignment.id)
+        .order_by(Submission.submitted_at.desc())
+    )
+    rows = result.all()
+    return [
+        AdminSubmissionPublic(
+            id=str(sub.id),
+            student_id=str(sub.student_id),
+            student_name=student.full_name,
+            student_roll=student.roll_number,
+            assignment_id=str(sub.assignment_id),
+            assignment_title=assignment.title,
+            assignment_slug=assignment.slug,
+            status=sub.status,
+            source_type=sub.source_type,
+            attempt_number=sub.attempt_number,
+            score=sub.score,
+            max_score=sub.max_score,
+            passed=sub.passed,
+            submitted_at=sub.submitted_at,
+            started_at=sub.started_at,
+            completed_at=sub.completed_at,
+        )
+        for sub, student, assignment in rows
     ]
 
 

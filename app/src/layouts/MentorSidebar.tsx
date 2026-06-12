@@ -1,18 +1,19 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, GraduationCap, BookOpen, Users, FlaskConical,
-  ClipboardCheck, BarChart3,
+  ClipboardCheck, BarChart3, Inbox,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navItems = [
-  { path: '/mentor',             label: 'Dashboard',   icon: LayoutDashboard, end: true },
-  { path: '/mentor/classrooms',  label: 'Classrooms',  icon: GraduationCap },
-  { path: '/mentor/assignments', label: 'Assignments',  icon: BookOpen },
-  { path: '/mentor/students',    label: 'Students',     icon: Users },
-  { path: '/mentor/sessions',    label: 'Sessions',     icon: FlaskConical },
-  { path: '/mentor/results',     label: 'Results',      icon: ClipboardCheck },
-  { path: '/mentor/analytics',   label: 'Analytics',    icon: BarChart3 },
+  { path: '/mentor',               label: 'Dashboard',        icon: LayoutDashboard, end: true },
+  { path: '/mentor/classrooms',    label: 'Classrooms',       icon: GraduationCap },
+  { path: '/mentor/assignments',   label: 'Assignments',      icon: BookOpen },
+  { path: '/mentor/students',      label: 'Students',         icon: Users },
+  { path: '/mentor/sessions',      label: 'Sessions',         icon: FlaskConical },
+  { path: '/mentor/submissions',   label: 'Submissions',      icon: Inbox },
+  { path: '/mentor/results',       label: 'Results',          icon: ClipboardCheck },
+  { path: '/mentor/analytics',     label: 'Analytics',        icon: BarChart3 },
 ]
 
 export const MentorSidebar = () => {

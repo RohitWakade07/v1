@@ -198,6 +198,7 @@ async def cancel_submission(
 )
 async def stream_submission_status(
     submission_id: uuid.UUID,
+    token: str | None = None,  # allow ?token= for EventSource (no custom header support)
     current_student: Student = Depends(get_approved_student),
     db: AsyncSession = Depends(get_db),
 ):

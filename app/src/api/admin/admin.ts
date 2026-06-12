@@ -1,5 +1,5 @@
 import { apiClient } from '@/api/client'
-import type { AdminStudent, AdminMentor, GradingSession, Assignment, HealthResponse } from '@/types/api'
+import type { AdminStudent, AdminMentor, GradingSession, AdminSubmission, Assignment, HealthResponse } from '@/types/api'
 
 export const listStudents = async (): Promise<AdminStudent[]> => {
   const { data } = await apiClient.get<AdminStudent[]>('/admin/students')
@@ -41,6 +41,11 @@ export const unpublishAssignment = async (id: string): Promise<Assignment> => {
 
 export const listAllSessions = async (): Promise<GradingSession[]> => {
   const { data } = await apiClient.get<GradingSession[]>('/admin/sessions')
+  return data
+}
+
+export const listAllSubmissions = async (): Promise<AdminSubmission[]> => {
+  const { data } = await apiClient.get<AdminSubmission[]>('/admin/submissions')
   return data
 }
 

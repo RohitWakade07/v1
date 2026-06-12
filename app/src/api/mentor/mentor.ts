@@ -1,6 +1,6 @@
 import { apiGet, apiPost } from '@/api/client'
 import type {
-  MentorStudent, MentorSession, MentorResult, MentorAnalytics,
+  MentorStudent, MentorSession, MentorResult, MentorSubmission, MentorAnalytics,
   Classroom, ClassroomStudentEnrollment,
 } from '@/types/api'
 
@@ -12,6 +12,9 @@ export const fetchMentorSessions = (): Promise<MentorSession[]> =>
 
 export const fetchMentorResults = (): Promise<MentorResult[]> =>
   apiGet<MentorResult[]>('/mentor/results')
+
+export const fetchMentorSubmissions = (): Promise<MentorSubmission[]> =>
+  apiGet<MentorSubmission[]>('/mentor/submissions')
 
 export const fetchMentorAnalytics = (): Promise<MentorAnalytics> =>
   apiGet<MentorAnalytics>('/mentor/analytics/summary')

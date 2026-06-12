@@ -1,7 +1,9 @@
 import uuid
-from typing import List
+from datetime import datetime
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, func
 
@@ -13,6 +15,7 @@ from app.models.models import (
     Student,
     SessionStatus,
     COMPLETED_RESULT_STATUSES,
+    Submission,
 )
 from app.api.v1.dependencies import get_current_mentor
 from app.schemas.schemas import (
@@ -24,6 +27,26 @@ from app.schemas.schemas import (
 )
 
 router = APIRouter(prefix="/mentor", tags=["Mentor Portal Phase 2"])
+
+
+class MentorSubmissionPublic(BaseModel):
+    id: str
+    student_id: str
+    student_name: str
+    student_roll: str
+    assignment_id: str
+    assignment_title: str
+    assignment_slug: str
+    status: str
+    source_type: str
+    attempt_number: int
+    score: Optional[float]
+    max_score: Optional[float]
+    passed: Optional[bool]
+    submitted_at: datetime
+    started_at: Optional[datetime]
+    completed_at: Optional[datetime]
+
 
 
 @router.get(
@@ -261,3 +284,43 @@ async def get_mentor_analytics(
         assignments_participation=assignments_participation,
         category_breakdown=category_breakdown,
     )
+
+
+@router.get(
+    "/submissions",
+    response_model=List[MentorSubmissionPublic],
+    summary="List all submissions for this mentor's assignments (queue view)",
+)
+async def list_mentor_submissions(
+    current_mentor: Mentor = Depends(get_current_mentor),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Submission, Student, Assignment)
+        .join(Student, Submission.student_id == Student.id)
+        .join(Assignment, Submission.assignment_id == Assignment.id)
+        .where(Assignment.created_by_id == current_mentor.id)
+        .order_by(Submission.submitted_at.desc())
+    )
+    rows = result.all()
+    return [
+        MentorSubmissionPublic(
+            id=str(sub.id),
+            student_id=str(sub.student_id),
+            student_name=student.full_name,
+            student_roll=student.roll_number,
+            assignment_id=str(sub.assignment_id),
+            assignment_title=assignment.title,
+            assignment_slug=assignment.slug,
+            status=sub.status.value,
+            source_type=sub.source_type.value,
+            attempt_number=sub.attempt_number,
+            score=sub.score,
+            max_score=sub.max_score,
+            passed=sub.passed,
+            submitted_at=sub.submitted_at,
+            started_at=sub.started_at,
+            completed_at=sub.completed_at,
+        )
+        for sub, student, assignment in rows
+    ]

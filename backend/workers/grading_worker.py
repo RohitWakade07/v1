@@ -229,12 +229,12 @@ def process_message(msg_val: bytes):
 
 def main():
     logger.info("Starting EYSIP Autograder Worker process...")
-    conf = {
-        "bootstrap.servers": settings.KAFKA_BOOTSTRAP_SERVERS,
+    conf = settings.kafka_client_config
+    conf.update({
         "group.id": "grading-workers-group",
         "auto.offset.reset": "earliest",
         "enable.auto.commit": True,
-    }
+    })
 
     consumer = Consumer(conf)
     consumer.subscribe(["grading-jobs"])

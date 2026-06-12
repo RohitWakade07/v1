@@ -112,6 +112,24 @@ class Settings(BaseSettings):
 
     # Kafka
     KAFKA_BOOTSTRAP_SERVERS: str = "localhost:9092"
+    # SASL auth — required for Upstash/Confluent Cloud. Leave blank for local Kafka.
+    KAFKA_SASL_USERNAME: str = ""
+    KAFKA_SASL_PASSWORD: str = ""
+    KAFKA_SECURITY_PROTOCOL: str = "PLAINTEXT"  # set to SASL_SSL for Upstash
+    KAFKA_SASL_MECHANISM: str = "PLAIN"  # SCRAM-SHA-256 for Upstash
+
+    @property
+    def kafka_client_config(self) -> dict:
+        """Returns base Kafka client config dict, with SASL auth if configured."""
+        config: dict = {"bootstrap.servers": self.KAFKA_BOOTSTRAP_SERVERS}
+        if self.KAFKA_SASL_USERNAME and self.KAFKA_SASL_PASSWORD:
+            config.update({
+                "security.protocol": self.KAFKA_SECURITY_PROTOCOL,
+                "sasl.mechanism": self.KAFKA_SASL_MECHANISM,
+                "sasl.username": self.KAFKA_SASL_USERNAME,
+                "sasl.password": self.KAFKA_SASL_PASSWORD,
+            })
+        return config
 
     # MinIO / S3
     MINIO_ENDPOINT: str = "localhost:9000"
@@ -120,11 +138,12 @@ class Settings(BaseSettings):
     MINIO_BUCKET_SUBMISSIONS: str = "submissions"
     MINIO_BUCKET_ASSETS: str = "grader-assets"
     MINIO_USE_SSL: bool = False
+    MINIO_REGION: str = "us-east-1"  # use "auto" for Cloudflare R2
 
     # EEP verifier (.eep1 / .eep2 / .eep3) RSA decryption
     RSA_PRIVATE_KEY_PATH: str = "keys/instructor_private.pem"
     RSA_PRIVATE_KEY_B64: str = ""
-    EEP_MAX_UPLOAD_BYTES: int = 50000
+    EEP_MAX_UPLOAD_BYTES: int = 5_000_000
 
     # Instructor files directory (replace hardcoded paths)
     INSTRUCTOR_FILES_DIR: str = "/app/instructor_files"
