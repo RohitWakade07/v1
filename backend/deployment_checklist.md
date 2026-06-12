@@ -22,17 +22,17 @@ Update the environment variables for both the **API Service** and the **Worker S
 
 ---
 
-## 2. Remote Docker Engine (`DOCKER_HOST`)
-Because the new architecture uses **Pre-Warmed Docker Pools**, the Python worker must maintain a fleet of running Docker containers. 
+## 2. Docker Engine Bypass (Testing Mode)
+Currently, Railway's default service containers **do not** have a Docker daemon running inside them. 
 
-Railway's default service containers **do not** have a Docker daemon running inside them due to security restrictions (no native Docker-in-Docker).
+Because you requested to skip the `DOCKER_HOST` setup for now so that you can start testing your backend, the grading worker has been configured with a **Mock Execution Bypass**. 
 
-To allow the `DockerExecutor` to spawn containers, you must:
-1. Provide a remote Docker engine (such as a dedicated VM or a secure TCP Docker socket).
-2. Set the `DOCKER_HOST` environment variable in your **Worker Service** to point to this engine.
-   * *Example*: `DOCKER_HOST=tcp://your-remote-docker-engine.com:2376`
+**How it works:**
+* If the Celery worker cannot connect to a Docker daemon, it will not crash.
+* Instead, it will instantly return a "MOCKED EXECUTION SUCCESS" with a perfect score (5.0/5.0).
+* This allows you to test the entire data pipeline (API Submission -> Postgres Outbox -> Poller -> Celery Task -> Database Write) end-to-end on Railway without needing a running Docker engine.
 
-> **Warning**: If `DOCKER_HOST` is not set, `docker.from_env()` will crash when the worker starts, because it will be unable to find a local `/var/run/docker.sock`.
+When you are ready to execute real code, you will need to provide a remote Docker host and set the `DOCKER_HOST` environment variable.
 
 ---
 
