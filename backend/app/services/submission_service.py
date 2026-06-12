@@ -99,6 +99,8 @@ class SubmissionService:
             submission.zip_object_key = key
 
         db.add(submission)
+        await db.flush()
+        await db.refresh(submission)
         import json
         payload = {
             "submission_id": str(submission.id),
