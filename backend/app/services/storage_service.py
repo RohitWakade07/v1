@@ -86,20 +86,23 @@ class StorageService:
                 logger.warning("Unexpected error checking bucket %s: %s. Assuming it exists.", self.bucket_name, e)
 
     async def upload_submission_zip(self, key: str, contents: bytes) -> str:
+        import sys
         async with await self._create_client() as client:
             await self.ensure_bucket()
             
-            logger.info(
-                "S3 Upload Debug | endpoint=%s region=%s bucket=%s key=%s",
-                self.endpoint_url,
-                self.region_name,
-                self.bucket_name,
-                key,
+            debug_msg = (
+                f"\n=== S3 DEBUG INFO ===\n"
+                f"Endpoint: {self.endpoint_url}\n"
+                f"Region: {self.region_name}\n"
+                f"Bucket: {self.bucket_name}\n"
+                f"Access Key ID length: {len(str(self.access_key)) if self.access_key else 0}\n"
+                f"Access Key ID prefix: {str(self.access_key)[:8] if self.access_key else 'None'}\n"
+                f"Secret Key length: {len(str(self.secret_key)) if self.secret_key else 0}\n"
+                f"=====================\n"
             )
-            logger.info(
-                "Access key prefix: %s",
-                str(self.access_key)[:8] if self.access_key else "None"
-            )
+            print(debug_msg, file=sys.stderr)
+            sys.stderr.flush()
+            logger.warning(debug_msg)
             
             await client.put_object(
                 Bucket=self.bucket_name,
