@@ -50,12 +50,29 @@ class StorageService:
         )
 
     async def ensure_bucket(self) -> None:
+        import botocore.exceptions
         async with await self._create_client() as client:
-            buckets = await client.list_buckets()
-            names = [bucket["Name"] for bucket in buckets.get("Buckets", [])]
-            if self.bucket_name not in names:
-                logger.info("Creating MinIO bucket %s", self.bucket_name)
-                await client.create_bucket(Bucket=self.bucket_name)
+            try:
+                await client.head_bucket(Bucket=self.bucket_name)
+            except botocore.exceptions.ClientError as e:
+                error_code = str(e.response.get("Error", {}).get("Code", ""))
+                # 404 means it definitely doesn't exist, so try creating it
+                if error_code == "404" or error_code == "NoSuchBucket":
+                    logger.info("Creating bucket %s", self.bucket_name)
+                    try:
+                        await client.create_bucket(Bucket=self.bucket_name)
+                    except Exception as create_err:
+                        logger.warning("Failed to create bucket %s: %s", self.bucket_name, create_err)
+                else:
+                    # 403 Forbidden or SignatureDoesNotMatch typically happens with 
+                    # bucket-restricted Application Keys in Backblaze B2/MinIO.
+                    # We assume the bucket already exists and proceed.
+                    logger.info(
+                        "Bucket check returned %s for %s. Assuming bucket exists and proceeding.",
+                        error_code, self.bucket_name
+                    )
+            except Exception as e:
+                logger.warning("Unexpected error checking bucket %s: %s. Assuming it exists.", self.bucket_name, e)
 
     async def upload_submission_zip(self, key: str, contents: bytes) -> str:
         async with await self._create_client() as client:
