@@ -100,12 +100,19 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins(self) -> list[str]:
-        """Returns parsed list of allowed CORS origins.
-        Empty string → no origins allowed in production.
+        """Always includes localhost for dev; prepends configured prod origins.
+        Empty ALLOWED_ORIGINS → localhost only (never an empty list).
         """
-        if not self.ALLOWED_ORIGINS.strip():
-            return []
-        return [o.strip() for o in self.ALLOWED_ORIGINS.split(",") if o.strip()]
+        local = [
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "http://localhost:5174",
+            "http://localhost:5175",
+        ]
+        if self.ALLOWED_ORIGINS.strip():
+            prod = [o.strip() for o in self.ALLOWED_ORIGINS.split(",") if o.strip()]
+            return list(dict.fromkeys(prod + local))  # prod first, no duplicates
+        return local
 
     # Rate limiting
     LOGIN_RATE_LIMIT_PER_MINUTE: int = 10
