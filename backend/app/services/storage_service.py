@@ -20,6 +20,14 @@ class StorageService:
         self.region_name = getattr(settings, "MINIO_REGION", "us-east-1")
         self.config = Config(signature_version="s3v4")
 
+        # Boto3 requires the scheme (http/https) in the endpoint URL.
+        # If the user only provided a hostname (e.g., 's3.us-east-005.backblazeb2.com'),
+        # add the appropriate scheme based on MINIO_USE_SSL.
+        if not self.endpoint_url.startswith("http"):
+            scheme = "https://" if self.use_ssl else "http://"
+            self.endpoint_url = f"{scheme}{self.endpoint_url}"
+
+
     async def _create_client(self):
         session = get_session()
         return session.create_client(
