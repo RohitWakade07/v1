@@ -1,3 +1,8 @@
+# POOL DISABLED — Railway deployment uses single container per job
+# Uncomment this entire module when moving to a dedicated Docker host
+# See architecture doc Section 7 for full pool design
+
+'''
 import docker
 import redis
 import logging
@@ -74,3 +79,4 @@ class ContainerPoolService:
                 logger.info(f"Warmed up {language} container: {container.id}")
             except Exception as e:
                 logger.error(f"Failed to create container for {language}: {e}")
+'''

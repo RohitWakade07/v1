@@ -14,7 +14,7 @@ import yaml
 
 from app.core.config import settings
 from app.services.storage_service import StorageService
-from app.services.pool_service import ContainerPoolService
+# from app.services.pool_service import ContainerPoolService
 from graders.registry import get_grader
 from graders.base_grader import GradingResult
 
@@ -24,11 +24,55 @@ logger = logging.getLogger(__name__)
 class DockerExecutor:
     def __init__(self):
         try:
-            self.docker_client = docker.from_env()
+            docker_host = os.environ.get("DOCKER_HOST")
+            if docker_host:
+                self.docker_client = docker.DockerClient(base_url=docker_host)
+            else:
+                self.docker_client = docker.from_env()
         except Exception as e:
             logger.error(f"Failed to connect to Docker daemon: {e}")
             self.docker_client = None
-        self.pool_service = ContainerPoolService()
+
+    def run_fresh_container(self, language: str, config: dict) -> Any:
+        """Helper to spin up a fresh idle container for a single execution."""
+        image_name = config.get("docker_image", "python:3.10-slim")
+        
+        # Determine volume mounts. We mount the parent jobs directory so that
+        # exec_run can access the specific submission paths.
+        project_name = os.environ.get("COMPOSE_PROJECT_NAME", "backend")
+        volume_name = f"{project_name}_grader_jobs"
+        volumes = {
+            volume_name: {"bind": "/tmp/autograder_jobs", "mode": "rw"},
+        }
+
+        # Apply security hardening
+        return self.docker_client.containers.run(
+            image=image_name,
+            command="tail -f /dev/null",  # Keep alive so we can exec_run into it
+            name=f"grader-{uuid.uuid4().hex[:16]}",
+            volumes=volumes,
+            network_disabled=config.get("network_disabled", True),
+            mem_limit=f"{config.get('memory_limit_mb', 512)}m",
+            nano_cpus=int(config.get("cpu_limit", 1.0) * 1e9),
+            pids_limit=64,
+            cap_drop=["ALL"],
+            security_opt=["no-new-privileges:true"],
+            detach=True,
+        )
+
+    def cleanup_container(self, container: Any) -> None:
+        """Helper to clean up a container after execution."""
+        if not container:
+            return
+        try:
+            container.stop(timeout=2)
+        except Exception:
+            pass
+        try:
+            container.remove(force=True)
+            logger.info(f"Cleaned up container {container.id}")
+        except Exception as e:
+            logger.error(f"Error removing container {container.id}: {e}")
 
     async def execute(
         self,
@@ -44,7 +88,6 @@ class DockerExecutor:
             tuple[status, grading_result, exec_metadata]
         """
         container = None
-        container_id = None
         language = None
         job_dir = Path("/tmp/autograder_jobs") / submission_id
         submission_dir = job_dir / "submission"
@@ -163,7 +206,7 @@ class DockerExecutor:
                     os.chmod(os.path.join(root_dir, f), 0o777)
 
             # ── PHASE 2: ACQUIRE CONTAINER ────────────────────────────────────
-            logger.info("Phase 2: Acquiring pre-warmed container")
+            logger.info("Phase 2: Spinning up fresh container")
             image_name = config.get("docker_image", "python:3.10-slim")
             
             lang_map = {
@@ -174,29 +217,11 @@ class DockerExecutor:
             }
             language = lang_map.get(image_name, "python")
             
-            # We block here or retry if no container is available
-            retries = 0
-            while not container_id and retries < 10:
-                container_id = self.pool_service.acquire_container(language)
-                if not container_id:
-                    retries += 1
-                    await asyncio.sleep(2)
-            
-            if not container_id:
-                raise RuntimeError(f"Failed to acquire pre-warmed {language} container from pool after 20 seconds")
-                
-            container = self.docker_client.containers.get(container_id)
+            container = self.run_fresh_container(language, config)
             exec_metadata["container_id"] = container.id
 
             # ── PHASE 3: EXECUTION ────────────────────────────────────────────
-            logger.info("Phase 3: Executing inside pre-warmed sandbox container")
-            
-            # Create the workspace INSIDE the prewarmed container
-            # The prewarmed container doesn't have the volume mounted with the dynamic submission ID path
-            # Wait, the pool containers don't have volumes!
-            # We must use `docker cp` to put the files into the container, OR 
-            # pre-warmed containers MUST mount the parent `/tmp/autograder_jobs` directory!
-            # Assuming pool containers mount `/tmp/autograder_jobs` globally:
+            logger.info("Phase 3: Executing inside sandbox container")
 
             # Get relative paths
             project_name = os.environ.get("COMPOSE_PROJECT_NAME", "backend")
@@ -215,14 +240,11 @@ class DockerExecutor:
             if config.get("working_dir"):
                 container_workdir = f"{container_submission}/{config['working_dir']}"
 
-            # Ensure the container has access to it. If the pre-warmed container mounted /tmp/autograder_jobs:
-            # We just docker exec.
             command = config.get("execution_command")
             
             start_time = time.time()
             
             # Execute command inside container
-            # Note: exec_run is blocking. We can use loop.run_in_executor
             loop = asyncio.get_event_loop()
             
             def run_exec():
@@ -248,16 +270,8 @@ class DockerExecutor:
                 logger.warning(f"Submission {submission_id} execution timed out")
                 exec_metadata["timed_out"] = True
                 exec_metadata["stdout"] = "Execution timed out"
-                # To actually stop the process inside the container, it's tricky with exec_run. 
-                # We might have to restart the container, so let's mark it for hard release
-                try:
-                    container.restart()
-                except Exception:
-                    pass
 
             exec_metadata["execution_time_ms"] = int((time.time() - start_time) * 1000)
-            
-            # We don't get separate stderr from exec_run easily, it multiplexes it.
             exec_metadata["stderr"] = ""
             
             # ── PHASE 4: GRADING ──────────────────────────────────────────────
@@ -289,8 +303,7 @@ class DockerExecutor:
         finally:
             # ── PHASE 5: CLEANUP ──────────────────────────────────────────────
             logger.info("Phase 5: Cleaning up containers and workspace directories")
-            if container_id and language:
-                self.pool_service.release_container(language, container_id)
+            self.cleanup_container(container)
 
             try:
                 shutil.rmtree(job_dir, ignore_errors=True)
