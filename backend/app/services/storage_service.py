@@ -42,10 +42,12 @@ class StorageService:
         # Strip trailing slash from endpoint to avoid signature mismatch
         self.endpoint_url = self.endpoint_url.rstrip("/")
                 
-        # Path-style addressing is sometimes required by B2 depending on the client version
+        # Backblaze B2 Application Keys restricted to a single bucket REQUIRE
+        # virtual-hosted style addressing. Because B2 is a custom endpoint,
+        # boto3 defaults to path-style unless explicitly forced to virtual.
         self.config = Config(
             signature_version="s3v4",
-            s3={"addressing_style": "path"}
+            s3={"addressing_style": "virtual"}
         )
 
     async def _create_client(self):
