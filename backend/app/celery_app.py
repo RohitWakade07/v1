@@ -12,4 +12,6 @@ celery_app = Celery(
 
 celery_app.config_from_object("app.celeryconfig")
 
-celery_app.autodiscover_tasks(["workers.tasks"], force=True)
+import os
+if os.environ.get("SERVICE_TYPE") == "worker":
+    celery_app.autodiscover_tasks(["workers.tasks"], force=True)

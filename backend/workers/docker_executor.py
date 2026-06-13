@@ -19,8 +19,14 @@ from graders.base_grader import GradingResult
 
 logger = logging.getLogger(__name__)
 
-# Docker client — always use the mounted socket directly, no DOCKER_HOST env var
-docker_client = docker.DockerClient(base_url="unix://var/run/docker.sock")
+# Docker client lazy loaded — always use the mounted socket directly, no DOCKER_HOST env var
+_docker_client = None
+
+def get_docker_client():
+    global _docker_client
+    if _docker_client is None:
+        _docker_client = docker.DockerClient(base_url="unix://var/run/docker.sock")
+    return _docker_client
 
 # Image name → language slug mapping
 _IMAGE_TO_LANGUAGE = {
@@ -42,7 +48,7 @@ def run_fresh_container(language: str, image_name: str) -> Any:
     Returns:
         A running docker container object.
     """
-    return docker_client.containers.run(
+    return get_docker_client().containers.run(
         image=image_name,
         command="tail -f /dev/null",  # Keep alive so exec_run can be called into it
         name=f"grader-{language}-{uuid.uuid4().hex[:12]}",
