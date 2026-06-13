@@ -4,7 +4,7 @@ import logging
 from celery import Task
 from app.celery_app import celery_app
 from workers.docker_executor import DockerExecutor
-from app.db.session import AsyncSessionLocal
+# app.db.session import removed because we create a local engine per task
 from app.models.models import (
     Submission, SubmissionStatus, GradingJob, JobStatus,
     SubmissionResult, ExecutionMetrics, ExecutionLogs
@@ -44,7 +44,21 @@ def grade_submission_task(self, submission_id: str):
 async def async_grade_submission(submission_id: str, celery_task_id: str):
     logger.info(f"[GRADE:INIT] submission_id={submission_id} celery_task_id={celery_task_id}")
 
-    async with AsyncSessionLocal() as db:
+    # Create a fresh, unpooled engine for this specific event loop
+    # Celery creates a new event loop per task due to asyncio.run(), which breaks global connection pools.
+    from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.pool import NullPool
+    from app.core.config import settings as db_settings
+    
+    local_engine = create_async_engine(
+        db_settings.DATABASE_URL,
+        echo=False,
+        poolclass=NullPool
+    )
+    LocalSession = sessionmaker(local_engine, class_=AsyncSession, expire_on_commit=False)
+
+    async with LocalSession() as db:
 
         # ── 1. Fetch GradingJob ────────────────────────────────────────────
         logger.debug(f"[GRADE:DB] Fetching GradingJob for submission_id={submission_id}")
@@ -207,6 +221,8 @@ async def async_grade_submission(submission_id: str, celery_task_id: str):
             raise
 
     logger.info(f"[GRADE:COMPLETE] submission_id={submission_id} fully processed")
+    await local_engine.dispose()
+    
     return {
         "status": status_str,
         "score": grading_result.score,
