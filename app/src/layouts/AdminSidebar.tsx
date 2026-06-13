@@ -27,7 +27,7 @@ const NAV: NavGroup[] = [
   {
     group: 'EVALUATION OVERSIGHT',
     items: [
-      { label: 'Sessions & Proofs', to: '/admin/sessions', icon: <Activity size={16} /> },
+      { label: 'Submissions',       to: '/admin/submissions', icon: <Activity size={16} /> },
       { label: 'Results',           to: '/admin/results',  icon: <FileText size={16} /> },
     ],
   },

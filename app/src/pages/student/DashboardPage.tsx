@@ -2,7 +2,7 @@ import { GraduationCap, FlaskConical, Trophy, FileCheck2, CheckCircle2 } from 'l
 import { Link } from 'react-router-dom'
 import { PageWrapper } from '@/components/shared/PageWrapper'
 import { useAssignments } from '@/hooks/student/useAssignments'
-import { useSessions } from '@/hooks/student/useSessions'
+import { useSubmissions } from '@/hooks/student/useSubmissions'
 import { useResults } from '@/hooks/student/useResults'
 import { StatCard } from '@/components/shared/StatCard'
 import { AssignmentSummaryWidget } from '@/components/student/dashboard/AssignmentSummaryWidget'
@@ -23,16 +23,15 @@ const getGreeting = () => {
 const DashboardPage = () => {
   const profile = useAuthStore((s) => s.profile)
   const assignmentsQuery = useAssignments()
-  const sessionsQuery = useSessions()
+  const submissionsQuery = useSubmissions()
   const resultsQuery = useResults()
 
   const isLoading =
-    assignmentsQuery.isLoading || sessionsQuery.isLoading || resultsQuery.isLoading
+    assignmentsQuery.isLoading || submissionsQuery.isLoading || resultsQuery.isLoading
 
   const assignments = assignmentsQuery.data ?? []
-  const sessions = sessionsQuery.data ?? []
+  const submissions = submissionsQuery.data ?? []
   const results = resultsQuery.data ?? []
-  const activeSessions = sessions.filter((s) => ['STARTED', 'IN_PROGRESS'].includes(s.status))
   
   // Group results by assignment_id and find the maximum final_score for each assignment
   const bestScoresByAssignment: Record<string, number> = {}
@@ -74,11 +73,11 @@ const DashboardPage = () => {
               subtitle="Available to attempt"
             />
             <StatCard
-              title="Active Sessions"
-              value={activeSessions.length}
+              title="Recent Submissions"
+              value={submissions.length}
               icon={<FlaskConical size={18} />}
               accent="warning"
-              subtitle="Started or in progress"
+              subtitle="All evaluated attempts"
             />
             <StatCard
               title="Completed Evaluations"
@@ -109,12 +108,12 @@ const DashboardPage = () => {
           </div>
         )}
 
-        {/* Active sessions (spans 1 col) */}
+        {/* Recent Submissions (spans 1 col) */}
         {isLoading ? (
           <SkeletonCard className="xl:col-span-1" />
         ) : (
           <div className="xl:col-span-1">
-            <RecentActivityFeed sessions={activeSessions.slice(0, 3)} />
+            <RecentActivityFeed submissions={submissions.slice(0, 3)} />
           </div>
         )}
 

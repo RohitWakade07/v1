@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
-  GraduationCap, FlaskConical, User, LayoutDashboard, LogOut,
+  GraduationCap, User, LayoutDashboard, LogOut,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/authStore'
@@ -9,7 +9,6 @@ import { useNotificationStore } from '@/store/notificationStore'
 const navItems = [
   { label: 'Dashboard',    to: '/student',              icon: LayoutDashboard, end: true },
   { label: 'Assignments',  to: '/student/assignments',  icon: GraduationCap },
-  { label: 'Sessions',     to: '/student/sessions',     icon: FlaskConical },
   { label: 'Profile',      to: '/student/profile',      icon: User },
 ]
 
