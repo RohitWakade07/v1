@@ -52,14 +52,16 @@ class StorageService:
 
     async def _create_client(self):
         session = get_session()
+        final_endpoint = self.endpoint_url if self.endpoint_url and self.endpoint_url not in ["http://", "https://"] else None
+        
         return session.create_client(
             "s3",
-            endpoint_url=self.endpoint_url,
+            endpoint_url=final_endpoint,
             aws_access_key_id=self.access_key,
             aws_secret_access_key=self.secret_key,
             region_name=self.region_name,
             config=self.config,
-            use_ssl=self.use_ssl,
+            use_ssl=True if not final_endpoint else self.use_ssl,
         )
 
     async def ensure_bucket(self) -> None:
