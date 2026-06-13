@@ -29,15 +29,9 @@ def grade_submission_task(self, submission_id: str):
     """Synchronous Celery task wrapper that runs the async grading process."""
     logger.info(f"[TASK:RECEIVED] submission_id={submission_id} celery_task_id={self.request.id} retries={self.request.retries}")
 
-    loop = asyncio.get_event_loop()
-    if loop.is_closed():
-        logger.warning(f"[TASK:EVENT_LOOP] Loop was closed — creating new event loop for submission_id={submission_id}")
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
     try:
         logger.info(f"[TASK:START] Running async grading coroutine for submission_id={submission_id}")
-        result = loop.run_until_complete(async_grade_submission(submission_id, self.request.id))
+        result = asyncio.run(async_grade_submission(submission_id, self.request.id))
         logger.info(f"[TASK:DONE] submission_id={submission_id} result={result}")
         return result
     except Exception as e:
