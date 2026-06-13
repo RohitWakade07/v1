@@ -1,4 +1,5 @@
 import asyncio
+import dataclasses
 import logging
 from celery import Task
 from app.celery_app import celery_app
@@ -91,8 +92,12 @@ async def async_grade_submission(submission_id: str, celery_task_id: str):
         logger.info(f"[GRADE:STATUS] DB commit OK — job.attempt_count={job.attempt_count}")
 
         # ── 5. Acquire distributed lock ────────────────────────────────────
-        from app.db.redis import get_redis
-        redis_client = await get_redis()
+        # Create a fresh Redis client per task — asyncio.run() creates a new
+        # event loop each call, so a globally cached client would be bound to
+        # a closed loop and throw "Future attached to a different loop".
+        import redis.asyncio as aioredis
+        from app.core.config import settings as _s
+        redis_client = aioredis.from_url(_s.REDIS_URL, encoding="utf-8", decode_responses=True)
         lock_key = f"grading:lock:{submission_id}"
 
         logger.info(f"[GRADE:LOCK] Attempting to acquire lock key={lock_key}")
@@ -134,7 +139,8 @@ async def async_grade_submission(submission_id: str, celery_task_id: str):
         finally:
             logger.info(f"[GRADE:LOCK] Releasing lock key={lock_key}")
             await redis_client.delete(lock_key)
-            logger.info(f"[GRADE:LOCK] Lock released")
+            await redis_client.aclose()
+            logger.info(f"[GRADE:LOCK] Lock released and Redis client closed")
 
         # ── 7. Save results atomically ─────────────────────────────────────
         logger.info(f"[GRADE:SAVE] Saving results to DB for submission_id={submission_id}")
@@ -150,7 +156,7 @@ async def async_grade_submission(submission_id: str, celery_task_id: str):
             submission.passed = grading_result.passed
             submission.completed_at = datetime.utcnow()
 
-            checks_json = json.dumps([c.model_dump() for c in grading_result.checks])
+            checks_json = json.dumps([dataclasses.asdict(c) for c in grading_result.checks])
 
             sub_res = SubmissionResult(
                 submission_id=submission.id,
