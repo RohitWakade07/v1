@@ -122,7 +122,7 @@ class Settings(BaseSettings):
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/1"
 
     # MinIO / S3
-    MINIO_ENDPOINT: str = "localhost:9000"
+    MINIO_ENDPOINT: str = ""
     MINIO_ACCESS_KEY: str = "minioadmin"
     MINIO_SECRET_KEY: str = "minioadmin"
     MINIO_BUCKET_SUBMISSIONS: str = "submissions"
