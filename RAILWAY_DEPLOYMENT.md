@@ -81,7 +81,7 @@ Configure each service individually in the Railway dashboard:
 
 **Worker service** (Settings → Build):
 - Dockerfile Path → `backend/Dockerfile.worker`
-- Build Context → `backend`
+- Build Context → *(leave empty — defaults to repo root, which is correct)*
 
 **Worker service** (Settings → Deploy):
 - Health Check Path → *(leave blank — Celery has no HTTP server)*

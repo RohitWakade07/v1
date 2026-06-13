@@ -6,10 +6,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc libpq-dev curl openssl build-essential git \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY backend/ .
 
 # Ensure the jobs directory exists in the image layer.
 # The named volume (/tmp/autograder_jobs) will be mounted over this at
