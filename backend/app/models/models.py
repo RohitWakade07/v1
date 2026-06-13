@@ -395,7 +395,6 @@ class Submission(SQLModel, table=True):
     passed: Optional[bool] = Field(default=None)
     attempt_number: int = Field(default=1)
     worker_id: Optional[str] = Field(default=None, sa_column=Column(String(100), nullable=True))
-    kafka_offset: Optional[int] = Field(default=None, sa_column=Column(Integer, nullable=True))
     validation_error: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -421,21 +420,8 @@ class SubmissionResult(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
-class DeadLetterRecord(SQLModel, table=True):
-    __tablename__ = "dead_letter_records"
-
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
-    topic: str = Field(sa_column=Column(String(200), nullable=False))
-    partition: int = Field(default=0)
-    offset: int = Field(default=0)
-    message_key: Optional[str] = Field(default=None, sa_column=Column(String(200), nullable=True))
-    message_value: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
-    error_reason: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
-    retry_count: int = Field(default=0)
-    first_failed_at: datetime = Field(default_factory=datetime.utcnow)
-    last_failed_at: datetime = Field(default_factory=datetime.utcnow)
-    resolved: bool = Field(default=False)
-    resolved_at: Optional[datetime] = Field(default=None)
+# ── Celery Grading Pipeline ───────────────────────────────────────────
+# The following models support the transactional outbox + Celery worker pipeline.
 
 
 class ClassroomEnrollment(SQLModel, table=True):

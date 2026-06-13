@@ -26,7 +26,6 @@ task_routes = {
     "workers.tasks.grade_submission_high":       {"queue": "high_priority"},
     "workers.tasks.regrade_submission":          {"queue": "regrade"},
     "workers.tasks.cleanup_workspace":           {"queue": "cleanup"},
-    "workers.tasks.replace_container":           {"queue": "cleanup"},
 }
 
 # ─── Reliability ───────────────────────────────────────────────────────────

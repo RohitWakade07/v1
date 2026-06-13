@@ -9,6 +9,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Ensure the jobs directory exists in the image layer.
+# The named volume (/tmp/autograder_jobs) will be mounted over this at
+# runtime, but this guarantees the path is present if the volume is absent.
+RUN mkdir -p /tmp/autograder_jobs
+VOLUME /tmp/autograder_jobs
+
 COPY . .
 
 CMD ["celery", "-A", "app.celery_app", "worker", "--pool=threads", "--concurrency=40", "-Q", "normal,high_priority,regrade,cleanup"]
