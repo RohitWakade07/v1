@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class StorageService:
     def __init__(self) -> None:
-        self.endpoint_url = settings.MINIO_ENDPOINT.strip() if settings.MINIO_ENDPOINT else ""
+        self.endpoint_url = settings.MINIO_ENDPOINT.strip() if settings.MINIO_ENDPOINT else None
         self.access_key = settings.MINIO_ACCESS_KEY.strip() if settings.MINIO_ACCESS_KEY else ""
         self.secret_key = settings.MINIO_SECRET_KEY.strip() if settings.MINIO_SECRET_KEY else ""
         self.bucket_name = settings.MINIO_BUCKET_SUBMISSIONS.strip() if settings.MINIO_BUCKET_SUBMISSIONS else ""
@@ -19,28 +19,29 @@ class StorageService:
         self.use_ssl = settings.MINIO_USE_SSL
         self.region_name = getattr(settings, "MINIO_REGION", "us-east-1")
         
-        # Force SSL for known cloud S3 providers regardless of default config
-        if "backblazeb2.com" in self.endpoint_url or "amazonaws.com" in self.endpoint_url or "r2.cloudflarestorage.com" in self.endpoint_url:
-            self.use_ssl = True
-            
-        # Sync SSL setting with URL scheme
-        if self.endpoint_url.startswith("https://"):
-            self.use_ssl = True
-        elif self.endpoint_url.startswith("http://") and self.use_ssl:
-            self.endpoint_url = self.endpoint_url.replace("http://", "https://", 1)
-        elif not self.endpoint_url.startswith("http"):
-            scheme = "https://" if self.use_ssl else "http://"
-            self.endpoint_url = f"{scheme}{self.endpoint_url}"
-
-        # Auto-detect region for Backblaze B2 if user forgot to set MINIO_REGION
-        if "backblazeb2.com" in self.endpoint_url and self.region_name == "us-east-1":
-            import re
-            match = re.search(r's3\.([^.]+)\.backblazeb2\.com', self.endpoint_url)
-            if match:
-                self.region_name = match.group(1)
+        if self.endpoint_url:
+            # Force SSL for known cloud S3 providers regardless of default config
+            if "backblazeb2.com" in self.endpoint_url or "amazonaws.com" in self.endpoint_url or "r2.cloudflarestorage.com" in self.endpoint_url:
+                self.use_ssl = True
                 
-        # Strip trailing slash from endpoint to avoid signature mismatch
-        self.endpoint_url = self.endpoint_url.rstrip("/")
+            # Sync SSL setting with URL scheme
+            if self.endpoint_url.startswith("https://"):
+                self.use_ssl = True
+            elif self.endpoint_url.startswith("http://") and self.use_ssl:
+                self.endpoint_url = self.endpoint_url.replace("http://", "https://", 1)
+            elif not self.endpoint_url.startswith("http"):
+                scheme = "https://" if self.use_ssl else "http://"
+                self.endpoint_url = f"{scheme}{self.endpoint_url}"
+
+            # Auto-detect region for Backblaze B2 if user forgot to set MINIO_REGION
+            if "backblazeb2.com" in self.endpoint_url and self.region_name == "us-east-1":
+                import re
+                match = re.search(r's3\.([^.]+)\.backblazeb2\.com', self.endpoint_url)
+                if match:
+                    self.region_name = match.group(1)
+                    
+            # Strip trailing slash from endpoint to avoid signature mismatch
+            self.endpoint_url = self.endpoint_url.rstrip("/")
                 
         # Backblaze B2 Application Keys restricted to a single bucket REQUIRE
         # virtual-hosted style addressing. Because B2 is a custom endpoint,
@@ -52,16 +53,14 @@ class StorageService:
 
     async def _create_client(self):
         session = get_session()
-        final_endpoint = self.endpoint_url if self.endpoint_url and self.endpoint_url not in ["http://", "https://"] else None
-        
         return session.create_client(
             "s3",
-            endpoint_url=final_endpoint,
+            endpoint_url=self.endpoint_url,
             aws_access_key_id=self.access_key,
             aws_secret_access_key=self.secret_key,
             region_name=self.region_name,
             config=self.config,
-            use_ssl=True if not final_endpoint else self.use_ssl,
+            use_ssl=True if not self.endpoint_url else self.use_ssl,
         )
 
     async def ensure_bucket(self) -> None:
