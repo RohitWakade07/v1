@@ -66,12 +66,31 @@ Also add:
 > For production, use a VPS (e.g. Railway's $5/mo instance with Docker installed)
 > or a dedicated self-hosted runner. The API can still deploy on Railway without the worker.
 
-### 8. Configure Railway to use the right Dockerfile
+### 8. Configure Railway to use the right Dockerfile per service
 
-The `railway.toml` at the repo root points to `backend/Dockerfile.api`.
-For the worker service, override the Dockerfile in Railway UI:
-Settings → Build → Dockerfile Path → `backend/Dockerfile.worker`
-Build Context → `backend`
+> [!CAUTION]
+> Do NOT add a `railway.toml` to the repo root — it applies to ALL services
+> and overrides per-service dashboard settings, causing both services to build
+> the same Dockerfile.
+
+Configure each service individually in the Railway dashboard:
+
+**API service** (Settings → Build):
+- Dockerfile Path → `backend/Dockerfile.api`
+- Build Context → *(leave empty — defaults to repo root, which is correct)*
+
+**Worker service** (Settings → Build):
+- Dockerfile Path → `backend/Dockerfile.worker`
+- Build Context → `backend`
+
+**Worker service** (Settings → Deploy):
+- Health Check Path → *(leave blank — Celery has no HTTP server)*
+- Restart Policy → `on_failure`, max retries 3
+
+**Worker service** (Variables tab):
+- `SERVICE_TYPE` → `worker`
+- `CELERY_BROKER_URL` → your Railway Redis URL (e.g. `redis://default:pass@host:6379/0`)
+- `CELERY_RESULT_BACKEND` → same Redis URL with `/1` db (e.g. `redis://default:pass@host:6379/1`)
 
 ---
 
