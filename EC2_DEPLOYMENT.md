@@ -68,6 +68,7 @@ services:
 
 volumes:
   grader_jobs:
+    name: grader_jobs
 ```
 
 ## Step 6: Create the `.env` file
