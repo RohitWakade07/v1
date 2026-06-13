@@ -5,4 +5,3 @@ dockerfilePath = "backend/Dockerfile.api"
 [deploy]
 startCommand = "sh -c 'alembic upgrade head && gunicorn app.main:app --worker-class uvicorn.workers.UvicornWorker --workers 2 --bind 0.0.0.0:$PORT'"
 restartPolicyMaxRetries = 3
-restartPolicyMaxRetries = 3
