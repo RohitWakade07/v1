@@ -27,8 +27,8 @@ _docker_client = None
 def get_docker_client():
     global _docker_client
     if _docker_client is None:
-        logger.info("[DOCKER:INIT] Connecting to Docker daemon via unix://var/run/docker.sock")
-        _docker_client = docker.DockerClient(base_url="unix://var/run/docker.sock")
+        logger.info("[DOCKER:INIT] Connecting to Docker daemon via environment config (or default unix socket)")
+        _docker_client = docker.from_env()
         version = _docker_client.version()
         logger.info(f"[DOCKER:INIT] Connected — Docker version={version.get('Version')} API={version.get('ApiVersion')}")
     return _docker_client
