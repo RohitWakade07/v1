@@ -8,7 +8,7 @@ We will keep your API, Postgres, and Redis on Railway, but move the Worker to a 
 1. Go to the AWS Console → **EC2** → **Launch Instance**.
 2. **Name**: `grading-worker`
 3. **AMI**: **Ubuntu Server 24.04 LTS** (or 22.04 LTS).
-4. **Instance Type**: Select **t3.medium** or **t3.large** (Docker grading needs CPU and Memory. t2.micro free tier will likely crash).
+4. **Instance Type**: Select **`m7i-flex.large`** (recommended, 8GB RAM) or **`c7i.large`** (4GB RAM). Avoid `t3.small` as the 2GB of RAM is too low to run multiple Docker grading containers at the same time without crashing.
 5. **Key Pair**: Create a new key pair or use an existing one so you can SSH into the instance.
 6. **Network Settings**:
    - Allow **SSH traffic from Anywhere** (Port 22) so you can connect.

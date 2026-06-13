@@ -16,4 +16,4 @@ COPY backend/ .
 # runtime, but this guarantees the path is present if the volume is absent.
 RUN mkdir -p /tmp/autograder_jobs
 
-CMD ["celery", "-A", "app.celery_app", "worker", "--pool=threads", "--concurrency=40", "-Q", "normal,high_priority,regrade,cleanup"]
+CMD ["celery", "-A", "app.celery_app", "worker", "--pool=threads", "--concurrency=8", "-Q", "normal,high_priority,regrade,cleanup"]
