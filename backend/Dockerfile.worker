@@ -15,6 +15,5 @@ COPY . .
 # The named volume (/tmp/autograder_jobs) will be mounted over this at
 # runtime, but this guarantees the path is present if the volume is absent.
 RUN mkdir -p /tmp/autograder_jobs
-VOLUME /tmp/autograder_jobs
 
 CMD ["celery", "-A", "app.celery_app", "worker", "--pool=threads", "--concurrency=40", "-Q", "normal,high_priority,regrade,cleanup"]
