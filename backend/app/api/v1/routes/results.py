@@ -9,11 +9,11 @@ from sqlmodel import select
 
 from app.db.session import get_db
 from app.models.models import (
-    GradingSession,
-    SessionStatus,
+    Submission,
+    SubmissionResult,
+    SubmissionStatus,
     Student,
     Assignment,
-    COMPLETED_RESULT_STATUSES,
 )
 from app.api.v1.dependencies import get_current_student
 from app.schemas.schemas import ErrorResponse
@@ -68,26 +68,26 @@ async def get_my_results(
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
-        select(GradingSession, Assignment)
-        .join(Assignment, GradingSession.assignment_id == Assignment.id)
+        select(Submission, Assignment)
+        .join(Assignment, Submission.assignment_id == Assignment.id)
         .where(
-            GradingSession.student_id == current_student.id,
-            GradingSession.status.in_(COMPLETED_RESULT_STATUSES),
+            Submission.student_id == current_student.id,
+            Submission.status.in_([SubmissionStatus.COMPLETED, SubmissionStatus.FAILED, SubmissionStatus.VALIDATION_ERROR]),
         )
-        .order_by(GradingSession.completed_at.desc())
+        .order_by(Submission.completed_at.desc())
     )
     rows = result.all()
     return [
         ResultSummary(
-            id=str(session.id),
+            id=str(submission.id),
             assignment_id=str(assignment.id),
             assignment_title=assignment.title,
             category=assignment.category.value if hasattr(assignment.category, "value") else (assignment.category or "manual_review"),
-            final_score=session.final_score,
+            final_score=submission.score,
             max_score=assignment.max_score,
-            completed_at=session.completed_at,
+            completed_at=submission.completed_at,
         )
-        for session, assignment in rows
+        for submission, assignment in rows
     ]
 
 
@@ -104,11 +104,12 @@ async def get_result_detail(
 ):
     import json
     result = await db.execute(
-        select(GradingSession, Assignment)
-        .join(Assignment, GradingSession.assignment_id == Assignment.id)
+        select(Submission, Assignment, SubmissionResult)
+        .join(Assignment, Submission.assignment_id == Assignment.id)
+        .outerjoin(SubmissionResult, SubmissionResult.submission_id == Submission.id)
         .where(
-            GradingSession.id == uuid.UUID(session_id),
-            GradingSession.student_id == current_student.id,
+            Submission.id == uuid.UUID(session_id),
+            Submission.student_id == current_student.id,
         )
     )
     row = result.first()
@@ -117,25 +118,31 @@ async def get_result_detail(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Result not found",
         )
-    session, assignment = row
+    submission, assignment, sub_result = row
     breakdown = None
-    if session.score_breakdown:
+    if sub_result and sub_result.checks_json:
         try:
-            breakdown = json.loads(session.score_breakdown)
+            checks = json.loads(sub_result.checks_json)
+            breakdown = {}
+            for c in checks:
+                breakdown[c.get("name", "Unknown Check")] = {
+                    "passed": c.get("passed", False),
+                    "score": c.get("marks", 0.0)
+                }
         except Exception:
             breakdown = None
 
     return ResultDetail(
-        id=str(session.id),
+        id=str(submission.id),
         assignment_id=str(assignment.id),
         assignment_title=assignment.title,
         category=assignment.category or "manual_review",
-        status=session.status,
-        final_score=session.final_score,
+        status=submission.status.value if hasattr(submission.status, "value") else str(submission.status),
+        final_score=submission.score,
         max_score=assignment.max_score,
         score_breakdown=breakdown,
-        started_at=session.started_at,
-        completed_at=session.completed_at,
-        rejection_reason=session.rejection_reason,
+        started_at=submission.started_at or submission.submitted_at,
+        completed_at=submission.completed_at,
+        rejection_reason=sub_result.feedback if sub_result else submission.validation_error,
         certificate_available=False,  # TODO: implement certificate check if needed
     )
