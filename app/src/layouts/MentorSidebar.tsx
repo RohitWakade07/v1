@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, GraduationCap, BookOpen, Users,
-  ClipboardCheck, BarChart3, Inbox,
+  ClipboardCheck, BarChart3, Inbox, X
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -15,14 +15,19 @@ const navItems = [
   { path: '/mentor/analytics',     label: 'Analytics',        icon: BarChart3 },
 ]
 
-export const MentorSidebar = () => {
+export const MentorSidebar = ({ isOpen, onClose }: { isOpen?: boolean, onClose?: () => void }) => {
   const location = useLocation()
 
   return (
-    <aside className="flex h-full w-[240px] flex-col border-r border-navy-800 bg-sidebar-bg transition-all duration-300">
-      <div className="flex h-16 items-center gap-3 bg-navy-900 px-6 border-b border-navy-800">
+    <aside className={`fixed inset-y-0 left-0 z-50 flex h-full w-[240px] flex-col border-r border-navy-800 bg-sidebar-bg transition-transform duration-300 md:relative md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className="flex h-16 items-center gap-3 bg-navy-900 px-4 md:px-6 border-b border-navy-800">
         <img src="/logo.png" alt="Logo" className="h-6 w-6 object-contain rounded" />
         <span className="font-display text-lg font-bold text-text-primary">Mentor Portal</span>
+        {onClose && (
+          <button onClick={onClose} className="ml-auto md:hidden text-text-secondary hover:text-text-primary">
+            <X size={20} />
+          </button>
+        )}
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-6 space-y-1">
@@ -33,6 +38,7 @@ export const MentorSidebar = () => {
               key={path}
               to={path}
               end={end}
+              onClick={onClose}
               className={cn(
                 'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                 isActive

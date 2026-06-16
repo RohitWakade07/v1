@@ -1,4 +1,4 @@
-import { Bell, ChevronRight } from 'lucide-react'
+import { Bell, ChevronRight, Menu } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { useNotificationStore } from '@/store/notificationStore'
 import { useAuthStore } from '@/store/authStore'
@@ -21,7 +21,7 @@ const useBreadcrumbs = () => {
   }))
 }
 
-export const StudentTopNav = () => {
+export const StudentTopNav = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const crumbs = useBreadcrumbs()
   const count = useNotificationStore((s) => s.notifications.length)
   const clearAll = useNotificationStore((s) => s.clearNotifications)
@@ -29,23 +29,30 @@ export const StudentTopNav = () => {
   const initials = profile?.roll_number?.slice(0, 2).toUpperCase() ?? 'ST'
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between border-b border-navy-800 bg-navy-950 px-6">
-      <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-sm">
-        {crumbs.map((crumb, i) => (
-          <span key={crumb.to} className="flex items-center gap-1">
-            {i > 0 && <ChevronRight size={14} className="text-text-secondary" />}
-            {i === crumbs.length - 1 ? (
-              <span className="font-display font-semibold text-text-primary">{crumb.label}</span>
-            ) : (
-              <Link to={crumb.to} className="text-text-secondary hover:text-text-primary transition-colors">
-                {crumb.label}
-              </Link>
-            )}
-          </span>
-        ))}
-      </nav>
+    <header className="flex h-16 shrink-0 items-center justify-between border-b border-navy-800 bg-navy-950 px-4 md:px-6 gap-2">
+      <div className="flex items-center gap-2">
+        {onMenuClick && (
+          <button onClick={onMenuClick} className="md:hidden text-text-secondary hover:text-text-primary flex-shrink-0">
+            <Menu size={24} />
+          </button>
+        )}
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-sm overflow-hidden whitespace-nowrap">
+          {crumbs.map((crumb, i) => (
+            <span key={crumb.to} className="flex items-center gap-1 truncate">
+              {i > 0 && <ChevronRight size={14} className="text-text-secondary shrink-0" />}
+              {i === crumbs.length - 1 ? (
+                <span className="font-display font-semibold text-text-primary truncate">{crumb.label}</span>
+              ) : (
+                <Link to={crumb.to} className="text-text-secondary hover:text-text-primary transition-colors truncate">
+                  {crumb.label}
+                </Link>
+              )}
+            </span>
+          ))}
+        </nav>
+      </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 md:gap-3 shrink-0">
         <button
           aria-label={`${count} notifications`}
           onClick={count > 0 ? clearAll : undefined}
@@ -67,7 +74,7 @@ export const StudentTopNav = () => {
           <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-accent-blue to-accent-teal text-[10px] font-bold text-white">
             {initials}
           </div>
-          <span className="text-xs font-medium text-text-secondary">
+          <span className="text-xs font-medium text-text-secondary hidden sm:block">
             {profile?.roll_number ?? 'Student'}
           </span>
         </Link>

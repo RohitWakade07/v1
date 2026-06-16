@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, UserCheck, BookOpen, Activity, FileText,
-  HeartPulse, Lock, LogOut, ChevronRight,
+  HeartPulse, Lock, LogOut, ChevronRight, X,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 
@@ -39,7 +39,7 @@ const NAV: NavGroup[] = [
   },
 ]
 
-export const AdminSidebar = () => {
+export const AdminSidebar = ({ isOpen, onClose }: { isOpen?: boolean, onClose?: () => void }) => {
   const { logout, username } = useAuthStore()
   const navigate = useNavigate()
 
@@ -49,13 +49,18 @@ export const AdminSidebar = () => {
   }
 
   return (
-    <aside className="flex h-screen w-64 shrink-0 flex-col bg-sidebar-bg border-r border-navy-800">
+    <aside className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 shrink-0 flex-col bg-sidebar-bg border-r border-navy-800 transition-transform duration-300 md:relative md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
       <div className="flex h-16 items-center gap-3 border-b border-navy-800 px-4">
         <img src="/logo.png" alt="E-Yantra Logo" className="h-9 w-9 rounded-xl object-contain shadow-glow-teal" />
         <div>
           <p className="font-display text-sm font-bold text-text-primary leading-tight">E-Yantra EEP</p>
           <p className="text-[10px] text-text-secondary tracking-wide uppercase">Admin Control Center</p>
         </div>
+        {onClose && (
+          <button onClick={onClose} className="ml-auto md:hidden text-text-secondary hover:text-text-primary">
+            <X size={20} />
+          </button>
+        )}
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
@@ -81,6 +86,7 @@ export const AdminSidebar = () => {
                     key={to}
                     to={to}
                     end={to === '/admin'}
+                    onClick={onClose}
                     className={({ isActive }) =>
                       `relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all duration-150 ${
                         isActive

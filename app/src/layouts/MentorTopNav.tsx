@@ -1,11 +1,11 @@
-import { Bell, LogOut, User } from 'lucide-react'
+import { Bell, LogOut, User, Menu } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { useNotificationStore } from '@/store/notificationStore'
 import { cn } from '@/lib/utils'
 import { ThemeToggle } from '@/components/shared/ThemeToggle'
 
-export const MentorTopNav = () => {
+export const MentorTopNav = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const { role, username, logout } = useAuthStore()
   const notifications = useNotificationStore((s) => s.notifications)
   const location = useLocation()
@@ -22,8 +22,13 @@ export const MentorTopNav = () => {
   }
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between border-b border-navy-800 bg-navy-950 px-6">
-      <div className="flex items-center gap-4">
+    <header className="flex h-16 shrink-0 items-center justify-between border-b border-navy-800 bg-navy-950 px-4 md:px-6">
+      <div className="flex items-center gap-3 md:gap-4">
+        {onMenuClick && (
+          <button onClick={onMenuClick} className="md:hidden text-text-secondary hover:text-text-primary">
+            <Menu size={24} />
+          </button>
+        )}
         <h2 className="text-lg font-medium text-text-primary hidden sm:block">{breadcrumb}</h2>
         {role && (
           <div className={cn(

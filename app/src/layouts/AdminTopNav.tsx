@@ -1,10 +1,10 @@
-import { Bell, LogOut } from 'lucide-react'
+import { Bell, LogOut, Menu } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { useNotificationStore } from '@/store/notificationStore'
 import { ThemeToggle } from '@/components/shared/ThemeToggle'
 
-export const AdminTopNav = () => {
+export const AdminTopNav = ({ onMenuClick }: { onMenuClick: () => void }) => {
   const { username, logout } = useAuthStore()
   const notifications = useNotificationStore((s) => s.notifications)
   const location = useLocation()
@@ -21,9 +21,12 @@ export const AdminTopNav = () => {
   }
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between border-b border-navy-800 bg-navy-950 px-6">
+    <header className="flex h-16 shrink-0 items-center justify-between border-b border-navy-800 bg-navy-950 px-4 md:px-6">
       <div className="flex items-center gap-3">
-        <h2 className="font-display text-base font-semibold text-text-primary">{breadcrumb}</h2>
+        <button onClick={onMenuClick} className="md:hidden text-text-secondary hover:text-text-primary">
+          <Menu size={24} />
+        </button>
+        <h2 className="font-display text-base font-semibold text-text-primary hidden sm:block">{breadcrumb}</h2>
         <span className="rounded-full bg-accent-teal/10 text-accent-teal border border-accent-teal/20 px-3 py-1 text-xs font-bold tracking-wider uppercase">
           Admin
         </span>

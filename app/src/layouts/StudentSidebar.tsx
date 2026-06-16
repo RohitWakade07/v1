@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
-  GraduationCap, User, LayoutDashboard, LogOut,
+  GraduationCap, User, LayoutDashboard, LogOut, X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/authStore'
@@ -12,7 +12,7 @@ const navItems = [
   { label: 'Profile',      to: '/student/profile',      icon: User },
 ]
 
-export const StudentSidebar = () => {
+export const StudentSidebar = ({ isOpen, onClose }: { isOpen?: boolean, onClose?: () => void }) => {
   const profile = useAuthStore((s) => s.profile)
   const logout = useAuthStore((s) => s.logout)
   const addNotification = useNotificationStore((s) => s.addNotification)
@@ -27,13 +27,18 @@ export const StudentSidebar = () => {
   const initials = profile?.roll_number?.slice(0, 2).toUpperCase() ?? 'ST'
 
   return (
-    <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col border-r border-navy-800 bg-sidebar-bg">
+    <aside className={`fixed inset-y-0 left-0 z-50 flex h-screen w-60 shrink-0 flex-col border-r border-navy-800 bg-sidebar-bg transition-transform duration-300 md:relative md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
       <div className="flex items-center gap-3 border-b border-navy-800 px-5 py-5">
         <img src="/logo.png" alt="Logo" className="h-9 w-9 object-contain rounded-lg" />
         <div>
           <p className="font-display text-sm font-bold text-text-primary leading-none">E-Yantra EEP</p>
           <p className="text-[10px] text-text-secondary mt-0.5">Student Portal</p>
         </div>
+        {onClose && (
+          <button onClick={onClose} className="ml-auto md:hidden text-text-secondary hover:text-text-primary">
+            <X size={20} />
+          </button>
+        )}
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 px-3 py-4" aria-label="Student navigation">
@@ -44,6 +49,7 @@ export const StudentSidebar = () => {
               key={item.to}
               to={item.to}
               end={item.end}
+              onClick={onClose}
               aria-label={item.label}
               className={({ isActive }) =>
                 cn(
