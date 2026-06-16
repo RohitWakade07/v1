@@ -6,14 +6,33 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc libpq-dev curl openssl build-essential git \
     && rm -rf /var/lib/apt/lists/*
 
-COPY backend/requirements.txt .
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY backend/ .
+# COPY must happen BEFORE the VOLUME declaration. Files copied after a
+# VOLUME instruction may not be visible inside the mounted volume at
+# runtime on some Docker versions, since the volume mount shadows the
+# image layer at that path from the point of declaration onward.
+COPY . .
 
-# Ensure the jobs directory exists in the image layer.
-# The named volume (/tmp/autograder_jobs) will be mounted over this at
-# runtime, but this guarantees the path is present if the volume is absent.
+# Ensure the shared jobs directory always exists inside the container.
+# On Railway this path is bind-mounted from the host via the grader_jobs
+# volume. Creating it here (before VOLUME) prevents PermissionError if the
+# mount is delayed or absent.
 RUN mkdir -p /tmp/autograder_jobs
+VOLUME /tmp/autograder_jobs
 
+# CONCURRENCY — lowered from 40 to 8.
+#
+# Each grading job spawns a fresh Docker container with mem_limit=256m.
+# At concurrency=40, a burst of concurrent submissions could attempt to
+# hold up to 40 * 256MB = ~10GB of container memory simultaneously, plus
+# the worker process's own overhead — far beyond what a typical Railway
+# worker service is allocated, leading to OOM kills or severe throttling.
+#
+# At concurrency=8, the worst case is 8 * 256MB = ~2GB for grading
+# containers, which is sustainable on Railway's default worker memory.
+# Redis + Celery queue any submissions beyond 8 concurrent jobs — nothing
+# is lost, submissions simply wait a few extra seconds for a free thread.
+# For classroom-scale usage this wait is negligible.
 CMD ["celery", "-A", "app.celery_app", "worker", "--pool=threads", "--concurrency=8", "-Q", "normal,high_priority,regrade,cleanup"]

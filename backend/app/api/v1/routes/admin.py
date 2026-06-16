@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 from app.db.session import get_db
-from app.models.models import Student, Mentor, GradingSession, Assignment, UserRole
+from app.models.models import Student, Mentor, Submission, Assignment, UserRole
 from app.api.v1.dependencies import get_current_admin
 from app.schemas.schemas import AssignmentPublic
 from app.core.security import hash_password
@@ -139,10 +139,10 @@ async def list_all_sessions(
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
-        select(GradingSession, Student, Assignment)
-        .join(Student, GradingSession.student_id == Student.id)
-        .join(Assignment, GradingSession.assignment_id == Assignment.id)
-        .order_by(GradingSession.started_at.desc())
+        select(Submission, Student, Assignment)
+        .join(Student, Submission.student_id == Student.id)
+        .join(Assignment, Submission.assignment_id == Assignment.id)
+        .order_by(Submission.started_at.desc())
     )
     rows = result.all()
     return [
@@ -154,12 +154,12 @@ async def list_all_sessions(
             assignment_id=str(s.assignment_id),
             assignment_title=assignment.title,
             assignment_slug=assignment.slug,
-            status=s.status,
-            started_at=s.started_at,
+            status=s.status.value if hasattr(s.status, "value") else str(s.status),
+            started_at=s.started_at or s.submitted_at,
             submitted_at=s.submitted_at,
             completed_at=s.completed_at,
-            final_score=s.final_score,
-            rejection_reason=s.rejection_reason,
+            final_score=s.score,
+            rejection_reason=s.validation_error,
         )
         for s, student, assignment in rows
     ]

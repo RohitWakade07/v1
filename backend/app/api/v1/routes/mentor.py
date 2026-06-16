@@ -11,11 +11,11 @@ from app.db.session import get_db
 from app.models.models import (
     Mentor,
     Assignment,
-    GradingSession,
     Student,
     SessionStatus,
     COMPLETED_RESULT_STATUSES,
     Submission,
+    SubmissionStatus,
 )
 from app.api.v1.dependencies import get_current_mentor
 from app.schemas.schemas import (
@@ -134,9 +134,9 @@ async def list_mentor_students(
 ):
     # Get students who have sessions for this mentor's assignments
     result = await db.execute(
-        select(Student, func.count(func.distinct(GradingSession.assignment_id)), func.count(GradingSession.id))
-        .join(GradingSession, GradingSession.student_id == Student.id)
-        .join(Assignment, GradingSession.assignment_id == Assignment.id)
+        select(Student, func.count(func.distinct(Submission.assignment_id)), func.count(Submission.id))
+        .join(Submission, Submission.student_id == Student.id)
+        .join(Assignment, Submission.assignment_id == Assignment.id)
         .where(Assignment.created_by_id == current_mentor.id)
         .group_by(Student.id)
     )
@@ -165,25 +165,25 @@ async def list_mentor_sessions(
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
-        select(GradingSession, Student, Assignment)
-        .join(Student, GradingSession.student_id == Student.id)
-        .join(Assignment, GradingSession.assignment_id == Assignment.id)
+        select(Submission, Student, Assignment)
+        .join(Student, Submission.student_id == Student.id)
+        .join(Assignment, Submission.assignment_id == Assignment.id)
         .where(Assignment.created_by_id == current_mentor.id)
-        .order_by(GradingSession.started_at.desc())
+        .order_by(Submission.started_at.desc())
     )
     
     rows = result.all()
     return [
         MentorSessionPublic(
-            id=session.id,
+            id=str(session.id),
             student_roll=student.roll_number,
             student_name=student.full_name,
             assignment_slug=assignment.slug,
             assignment_title=assignment.title,
-            status=session.status,
-            started_at=session.started_at,
+            status=session.status.value if hasattr(session.status, "value") else str(session.status),
+            started_at=session.started_at or session.submitted_at,
             completed_at=session.completed_at,
-            final_score=session.final_score,
+            final_score=session.score,
         )
         for session, student, assignment in rows
     ]
@@ -199,25 +199,25 @@ async def list_mentor_results(
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
-        select(GradingSession, Student, Assignment)
-        .join(Student, GradingSession.student_id == Student.id)
-        .join(Assignment, GradingSession.assignment_id == Assignment.id)
+        select(Submission, Student, Assignment)
+        .join(Student, Submission.student_id == Student.id)
+        .join(Assignment, Submission.assignment_id == Assignment.id)
         .where(
             Assignment.created_by_id == current_mentor.id,
-            GradingSession.status.in_(COMPLETED_RESULT_STATUSES),
+            Submission.status.in_([SubmissionStatus.COMPLETED, SubmissionStatus.FAILED, SubmissionStatus.VALIDATION_ERROR]),
         )
-        .order_by(GradingSession.completed_at.desc())
+        .order_by(Submission.completed_at.desc())
     )
     
     rows = result.all()
     return [
         MentorResultPublic(
-            session_id=session.id,
+            session_id=str(session.id),
             student_roll=student.roll_number,
             student_name=student.full_name,
             assignment_slug=assignment.slug,
             assignment_title=assignment.title,
-            final_score=session.final_score or 0.0,
+            final_score=session.score or 0.0,
             max_score=assignment.max_score,
             completed_at=session.completed_at,
         )
@@ -236,18 +236,18 @@ async def get_mentor_analytics(
 ):
     # Fetch all relevant sessions
     result = await db.execute(
-        select(GradingSession, Assignment)
-        .join(Assignment, GradingSession.assignment_id == Assignment.id)
+        select(Submission, Assignment)
+        .join(Assignment, Submission.assignment_id == Assignment.id)
         .where(Assignment.created_by_id == current_mentor.id)
     )
     rows = result.all()
     
     total_submissions = len(rows)
-    completed_sessions = [r for r in rows if r[0].status in COMPLETED_RESULT_STATUSES]
+    completed_sessions = [r for r in rows if r[0].status in [SubmissionStatus.COMPLETED, SubmissionStatus.FAILED, SubmissionStatus.VALIDATION_ERROR]]
     
     completion_rate = (len(completed_sessions) / total_submissions * 100) if total_submissions > 0 else 0.0
     
-    total_score = sum(r[0].final_score or 0.0 for r in completed_sessions)
+    total_score = sum(r[0].score or 0.0 for r in completed_sessions)
     avg_score = (total_score / len(completed_sessions)) if completed_sessions else 0.0
     
     # Calculate unique students
@@ -257,7 +257,7 @@ async def get_mentor_analytics(
     # Distributions
     score_distribution = {"0-20": 0, "21-40": 0, "41-60": 0, "61-80": 0, "81-100": 0}
     for session, assignment in completed_sessions:
-        score_pct = (session.final_score / assignment.max_score * 100) if assignment.max_score > 0 else 0
+        score_pct = ((session.score or 0.0) / assignment.max_score * 100) if assignment.max_score > 0 else 0
         if score_pct <= 20: score_distribution["0-20"] += 1
         elif score_pct <= 40: score_distribution["21-40"] += 1
         elif score_pct <= 60: score_distribution["41-60"] += 1

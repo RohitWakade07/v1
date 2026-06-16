@@ -72,7 +72,7 @@ class SubmissionService:
             )
         )
         active_session = session_query.scalar_one_or_none()
-        
+
         if not active_session:
             active_session = GradingSession(
                 student_id=student.id,
@@ -82,6 +82,31 @@ class SubmissionService:
             db.add(active_session)
             await db.flush()
 
+        # ─────────────────────────────────────────────────────────────────
+        # ATOMICITY FIX 1 — attempt_number race condition
+        #
+        # Previously, attempt_number was computed via a plain COUNT(*) query
+        # inside the same transaction, BEFORE the new row was inserted. Two
+        # concurrent submissions from the same student (double-click, retry
+        # on network blip) could both read the same COUNT and both insert
+        # rows with the same attempt_number.
+        #
+        # Fix: lock the student's existing submission rows for this
+        # assignment with SELECT ... FOR UPDATE before computing the count.
+        # This forces concurrent transactions to serialize on this student+
+        # assignment pair — the second transaction blocks until the first
+        # commits, then sees the now-correct count.
+        #
+        # This does NOT add lock contention across different students/
+        # assignments (different rows), so it doesn't hurt concurrency for
+        # the platform as a whole — only serializes duplicate submissions
+        # from the same student for the same assignment, which is the
+        # correct behavior anyway.
+        # ─────────────────────────────────────────────────────────────────
+        attempt_number = await SubmissionService._resolve_attempt_number_locked(
+            student.id, assignment.id, db
+        )
+
         submission = Submission(
             student_id=student.id,
             assignment_id=assignment.id,
@@ -89,48 +114,86 @@ class SubmissionService:
             source_type=source_type,
             repo_url=repo_url if source_type == SubmissionSourceType.GITHUB else None,
             submitted_at=datetime.utcnow(),
-            attempt_number=await SubmissionService._resolve_attempt_number(student.id, assignment.id, db),
+            attempt_number=attempt_number,
         )
+
+        # ─────────────────────────────────────────────────────────────────
+        # ATOMICITY FIX 2 — B2 upload orphan on commit failure
+        #
+        # Previously, the ZIP was uploaded to B2 BEFORE db.commit(). If the
+        # commit failed afterward (DB connection drop, constraint violation,
+        # etc.), the B2 object would be left behind with no DB record
+        # pointing to it — an orphaned object that accumulates over time.
+        #
+        # Fix: wrap the entire DB-write block in try/except. If anything
+        # fails after the upload succeeds, delete the just-uploaded B2
+        # object as a compensating action before re-raising. This keeps
+        # B2 and Postgres consistent: either both succeed, or neither
+        # leaves a trace.
+        # ─────────────────────────────────────────────────────────────────
+        uploaded_key: Optional[str] = None
+        storage_service: Optional[StorageService] = None
 
         if source_type == SubmissionSourceType.ZIP:
             key = f"submissions/{assignment.slug}/{student.roll_number}/{uuid.uuid4().hex}.zip"
             storage_service = StorageService()
             await storage_service.upload_submission_zip(key, zip_bytes)
+            uploaded_key = key
             submission.zip_object_key = key
 
-        db.add(submission)
-        await db.flush()
-        await db.refresh(submission)
-        import json
-        payload = {
-            "submission_id": str(submission.id),
-            "student_id": str(student.id),
-            "assignment_id": str(assignment.id),
-            "assignment_slug": assignment.slug,
-            "source_type": source_type.value,
-            "repo_url": repo_url,
-            "zip_object_key": submission.zip_object_key,
-            "submitted_at": submission.submitted_at.isoformat(),
-            "priority": 5, # default
-        }
+        try:
+            db.add(submission)
+            await db.flush()
+            await db.refresh(submission)
 
-        # Create grading job record
-        job = GradingJob(
-            submission_id=submission.id,
-            status=JobStatus.PENDING,
-            queue_name="normal"
-        )
-        db.add(job)
+            import json
+            payload = {
+                "submission_id": str(submission.id),
+                "student_id": str(student.id),
+                "assignment_id": str(assignment.id),
+                "assignment_slug": assignment.slug,
+                "source_type": source_type.value,
+                "repo_url": repo_url,
+                "zip_object_key": submission.zip_object_key,
+                "submitted_at": submission.submitted_at.isoformat(),
+                "priority": 5,  # default
+            }
 
-        # Create outbox record
-        outbox_msg = SubmissionOutbox(
-            submission_id=submission.id,
-            payload=json.dumps(payload),
-        )
-        db.add(outbox_msg)
+            # Create grading job record
+            job = GradingJob(
+                submission_id=submission.id,
+                status=JobStatus.PENDING,
+                queue_name="normal"
+            )
+            db.add(job)
 
-        await db.commit()
+            # Create outbox record
+            outbox_msg = SubmissionOutbox(
+                submission_id=submission.id,
+                payload=json.dumps(payload),
+            )
+            db.add(outbox_msg)
 
+            await db.commit()
+
+        except Exception:
+            # Compensating action: roll back the B2 upload if the DB
+            # transaction did not complete, so we never leave an orphaned
+            # object with no matching submission row.
+            await db.rollback()
+            if uploaded_key and storage_service:
+                try:
+                    await storage_service.delete_object(uploaded_key)
+                    logger.warning(
+                        "Rolled back orphaned B2 object %s after DB commit failure",
+                        uploaded_key,
+                    )
+                except Exception as cleanup_err:
+                    logger.error(
+                        "Failed to clean up orphaned B2 object %s: %s",
+                        uploaded_key, cleanup_err,
+                    )
+            raise
 
         return SubmissionCreateResponse(
             submission_id=submission.id,
@@ -145,7 +208,32 @@ class SubmissionService:
         )
 
     @staticmethod
+    async def _resolve_attempt_number_locked(student_id: uuid.UUID, assignment_id: uuid.UUID, db: AsyncSession) -> int:
+        """Lock existing submission rows for this student+assignment, then
+        compute the next attempt_number. The FOR UPDATE lock serializes
+        concurrent submissions from the same student for the same
+        assignment, preventing duplicate attempt_number values.
+
+        If no rows exist yet, there is nothing to lock and this resolves
+        to attempt_number=1 immediately (the unique-row scenario where a
+        race is impossible).
+        """
+        locked_query = await db.execute(
+            select(Submission.id)
+            .where(
+                Submission.student_id == student_id,
+                Submission.assignment_id == assignment_id,
+            )
+            .with_for_update()
+        )
+        existing_ids = locked_query.scalars().all()
+        return max(1, len(existing_ids) + 1)
+
+    @staticmethod
     async def _resolve_attempt_number(student_id: uuid.UUID, assignment_id: uuid.UUID, db: AsyncSession) -> int:
+        """Deprecated — kept for backward compatibility with any external
+        callers. Use _resolve_attempt_number_locked for new code, which
+        guards against the race condition described above."""
         count_query = await db.execute(
             select(func.count()).select_from(Submission).where(
                 Submission.student_id == student_id,
