@@ -194,12 +194,17 @@ async def unpublish_assignment(
     db: AsyncSession = Depends(get_db),
 ):
     import uuid
-    result = await db.execute(
-        select(Assignment).where(
-            Assignment.id == uuid.UUID(assignment_id),
-            Assignment.created_by_id == current_mentor.id,
+    if current_mentor.role == UserRole.ADMIN:
+        result = await db.execute(
+            select(Assignment).where(Assignment.id == uuid.UUID(assignment_id))
         )
-    )
+    else:
+        result = await db.execute(
+            select(Assignment).where(
+                Assignment.id == uuid.UUID(assignment_id),
+                Assignment.created_by_id == current_mentor.id,
+            )
+        )
     assignment = result.scalar_one_or_none()
     if not assignment:
         raise HTTPException(
@@ -238,12 +243,17 @@ async def update_assignment(
     db: AsyncSession = Depends(get_db),
 ):
     import uuid as _uuid
-    result = await db.execute(
-        select(Assignment).where(
-            Assignment.id == _uuid.UUID(assignment_id),
-            Assignment.created_by_id == current_mentor.id,
+    if current_mentor.role == UserRole.ADMIN:
+        result = await db.execute(
+            select(Assignment).where(Assignment.id == _uuid.UUID(assignment_id))
         )
-    )
+    else:
+        result = await db.execute(
+            select(Assignment).where(
+                Assignment.id == _uuid.UUID(assignment_id),
+                Assignment.created_by_id == current_mentor.id,
+            )
+        )
     assignment = result.scalar_one_or_none()
     if not assignment:
         raise HTTPException(
