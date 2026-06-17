@@ -281,18 +281,24 @@ async def import_questions_csv(
     option_labels = ["a", "b", "c", "d"]
 
     for i, row in enumerate(reader):
-        correct_letters = [c.strip().lower() for c in row["correct_answer"].split(",")]
-        q_type = QuestionType.MULTIPLE if row["type"].strip().lower() == "multiple" else QuestionType.SINGLE
+        correct_raw = row.get("correct_answer") or ""
+        correct_letters = [c.strip().lower() for c in correct_raw.split(",") if c.strip()]
+        
+        type_raw = row.get("type") or ""
+        q_type = QuestionType.MULTIPLE if type_raw.strip().lower() == "multiple" else QuestionType.SINGLE
+        
+        marks_raw = row.get("marks") or ""
         marks_val = None
-        if row.get("marks", "").strip():
+        if marks_raw.strip():
             try:
-                marks_val = int(row["marks"].strip())
+                marks_val = int(marks_raw.strip())
             except ValueError:
                 pass
 
+        question_raw = row.get("question") or ""
         question = QuizQuestion(
             quiz_id=qid,
-            question_text=row["question"].strip(),
+            question_text=question_raw.strip() or "Untitled Question",
             type=q_type.value,
             marks=marks_val,
             order_index=i,
@@ -302,11 +308,12 @@ async def import_questions_csv(
 
         for j, label in enumerate(option_labels):
             col = f"option_{label}"
-            if col not in row or not row[col].strip():
+            val_raw = row.get(col) or ""
+            if not val_raw.strip():
                 continue
             opt = QuizOption(
                 question_id=question.id,
-                option_text=row[col].strip(),
+                option_text=val_raw.strip(),
                 is_correct=(label in correct_letters),
                 order_index=j,
             )
