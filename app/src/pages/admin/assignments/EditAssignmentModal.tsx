@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Modal } from '@/components/shared/Modal'
 import { Assignment } from '@/types/api'
 import { useUpdateAssignment } from '@/hooks/mentor/useUpdateAssignment'
