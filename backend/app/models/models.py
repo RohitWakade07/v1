@@ -561,7 +561,7 @@ class QuizQuestion(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
     quiz_id: uuid.UUID = Field(foreign_key="quizzes.id", index=True)
     question_text: str = Field(sa_column=Column(Text, nullable=False))
-    type: QuestionType = Field(default=QuestionType.SINGLE)
+    type: str = Field(sa_column=Column(String(20), nullable=False, server_default="single"))
     marks: Optional[int] = Field(default=None)  # overrides quiz.marks_per_question if set
     order_index: int = Field(default=0)
     created_at: datetime = Field(default_factory=datetime.utcnow)
