@@ -108,6 +108,8 @@ class Settings(BaseSettings):
             "http://localhost:5173",
             "http://localhost:5174",
             "http://localhost:5175",
+            "https://eyantraeep.vercel.app",
+            "https://v1-alpha-rose.vercel.app",
         ]
         if self.ALLOWED_ORIGINS.strip():
             prod = [o.strip() for o in self.ALLOWED_ORIGINS.split(",") if o.strip()]
