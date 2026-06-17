@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Globe, Lock, PenTool } from 'lucide-react'
+import { Search, Globe, Lock, PenTool, FileText } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { PageWrapper } from '@/components/shared/PageWrapper'
 import { PageHeader } from '@/components/shared/PageHeader'
@@ -8,6 +8,8 @@ import { StatusBadge } from '@/components/shared/StatusBadge'
 import { SkeletonRow } from '@/components/shared/SkeletonCard'
 import { listAllAssignments, publishAssignment, unpublishAssignment } from '@/api/admin/admin'
 import { formatDate, shortId } from '@/lib/utils'
+import { EditAssignmentModal } from './EditAssignmentModal'
+import { Assignment } from '@/types/api'
 
 const CATEGORY_LABELS: Record<string, string> = {
   artifact_validation: 'Artifact',
@@ -22,6 +24,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 export const AssignmentsPage = () => {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<'all' | 'published' | 'draft'>('all')
+  const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null)
   const qc = useQueryClient()
 
   const { data: assignments = [], isLoading, error } = useQuery({
@@ -150,11 +153,17 @@ export const AssignmentsPage = () => {
                           <Globe size={11} /> Publish
                         </button>
                       )}
+                      <button
+                        onClick={() => setEditingAssignment(a)}
+                        className="flex items-center gap-1 text-xs text-accent-blue hover:text-accent-blue/80 border border-accent-blue/30 rounded px-2 py-1 transition-colors"
+                      >
+                        <PenTool size={11} /> Edit
+                      </button>
                       <Link
                         to={`/admin/assignments/${a.id}/quiz`}
                         className="flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300 border border-purple-400/30 rounded px-2 py-1 transition-colors"
                       >
-                        <PenTool size={11} /> Quiz
+                        <FileText size={11} /> Quiz
                       </Link>
                     </td>
                   </tr>
@@ -169,6 +178,11 @@ export const AssignmentsPage = () => {
           </div>
         )}
       </div>
+
+      <EditAssignmentModal
+        assignment={editingAssignment}
+        onClose={() => setEditingAssignment(null)}
+      />
     </PageWrapper>
   )
 }
