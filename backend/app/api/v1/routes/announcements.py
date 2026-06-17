@@ -277,7 +277,7 @@ async def get_student_notifications(
 ):
     notifs = (await db.execute(
         select(Notification)
-        .where(Notification.recipient_id == current_student.id, Notification.recipient_type == RecipientType.STUDENT)
+        .where(Notification.recipient_id == current_student.id, Notification.recipient_type == RecipientType.STUDENT.value)
         .order_by(Notification.created_at.desc())
         .limit(NOTIFICATION_CAP)
     )).scalars().all()
@@ -324,7 +324,7 @@ async def get_mentor_notifications(
 ):
     notifs = (await db.execute(
         select(Notification)
-        .where(Notification.recipient_id == current_mentor.id, Notification.recipient_type == RecipientType.MENTOR)
+        .where(Notification.recipient_id == current_mentor.id, Notification.recipient_type == RecipientType.MENTOR.value)
         .order_by(Notification.created_at.desc())
         .limit(NOTIFICATION_CAP)
     )).scalars().all()
