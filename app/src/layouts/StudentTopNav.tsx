@@ -1,8 +1,8 @@
-import { Bell, ChevronRight, Menu } from 'lucide-react'
+import { ChevronRight, Menu } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
-import { useNotificationStore } from '@/store/notificationStore'
 import { useAuthStore } from '@/store/authStore'
 import { ThemeToggle } from '@/components/shared/ThemeToggle'
+import { NotificationDropdown } from '@/components/shared/NotificationDropdown'
 
 const routeLabels: Record<string, string> = {
   student: 'Dashboard', assignments: 'Assignments', sessions: 'Sessions',
@@ -23,8 +23,6 @@ const useBreadcrumbs = () => {
 
 export const StudentTopNav = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const crumbs = useBreadcrumbs()
-  const count = useNotificationStore((s) => s.notifications.length)
-  const clearAll = useNotificationStore((s) => s.clearNotifications)
   const profile = useAuthStore((s) => s.profile)
   const initials = profile?.roll_number?.slice(0, 2).toUpperCase() ?? 'ST'
 
@@ -53,18 +51,7 @@ export const StudentTopNav = ({ onMenuClick }: { onMenuClick?: () => void }) => 
       </div>
 
       <div className="flex items-center gap-2 md:gap-3 shrink-0">
-        <button
-          aria-label={`${count} notifications`}
-          onClick={count > 0 ? clearAll : undefined}
-          className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-navy-800 bg-navy-900 text-text-secondary transition-colors hover:text-text-primary"
-        >
-          <Bell size={16} />
-          {count > 0 && (
-            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent-blue text-[9px] font-bold text-white">
-              {count > 9 ? '9+' : count}
-            </span>
-          )}
-        </button>
+        <NotificationDropdown />
         <ThemeToggle />
         <Link
           to="/student/profile"

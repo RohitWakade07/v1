@@ -1,13 +1,12 @@
-import { Bell, LogOut, User, Menu } from 'lucide-react'
+import { LogOut, User, Menu } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
-import { useNotificationStore } from '@/store/notificationStore'
 import { cn } from '@/lib/utils'
 import { ThemeToggle } from '@/components/shared/ThemeToggle'
+import { NotificationDropdown } from '@/components/shared/NotificationDropdown'
 
 export const MentorTopNav = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const { role, username, logout } = useAuthStore()
-  const notifications = useNotificationStore((s) => s.notifications)
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -43,12 +42,8 @@ export const MentorTopNav = ({ onMenuClick }: { onMenuClick?: () => void }) => {
       </div>
 
       <div className="flex items-center gap-4">
-        <button className="relative rounded-full p-2 text-text-secondary transition-colors hover:bg-navy-900 hover:text-text-primary">
-          <Bell size={20} />
-          {notifications.length > 0 && (
-            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-accent-blue ring-2 ring-navy-950" />
-          )}
-        </button>
+        <NotificationDropdown />
+
 
         <ThemeToggle />
         <div className="h-6 w-px bg-navy-800" />
