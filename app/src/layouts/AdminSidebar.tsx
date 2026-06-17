@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, UserCheck, BookOpen, Activity, FileText,
-  HeartPulse, Lock, LogOut, ChevronRight, X,
+  HeartPulse, Lock, LogOut, ChevronRight, X, Megaphone,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 
@@ -18,6 +18,7 @@ const NAV: NavGroup[] = [
     items: [
       { label: 'Students', to: '/admin/students', icon: <Users size={16} /> },
       { label: 'Mentors',  to: '/admin/mentors',  icon: <UserCheck size={16} /> },
+      { label: 'Announcements', to: '/admin/announcements', icon: <Megaphone size={16} /> },
     ],
   },
   {

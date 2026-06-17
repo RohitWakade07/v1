@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Search, UserCheck, UserPlus, X } from 'lucide-react'
 import { PageWrapper } from '@/components/shared/PageWrapper'
@@ -156,8 +157,8 @@ export const MentorsPage = () => {
       </div>
 
       {/* Create Mentor Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      {showModal && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="relative w-full max-w-md rounded-2xl border border-navy-800 bg-navy-900 p-6 shadow-2xl">
             <button
               onClick={() => { setShowModal(false); setForm(EMPTY_FORM); setFormError('') }}
@@ -243,7 +244,8 @@ export const MentorsPage = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </PageWrapper>
   )

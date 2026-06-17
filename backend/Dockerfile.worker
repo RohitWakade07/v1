@@ -35,4 +35,8 @@ VOLUME /tmp/autograder_jobs
 # Redis + Celery queue any submissions beyond 8 concurrent jobs — nothing
 # is lost, submissions simply wait a few extra seconds for a free thread.
 # For classroom-scale usage this wait is negligible.
-CMD ["celery", "-A", "app.celery_app", "worker", "--pool=threads", "--concurrency=8", "-Q", "normal,high_priority,regrade,cleanup"]
+
+HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=3 \
+  CMD docker info || exit 1
+
+CMD sh -c "while ! docker info > /dev/null 2>&1; do echo 'Waiting for dockerd...'; sleep 2; done; celery -A app.celery_app worker --pool=threads --concurrency=8 -Q normal,high_priority,regrade,cleanup"

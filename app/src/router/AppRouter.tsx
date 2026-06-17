@@ -19,6 +19,8 @@ const StudentSubmissionDetail = lazy(() => import('@/pages/student/SubmissionDet
 const StudentResults       = lazy(() => import('@/pages/student/ResultsPage'))
 const StudentResultDetail  = lazy(() => import('@/pages/student/ResultDetailPage'))
 const StudentProfile       = lazy(() => import('@/pages/student/ProfilePage'))
+const StudentAnnouncements = lazy(() => import('@/pages/student/AnnouncementsPage'))
+const StudentQuiz          = lazy(() => import('@/pages/student/QuizPage'))
 
 // ── Mentor pages ───────────────────────────────────────────────────
 const MentorDashboard    = lazy(() => import('@/pages/mentor/DashboardPage'))
@@ -34,14 +36,17 @@ const MentorResults      = lazy(() => import('@/pages/mentor/results/ResultsPage
 const MentorAnalytics    = lazy(() => import('@/pages/mentor/analytics/AnalyticsPage'))
 const MentorEvaluators   = lazy(() => import('@/pages/mentor/evaluators/EvaluatorsPage'))
 const MentorCertificates = lazy(() => import('@/pages/mentor/certificates/CertificatesPage'))
+const MentorAnnouncements = lazy(() => import('@/pages/mentor/AnnouncementsPage'))
 
 // ── Admin pages ────────────────────────────────────────────────────
 const AdminDashboard    = lazy(() => import('@/pages/admin/DashboardPage'))
 const AdminStudents     = lazy(() => import('@/pages/admin/users/StudentsPage'))
 const AdminMentors      = lazy(() => import('@/pages/admin/users/MentorsPage'))
-const AdminAssignments  = lazy(() => import('@/pages/admin/assignments/AssignmentsPage'))
-const AdminResults      = lazy(() => import('@/pages/admin/results/ResultsPage'))
-const AdminHealth       = lazy(() => import('@/pages/admin/health/HealthPage'))
+const AdminAssignments   = lazy(() => import('@/pages/admin/assignments/AssignmentsPage'))
+const AdminResults       = lazy(() => import('@/pages/admin/results/ResultsPage'))
+const AdminHealth        = lazy(() => import('@/pages/admin/health/HealthPage'))
+const AdminAnnouncements = lazy(() => import('@/pages/admin/announcements/AnnouncementsPage'))
+const AdminQuiz          = lazy(() => import('@/pages/admin/quiz/AdminQuizPage'))
 
 const Fallback = () => (
   <div className="flex h-screen items-center justify-center">
@@ -75,10 +80,12 @@ export const AppRouter = () => (
           <Route index element={<StudentDashboard />} />
           <Route path="assignments"      element={<StudentAssignments />} />
           <Route path="assignments/:id"  element={<StudentAssignmentDetail />} />
+          <Route path="assignments/:assignmentId/quiz" element={<StudentQuiz />} />
           <Route path="submissions/:id"  element={<StudentSubmissionDetail />} />
           <Route path="results"          element={<StudentResults />} />
           <Route path="results/:id"      element={<StudentResultDetail />} />
           <Route path="profile"          element={<StudentProfile />} />
+          <Route path="announcements"    element={<StudentAnnouncements />} />
         </Route>
       </Route>
 
@@ -98,6 +105,7 @@ export const AppRouter = () => (
           <Route path="analytics"            element={<MentorAnalytics />} />
           <Route path="evaluators"           element={<MentorEvaluators />} />
           <Route path="certificates"         element={<MentorCertificates />} />
+          <Route path="announcements"        element={<MentorAnnouncements />} />
         </Route>
       </Route>
 
@@ -107,9 +115,11 @@ export const AppRouter = () => (
           <Route index element={<AdminDashboard />} />
           <Route path="students"    element={<AdminStudents />} />
           <Route path="mentors"     element={<AdminMentors />} />
-          <Route path="assignments" element={<AdminAssignments />} />
-          <Route path="results"     element={<AdminResults />} />
-          <Route path="health"      element={<AdminHealth />} />
+          <Route path="assignments"           element={<AdminAssignments />} />
+          <Route path="assignments/:assignmentId/quiz" element={<AdminQuiz />} />
+          <Route path="results"               element={<AdminResults />} />
+          <Route path="health"                element={<AdminHealth />} />
+          <Route path="announcements"         element={<AdminAnnouncements />} />
         </Route>
       </Route>
 

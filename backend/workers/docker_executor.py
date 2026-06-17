@@ -281,7 +281,7 @@ class DockerExecutor:
                 f"[PHASE3:EXEC] cmd={command!r} workdir={container_workdir} timeout={timeout}s"
             )
 
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             start_time = time.time()
 
             def run_exec():

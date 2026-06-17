@@ -48,8 +48,8 @@ services:
 
   backend:
     build:
-      context: .
-      dockerfile: Dockerfile.api
+      context: ..
+      dockerfile: backend/Dockerfile.api
     container_name: grading_backend
     restart: unless-stopped
     env_file: .env

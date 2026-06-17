@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Globe, Lock } from 'lucide-react'
+import { Search, Globe, Lock, PenTool } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { PageWrapper } from '@/components/shared/PageWrapper'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { StatusBadge } from '@/components/shared/StatusBadge'
@@ -131,7 +132,7 @@ export const AssignmentsPage = () => {
                     <td className="px-4 py-3">
                       <StatusBadge status={a.is_published ? 'published' : 'draft'} />
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 flex items-center gap-2">
                       {a.is_published ? (
                         <button
                           onClick={() => unpublishMut.mutate(a.id)}
@@ -149,6 +150,12 @@ export const AssignmentsPage = () => {
                           <Globe size={11} /> Publish
                         </button>
                       )}
+                      <Link
+                        to={`/admin/assignments/${a.id}/quiz`}
+                        className="flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300 border border-purple-400/30 rounded px-2 py-1 transition-colors"
+                      >
+                        <PenTool size={11} /> Quiz
+                      </Link>
                     </td>
                   </tr>
                 ))

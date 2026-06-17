@@ -1,12 +1,11 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { PlusCircle, Eye, Send, Pencil, Globe, Lock, BookOpen, LayoutDashboard } from 'lucide-react'
+import { Eye, Globe, Lock, BookOpen } from 'lucide-react'
 import { PageWrapper } from '@/components/shared/PageWrapper'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { DataTable } from '@/components/shared/DataTable'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { useAssignments } from '@/hooks/mentor/useAssignments'
-import { usePublishAssignment } from '@/hooks/mentor/usePublishAssignment'
 import { formatDate } from '@/lib/utils'
 
 
@@ -22,7 +21,6 @@ const getDeadlineColor = (deadline: string | null) => {
 
 export const AssignmentsPage = () => {
   const { data: assignments, isLoading } = useAssignments()
-  const publishMutation = usePublishAssignment()
   
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft'>('all')
@@ -73,44 +71,15 @@ export const AssignmentsPage = () => {
         >
           <Eye size={16} />
         </Link>
-        
-        {!a.is_published && (
-          <button
-            onClick={() => publishMutation.mutate(a.id)}
-            disabled={publishMutation.isPending}
-            className="flex items-center gap-1 rounded p-1 text-xs text-text-secondary transition-colors hover:bg-accent-teal/10 hover:text-accent-teal"
-            title="Publish"
-          >
-            <Send size={16} />
-          </button>
-        )}
-        
-        <button
-          disabled
-          title="Coming in Phase 2"
-          className="flex cursor-not-allowed items-center gap-1 rounded p-1 text-xs text-text-secondary/50 opacity-50"
-        >
-          <Pencil size={16} />
-        </button>
       </div>
     ])
-  }, [filteredData, publishMutation])
+  }, [filteredData])
 
   return (
     <PageWrapper>
       <PageHeader
         title="Assignments"
-        description="Manage platform assignments, drafts, and publication status."
-        actions={
-          <div className="flex items-center gap-2">
-            <Link to="/mentor/assignments/manage" className="btn-secondary">
-              <LayoutDashboard size={16} /> Manage Weeks
-            </Link>
-            <Link to="/mentor/assignments/create" className="btn-primary">
-              <PlusCircle size={16} /> Create Assignment
-            </Link>
-          </div>
-        }
+        description="View platform assignments, drafts, and publication status."
       />
 
       <div className="card-dark p-5">
@@ -145,8 +114,7 @@ export const AssignmentsPage = () => {
           <EmptyState
             icon={<BookOpen size={24} />}
             title="No assignments found"
-            message={searchTerm ? "Try adjusting your search or filters." : "Create your first assignment to get started."}
-            action={!searchTerm && <Link to="/mentor/assignments/create" className="btn-primary mt-4">Create Assignment</Link>}
+            message={searchTerm ? "Try adjusting your search or filters." : "No assignments available."}
           />
         ) : (
           <DataTable headers={headers} rows={rows} />

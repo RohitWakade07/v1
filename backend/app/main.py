@@ -15,6 +15,8 @@ from app.api.v1.routes import (
     students,
     classrooms,
     submissions,
+    quiz,
+    announcements,
 )
 
 
@@ -57,15 +59,17 @@ app.add_middleware(
 # ── Routers ───────────────────────────────────────────────────────────
 PREFIX = "/api/v1"
 
-app.include_router(auth.router,        prefix=PREFIX)
-app.include_router(assignments.router, prefix=PREFIX)
-app.include_router(sessions.router,    prefix=PREFIX)
-app.include_router(submissions.router, prefix=PREFIX)
-app.include_router(results.router,     prefix=PREFIX)
-app.include_router(admin.router,       prefix=PREFIX)
-app.include_router(mentor.router,      prefix=PREFIX)
-app.include_router(students.router,    prefix=PREFIX)
-app.include_router(classrooms.router,  prefix=PREFIX)
+app.include_router(auth.router,          prefix=PREFIX)
+app.include_router(assignments.router,   prefix=PREFIX)
+app.include_router(sessions.router,      prefix=PREFIX)
+app.include_router(submissions.router,   prefix=PREFIX)
+app.include_router(results.router,       prefix=PREFIX)
+app.include_router(admin.router,         prefix=PREFIX)
+app.include_router(mentor.router,        prefix=PREFIX)
+app.include_router(students.router,      prefix=PREFIX)
+app.include_router(classrooms.router,    prefix=PREFIX)
+app.include_router(quiz.router,          prefix=PREFIX)
+app.include_router(announcements.router, prefix=PREFIX)
 
 
 @app.get("/health", tags=["Health"])

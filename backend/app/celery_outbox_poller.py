@@ -12,8 +12,20 @@ logger = logging.getLogger(__name__)
 
 async def poll_outbox():
     logger.info("Starting Celery outbox poller...")
+    import redis.asyncio as aioredis
+    from app.core.config import settings
+    redis_client = aioredis.from_url(settings.REDIS_URL, encoding="utf-8", decode_responses=True)
+    lock_key = "celery_outbox_poller_lock"
+
     while True:
         try:
+            # Attempt to acquire a short-lived lock
+            lock_acquired = await redis_client.set(lock_key, "locked", nx=True, ex=10)
+            if not lock_acquired:
+                # Another worker is polling, sleep and try again later
+                await asyncio.sleep(5)
+                continue
+
             async with AsyncSessionLocal() as db:
                 # Fetch undispatched
                 result = await db.execute(

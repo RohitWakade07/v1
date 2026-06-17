@@ -40,3 +40,13 @@ export const joinClassroom = async (classCode: string) => {
 
 export const loginStaff = async (credentials: MentorLoginRequest): Promise<TokenResponse> =>
   apiPost<TokenResponse, MentorLoginRequest>('/auth/mentor/login', credentials)
+
+export const changeStudentPassword = async (current_password: string, new_password: string) => {
+  const { data } = await apiClient.post('/auth/student/change-password', { current_password, new_password })
+  return data
+}
+
+export const changeMentorPassword = async (current_password: string, new_password: string) => {
+  const { data } = await apiClient.post('/auth/mentor/change-password', { current_password, new_password })
+  return data
+}

@@ -57,6 +57,9 @@ export interface AssignmentSummary {
 export interface AssignmentDetail extends AssignmentSummary {
   slug?: string
   instructions?: string
+  resource_links?: { title: string; url: string }[] | null
+  allow_late_submissions?: boolean
+  late_penalty_pct?: number
 }
 
 // Full assignment (used by mentor + admin)

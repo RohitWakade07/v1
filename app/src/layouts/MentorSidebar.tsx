@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, GraduationCap, BookOpen, Users,
-  ClipboardCheck, BarChart3, Inbox, X
+  ClipboardCheck, BarChart3, Inbox, X, Megaphone
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -12,6 +12,7 @@ const navItems = [
   { path: '/mentor/students',      label: 'Students',         icon: Users },
   { path: '/mentor/submissions',   label: 'Submissions',      icon: Inbox },
   { path: '/mentor/results',       label: 'Results',          icon: ClipboardCheck },
+  { path: '/mentor/announcements', label: 'Announcements',    icon: Megaphone },
   { path: '/mentor/analytics',     label: 'Analytics',        icon: BarChart3 },
 ]
 

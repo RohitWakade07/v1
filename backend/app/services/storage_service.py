@@ -46,9 +46,10 @@ class StorageService:
         # Backblaze B2 Application Keys restricted to a single bucket REQUIRE
         # virtual-hosted style addressing. Because B2 is a custom endpoint,
         # boto3 defaults to path-style unless explicitly forced to virtual.
+        addressing_style = "virtual" if self.endpoint_url and "backblazeb2.com" in self.endpoint_url else "auto"
         self.config = Config(
             signature_version="s3v4",
-            s3={"addressing_style": "virtual"}
+            s3={"addressing_style": addressing_style}
         )
 
     async def _create_client(self):

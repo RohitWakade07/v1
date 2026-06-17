@@ -33,3 +33,24 @@ export const approveEnrollment = (enrollmentId: string): Promise<unknown> =>
 
 export const rejectEnrollment = (enrollmentId: string): Promise<unknown> =>
   apiPost(`/classrooms/enrollments/${enrollmentId}/reject`, null)
+
+export const importStudentsCSV = async (classroomId: string, file: File) => {
+  const form = new FormData()
+  form.append('file', file)
+  const { apiClient } = await import('@/api/client')
+  const { data } = await apiClient.post(`/mentor/students/csv?classroom_id=${classroomId}`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return data
+}
+
+export const downloadStudentCSVTemplate = () => {
+  const csv = `full_name,email,roll_number\nJohn Doe,john@example.com,2024CSE001\nJane Smith,jane@example.com,2024CSE002`
+  const blob = new Blob([csv], { type: 'text/csv' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'student_import_template.csv'
+  a.click()
+  URL.revokeObjectURL(url)
+}

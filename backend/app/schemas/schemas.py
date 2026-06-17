@@ -89,6 +89,8 @@ class AssignmentPublic(BaseModel):
     deadline: Optional[datetime]
     is_published: bool
     is_archived: bool
+    resource_links: Optional[str] = "[]"  # JSON string: [{title, url}]
+    late_penalty_pct: float = 0.0
     created_by_id: uuid.UUID
     created_at: datetime
     updated_at: Optional[datetime] = None

@@ -1,6 +1,6 @@
 import uuid
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import StreamingResponse
@@ -10,7 +10,10 @@ from sqlmodel import select
 from app.api.v1.dependencies import get_approved_student
 from app.core.config import settings
 from app.db.session import get_db
-from app.models.models import Student, Submission, SubmissionSourceType, SubmissionStatus, SubmissionResult
+from app.models.models import (
+    Student, Submission, SubmissionSourceType, SubmissionStatus, SubmissionResult,
+    SubmissionRateLimit, Assignment, Notification, RecipientType, NotificationSourceType,
+)
 from app.schemas.schemas import SubmissionCreateResponse, SubmissionPublic, ErrorResponse, SubmissionResultDetail
 from app.services.submission_service import SubmissionService
 
@@ -39,7 +42,21 @@ async def create_submission(
     if source_type == SubmissionSourceType.ZIP and not file:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="ZIP file is required for zip submissions",
+            detail={"error": "ZIP_REQUIRED", "message": "ZIP file is required for zip submissions"},
+        )
+
+    # ── Server-side rate limit (5 seconds) ────────────────────────────
+    rl_result = await db.execute(
+        select(SubmissionRateLimit).where(
+            SubmissionRateLimit.student_id == current_student.id,
+            SubmissionRateLimit.assignment_id == assignment_id,
+        )
+    )
+    rl = rl_result.scalar_one_or_none()
+    if rl and (datetime.utcnow() - rl.last_submitted_at).total_seconds() < 5:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={"error": "RATE_LIMITED", "message": "Please wait 5 seconds before submitting again"},
         )
 
     zip_bytes = None
@@ -52,20 +69,20 @@ async def create_submission(
             "application/octet-stream",
             "application/x-compressed"
         ]
-        
+
         if file.content_type not in valid_content_types and not (file.filename and file.filename.lower().endswith(".zip")):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Only ZIP archives are accepted for uploads. Got content_type={file.content_type}, filename={file.filename}",
+                detail={"error": "INVALID_FILE_TYPE", "message": f"Only ZIP archives are accepted. Got: {file.content_type}"},
             )
         zip_bytes = await file.read()
         if len(zip_bytes) > settings.EEP_MAX_UPLOAD_BYTES:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Uploaded ZIP exceeds maximum size of {settings.EEP_MAX_UPLOAD_BYTES} bytes",
+                detail={"error": "FILE_TOO_LARGE", "message": f"Uploaded ZIP exceeds maximum size of {settings.EEP_MAX_UPLOAD_BYTES} bytes"},
             )
 
-    return await SubmissionService.submit_assignment(
+    submission_result = await SubmissionService.submit_assignment(
         student=current_student,
         assignment_id=assignment_id,
         source_type=source_type,
@@ -73,6 +90,39 @@ async def create_submission(
         zip_bytes=zip_bytes,
         db=db,
     )
+
+    # ── Update rate limit record ─────────────────────────────────────
+    if rl:
+        rl.last_submitted_at = datetime.utcnow()
+        db.add(rl)
+    else:
+        db.add(SubmissionRateLimit(
+            student_id=current_student.id,
+            assignment_id=assignment_id,
+            last_submitted_at=datetime.utcnow(),
+        ))
+
+    # ── Push submission notification to student ─────────────────────
+    existing_notifs = (await db.execute(
+        select(Notification)
+        .where(Notification.recipient_id == current_student.id)
+        .order_by(Notification.created_at.asc())
+    )).scalars().all()
+    if len(existing_notifs) >= 5:
+        for old in existing_notifs[:len(existing_notifs) - 4]:
+            await db.delete(old)
+
+    db.add(Notification(
+        recipient_id=current_student.id,
+        recipient_type=RecipientType.STUDENT,
+        source_type=NotificationSourceType.SUBMISSION,
+        source_id=submission_result.submission_id,
+        title="Submission Received",
+        message="Your submission has been received and is queued for evaluation. We'll notify you once it's done!",
+    ))
+    await db.commit()
+
+    return submission_result
 
 
 @router.get(

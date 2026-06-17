@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { GraduationCap, Copy, Check, Plus, Loader2, Users, CheckCircle2, XCircle, AlertCircle } from 'lucide-react'
+import { GraduationCap, Copy, Check, Plus, Loader2, Users, CheckCircle2, XCircle, AlertCircle, UploadCloud, Download } from 'lucide-react'
 import { PageWrapper } from '@/components/shared/PageWrapper'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { DataTable } from '@/components/shared/DataTable'
@@ -10,6 +10,7 @@ import {
   useApproveEnrollment,
   useRejectEnrollment,
 } from '@/hooks/mentor/useMentor'
+import { importStudentsCSV, downloadStudentCSVTemplate } from '@/api/mentor/mentor'
 import { useNotificationStore } from '@/store/notificationStore'
 import { formatDate } from '@/lib/utils'
 
@@ -21,10 +22,12 @@ export const ClassroomsPage = () => {
   const [newClassName, setNewClassName] = useState('')
   const [copiedCode, setCopiedCode] = useState<string | null>(null)
 
-  const { data: enrollments, isLoading: isEnrollmentsLoading } = useClassroomEnrollments(selectedClassroomId)
+  const { data: enrollments, isLoading: isEnrollmentsLoading, refetch: refetchEnrollments } = useClassroomEnrollments(selectedClassroomId)
   const createClassroomMutation = useCreateClassroom()
   const approveEnrollmentMutation = useApproveEnrollment()
   const rejectEnrollmentMutation = useRejectEnrollment()
+
+  const [importing, setImporting] = useState(false)
 
   const handleCreateClassroom = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -90,6 +93,30 @@ export const ClassroomsPage = () => {
         title: 'Rejection failed',
         message: 'Failed to reject student. Try again.',
       })
+    }
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !selectedClassroomId) return
+    setImporting(true)
+    try {
+      await importStudentsCSV(selectedClassroomId, file)
+      addNotification({
+        type: 'success',
+        title: 'Students Imported',
+        message: 'CSV uploaded successfully. Check the list for updates.',
+      })
+      refetchEnrollments()
+    } catch (err: any) {
+      addNotification({
+        type: 'error',
+        title: 'Import Failed',
+        message: err?.response?.data?.detail?.message || 'Failed to import CSV',
+      })
+    } finally {
+      setImporting(false)
+      if (e.target) e.target.value = ''
     }
   }
 
@@ -269,12 +296,25 @@ export const ClassroomsPage = () => {
               </div>
             ) : (
               <div className="flex-1 flex flex-col">
-                <div className="mb-4 flex items-center justify-between border-b border-navy-800 pb-3">
+                <div className="mb-4 flex items-center justify-between border-b border-navy-800 pb-3 w-full">
                   <div>
                     <h4 className="font-semibold text-sm text-text-primary">{selectedClassroomName}</h4>
                     <p className="text-xs text-text-secondary mt-0.5">Manage students requesting entry.</p>
                   </div>
-                </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={downloadStudentCSVTemplate}
+                        className="flex items-center gap-1.5 text-xs text-accent-blue hover:text-accent-teal transition-colors"
+                      >
+                        <Download size={14} /> Template
+                      </button>
+                      <label className="flex items-center gap-2 rounded-lg border border-navy-600 px-3 py-1.5 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-navy-800 cursor-pointer transition-colors">
+                        {importing ? <Loader2 size={14} className="animate-spin" /> : <UploadCloud size={14} />}
+                        Import CSV
+                        <input type="file" accept=".csv" className="hidden" onChange={handleFileUpload} disabled={importing} />
+                      </label>
+                    </div>
+                  </div>
 
                 {isEnrollmentsLoading ? (
                   <div className="animate-pulse space-y-4 py-8">

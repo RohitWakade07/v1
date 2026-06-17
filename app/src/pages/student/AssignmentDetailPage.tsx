@@ -8,7 +8,7 @@ import { useSubmissions, useSubmitAssignment } from '@/hooks/student/useSubmissi
 import { SubmissionForm } from '@/components/student/submissions/SubmissionForm'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { formatDate } from '@/lib/utils'
-import { Activity, UploadCloud, ChevronRight } from 'lucide-react'
+import { Activity, UploadCloud, ChevronRight, PenTool } from 'lucide-react'
 import type { SubmissionSourceType } from '@/types/api'
 
 const AssignmentDetailPage = () => {
@@ -64,6 +64,23 @@ const AssignmentDetailPage = () => {
 
         {/* Right column: submission and history (1/3 width) */}
         <div className="lg:col-span-1 space-y-6">
+
+          {/* Quiz Section */}
+          <div className="card-dark p-5">
+            <h3 className="font-display text-base font-semibold text-text-primary flex items-center gap-2 mb-2">
+              <PenTool size={18} className="text-purple-400" />
+              Weekly Quiz
+            </h3>
+            <p className="text-sm text-text-secondary mb-4">
+              Unlock the quiz by submitting your weekly assignment first.
+            </p>
+            <Link
+              to={`/student/assignments/${id}/quiz`}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-navy-800 px-4 py-2.5 text-sm font-medium text-text-primary hover:bg-navy-700 transition-colors"
+            >
+              Take Quiz
+            </Link>
+          </div>
 
           {/* New Submission */}
           <div className="card-dark p-5">

@@ -15,6 +15,11 @@ interface AssignmentDetailPanelProps {
 
 export const AssignmentDetailPanel = ({ assignment }: AssignmentDetailPanelProps) => {
   const urgent = isUrgent(assignment.deadline)
+  const resourceLinks = Array.isArray(assignment.resource_links)
+    ? assignment.resource_links
+    : typeof assignment.resource_links === 'string'
+      ? (() => { try { return JSON.parse(assignment.resource_links) } catch { return [] } })()
+      : []
 
   return (
     <div className="space-y-5">
@@ -48,9 +53,16 @@ export const AssignmentDetailPanel = ({ assignment }: AssignmentDetailPanelProps
         </p>
 
         {assignment.deadline && (
-          <p className="mt-3 text-xs text-text-muted">
-            Deadline: {formatDate(assignment.deadline)}
-          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <p className="text-xs text-text-muted">
+              Deadline: {formatDate(assignment.deadline)}
+            </p>
+            {assignment.allow_late_submissions && assignment.late_penalty_pct ? (
+              <span className="rounded bg-status-warning/10 px-2 py-0.5 text-[10px] font-semibold text-status-warning border border-status-warning/20">
+                Late submissions allowed (-{assignment.late_penalty_pct}% penalty)
+              </span>
+            ) : null}
+          </div>
         )}
       </div>
 
@@ -152,6 +164,30 @@ export const AssignmentDetailPanel = ({ assignment }: AssignmentDetailPanelProps
           </p>
         </div>
       </div>
+
+      {resourceLinks.length > 0 && (
+        <div className="rounded-xl border border-navy-800 bg-surface-main p-6 shadow-card">
+          <h3 className="font-display text-base font-semibold text-text-primary mb-4">Resource Links</h3>
+          <div className="space-y-2">
+            {resourceLinks.map((link: { url: string; title: string }, i: number) => (
+              <a
+                key={i}
+                href={link.url}
+                target="_blank"
+                rel="noreferrer"
+                className="block rounded-lg border border-navy-700 bg-navy-800/40 p-3 hover:border-navy-600 hover:bg-navy-800 transition-colors"
+              >
+                <div className="text-sm font-medium text-text-primary group-hover:text-accent-blue">
+                  {link.title}
+                </div>
+                <div className="mt-0.5 text-xs text-text-secondary truncate">
+                  {link.url}
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

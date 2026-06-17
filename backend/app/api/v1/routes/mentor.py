@@ -1,8 +1,10 @@
+import csv
+import io
 import uuid
 from datetime import datetime
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, func
@@ -12,6 +14,8 @@ from app.models.models import (
     Mentor,
     Assignment,
     Student,
+    Classroom,
+    ClassroomEnrollment,
     SessionStatus,
     COMPLETED_RESULT_STATUSES,
     Submission,
@@ -324,3 +328,86 @@ async def list_mentor_submissions(
         )
         for sub, student, assignment in rows
     ]
+
+
+# ── CSV Student Import ─────────────────────────────────────────────────
+
+class ImportedStudentPublic(BaseModel):
+    roll_number: str
+    full_name: str
+    email: str
+    status: str  # 'created' or 'already_exists'
+
+
+@router.post(
+    "/students/csv",
+    response_model=List[ImportedStudentPublic],
+    status_code=201,
+    summary="Import students via CSV (mentor, adds to a classroom)",
+)
+async def import_students_csv(
+    classroom_id: str,
+    file: UploadFile = File(...),
+    current_mentor: Mentor = Depends(get_current_mentor),
+    db: AsyncSession = Depends(get_db),
+):
+    """CSV columns: full_name, email, roll_number
+    Default password = email. Student is enrolled in given classroom.
+    """
+    from app.core.security import hash_password
+
+    # Verify classroom belongs to mentor
+    cid = uuid.UUID(classroom_id)
+    classroom = (await db.execute(
+        select(Classroom).where(Classroom.id == cid, Classroom.mentor_id == current_mentor.id)
+    )).scalar_one_or_none()
+    if not classroom:
+        raise HTTPException(404, detail={"error": "NOT_FOUND", "message": "Classroom not found or not owned by you"})
+
+    content = await file.read()
+    try:
+        text = content.decode("utf-8")
+    except Exception:
+        raise HTTPException(422, detail={"error": "INVALID_CSV", "message": "File must be UTF-8 encoded CSV"})
+
+    reader = csv.DictReader(io.StringIO(text))
+    required = {"full_name", "email", "roll_number"}
+    if not required.issubset(set(reader.fieldnames or [])):
+        raise HTTPException(
+            422,
+            detail={"error": "INVALID_CSV", "message": f"CSV must have columns: {', '.join(required)}"}
+        )
+
+    results = []
+    for row in reader:
+        roll = row["roll_number"].strip().upper()
+        email = row["email"].strip().lower()
+        full_name = row["full_name"].strip()
+
+        # Check if already exists
+        existing = (await db.execute(select(Student).where(Student.roll_number == roll))).scalar_one_or_none()
+        if existing:
+            results.append(ImportedStudentPublic(roll_number=roll, full_name=full_name, email=email, status="already_exists"))
+            continue
+
+        # Create student with password = email, must_change_password=True
+        student = Student(
+            roll_number=roll,
+            full_name=full_name,
+            email=email,
+            hashed_password=hash_password(email),  # default password = email
+            must_change_password=True,
+        )
+        db.add(student)
+        await db.flush()
+
+        # Enroll in classroom
+        db.add(ClassroomEnrollment(
+            classroom_id=cid,
+            student_id=student.id,
+            status="APPROVED",  # auto-approved for CSV imports
+        ))
+        results.append(ImportedStudentPublic(roll_number=roll, full_name=full_name, email=email, status="created"))
+
+    await db.commit()
+    return results

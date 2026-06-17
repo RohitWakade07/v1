@@ -1,9 +1,10 @@
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import Optional, List
 
-from sqlalchemy import String, Text, Integer, UniqueConstraint, Index
+from sqlalchemy import String, Text, Integer, UniqueConstraint, Index, Float
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, SQLModel, Column
 
 
@@ -77,6 +78,10 @@ class Student(SQLModel, table=True):
     email: str = Field(sa_column=Column(String(200), unique=True, nullable=False))
     hashed_password: str = Field(sa_column=Column(String(200), nullable=False))
     is_active: bool = Field(default=True)
+    must_change_password: bool = Field(default=False)
+    failed_login_attempts: int = Field(default=0)
+    locked_until: Optional[datetime] = Field(default=None)
+    last_login_at: Optional[datetime] = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -95,6 +100,9 @@ class Mentor(SQLModel, table=True):
     hashed_password: str = Field(sa_column=Column(String(200), nullable=False))
     role: UserRole = Field(default=UserRole.MENTOR)
     is_active: bool = Field(default=True)
+    failed_login_attempts: int = Field(default=0)
+    locked_until: Optional[datetime] = Field(default=None)
+    last_login_at: Optional[datetime] = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -114,6 +122,10 @@ class Assignment(SQLModel, table=True):
     deadline: Optional[datetime] = Field(default=None)
     is_published: bool = Field(default=False)
     is_archived: bool = Field(default=False)
+    # Resource links: list of {title: str, url: str} stored as JSON
+    resource_links: Optional[str] = Field(default="[]", sa_column=Column(Text, nullable=False, server_default="[]"))
+    # Late submission penalty as a percentage (0-100)
+    late_penalty_pct: float = Field(default=0.0, sa_column=Column(Float, nullable=False, server_default="0.0"))
     created_by_id: uuid.UUID = Field(foreign_key="mentors.id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -308,14 +320,29 @@ class EvaluatorBuild(SQLModel, table=True):
     completed_at: Optional[datetime] = Field(default=None)
 
 
-# ── Notification ──────────────────────────────────────────────────────
+# ── Notification (polymorphic, rebuilt) ──────────────────────────────
+
+class RecipientType(str, Enum):
+    STUDENT = "student"
+    MENTOR = "mentor"
+
+
+class NotificationSourceType(str, Enum):
+    ANNOUNCEMENT = "announcement"
+    SUBMISSION = "submission"
+    QUIZ = "quiz"
+    SYSTEM = "system"
+
 
 class Notification(SQLModel, table=True):
     __tablename__ = "notifications"
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
-    mentor_id: uuid.UUID = Field(foreign_key="mentors.id", index=True)
-    title: str = Field(sa_column=Column(String(200), nullable=False))
+    recipient_id: uuid.UUID = Field(index=True)  # student.id or mentor.id
+    recipient_type: RecipientType
+    source_type: NotificationSourceType = Field(default=NotificationSourceType.SYSTEM)
+    source_id: Optional[uuid.UUID] = Field(default=None)  # announcement.id, submission.id, etc.
+    title: str = Field(sa_column=Column(String(300), nullable=False))
     message: str = Field(sa_column=Column(Text, nullable=False))
     is_read: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -495,3 +522,122 @@ class ExecutionLogs(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
+# ── Submission Rate Limit ─────────────────────────────────────────────
+
+class SubmissionRateLimit(SQLModel, table=True):
+    __tablename__ = "submission_rate_limits"
+    __table_args__ = (
+        UniqueConstraint("student_id", "assignment_id", name="uq_rate_limit_student_assignment"),
+    )
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
+    student_id: uuid.UUID = Field(foreign_key="students.id", index=True)
+    assignment_id: uuid.UUID = Field(foreign_key="assignments.id", index=True)
+    last_submitted_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+# ── Quiz ─────────────────────────────────────────────────────────────
+
+class QuestionType(str, Enum):
+    SINGLE = "single"
+    MULTIPLE = "multiple"
+
+
+class Quiz(SQLModel, table=True):
+    __tablename__ = "quizzes"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
+    assignment_id: uuid.UUID = Field(foreign_key="assignments.id", index=True, unique=True)
+    title: str = Field(sa_column=Column(String(300), nullable=False))
+    marks_per_question: int = Field(default=1)
+    is_active: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class QuizQuestion(SQLModel, table=True):
+    __tablename__ = "quiz_questions"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
+    quiz_id: uuid.UUID = Field(foreign_key="quizzes.id", index=True)
+    question_text: str = Field(sa_column=Column(Text, nullable=False))
+    type: QuestionType = Field(default=QuestionType.SINGLE)
+    marks: Optional[int] = Field(default=None)  # overrides quiz.marks_per_question if set
+    order_index: int = Field(default=0)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class QuizOption(SQLModel, table=True):
+    __tablename__ = "quiz_options"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
+    question_id: uuid.UUID = Field(foreign_key="quiz_questions.id", index=True)
+    option_text: str = Field(sa_column=Column(Text, nullable=False))
+    is_correct: bool = Field(default=False)
+    order_index: int = Field(default=0)
+
+
+class QuizAttempt(SQLModel, table=True):
+    __tablename__ = "quiz_attempts"
+    __table_args__ = (
+        UniqueConstraint("quiz_id", "student_id", name="uq_one_attempt_per_student"),
+    )
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
+    quiz_id: uuid.UUID = Field(foreign_key="quizzes.id", index=True)
+    student_id: uuid.UUID = Field(foreign_key="students.id", index=True)
+    total_score: int = Field(default=0)
+    max_score: int = Field(default=0)
+    started_at: datetime = Field(default_factory=datetime.utcnow)
+    submitted_at: Optional[datetime] = Field(default=None)
+
+
+class QuizAnswer(SQLModel, table=True):
+    __tablename__ = "quiz_answers"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
+    attempt_id: uuid.UUID = Field(foreign_key="quiz_attempts.id", index=True)
+    question_id: uuid.UUID = Field(foreign_key="quiz_questions.id")
+    is_correct: bool = Field(default=False)
+    marks_awarded: int = Field(default=0)
+
+
+class QuizAnswerOption(SQLModel, table=True):
+    __tablename__ = "quiz_answer_options"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
+    answer_id: uuid.UUID = Field(foreign_key="quiz_answers.id")
+    option_id: uuid.UUID = Field(foreign_key="quiz_options.id")
+
+
+# ── Announcements ─────────────────────────────────────────────────────
+
+class AudienceType(str, Enum):
+    STUDENTS = "students"
+    MENTORS = "mentors"
+    ALL = "all"
+
+
+class Announcement(SQLModel, table=True):
+    __tablename__ = "announcements"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
+    admin_id: uuid.UUID = Field(foreign_key="mentors.id", index=True)
+    title: str = Field(sa_column=Column(String(300), nullable=False))
+    body: str = Field(sa_column=Column(Text, nullable=False))
+    audience: str = Field(sa_column=Column(String(20), default="all"))
+    expires_at: Optional[datetime] = Field(default=None)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class AnnouncementRead(SQLModel, table=True):
+    __tablename__ = "announcement_reads"
+    __table_args__ = (
+        UniqueConstraint("announcement_id", "user_id", name="uq_announcement_read"),
+    )
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
+    announcement_id: uuid.UUID = Field(foreign_key="announcements.id", index=True)
+    user_id: uuid.UUID = Field(index=True)  # student.id or mentor.id
+    read_at: datetime = Field(default_factory=datetime.utcnow)

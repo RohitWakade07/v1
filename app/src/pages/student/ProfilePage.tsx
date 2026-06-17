@@ -3,7 +3,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { PageWrapper } from '@/components/shared/PageWrapper'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { useAuthStore } from '@/store/authStore'
+import { useNotificationStore } from '@/store/notificationStore'
 import { passwordChangeSchema } from '@/lib/schemas'
+import { changeStudentPassword } from '@/api/auth'
 
 interface PasswordFormValues {
   currentPassword: string
@@ -13,6 +15,7 @@ interface PasswordFormValues {
 
 const ProfilePage = () => {
   const profile = useAuthStore((state) => state.profile)
+  const addNotification = useNotificationStore((state) => state.addNotification)
   const {
     register,
     handleSubmit,
@@ -22,9 +25,15 @@ const ProfilePage = () => {
     resolver: zodResolver(passwordChangeSchema),
   })
 
-  const onSubmit = handleSubmit(async () => {
-    // TODO: Connect to backend password change endpoint once available.
-    reset()
+  const onSubmit = handleSubmit(async (values) => {
+    try {
+      await changeStudentPassword(values.currentPassword, values.newPassword)
+      addNotification({ type: 'success', title: 'Success', message: 'Password changed successfully' })
+      reset()
+    } catch (error: any) {
+      const msg = error?.response?.data?.detail?.message || 'Failed to change password'
+      addNotification({ type: 'error', title: 'Error', message: msg })
+    }
   })
 
   return (

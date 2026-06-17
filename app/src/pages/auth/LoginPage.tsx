@@ -39,6 +39,7 @@ export const LoginPage = () => {
 
   const [activeTab, setActiveTab] = useState<'student' | 'staff'>('student')
   const [showPassword, setShowPassword] = useState(false)
+  const [apiError, setApiError] = useState<string | null>(null)
 
   // React hook form for Student
   const {
@@ -62,9 +63,9 @@ export const LoginPage = () => {
 
   // Submit Handler for Student
   const onStudentSubmit = handleStudentSubmit(async (values) => {
+    setApiError(null)
     try {
       const response = await loginStudent(values.rollNumber, values.password)
-      // Temporarily set token in Zustand state to authorize getStudentProfile
       useAuthStore.setState({ token: response.access_token })
 
       let profileData = {
@@ -91,13 +92,20 @@ export const LoginPage = () => {
       const params = new URLSearchParams(location.search)
       navigate(params.get('redirect') || '/student')
     } catch (err: any) {
-      console.error(err)
-      // Error notifications are already handled by the axios instance response interceptor
+      const detail = err?.response?.data?.detail
+      if (detail && typeof detail === 'object' && detail.message) {
+        setApiError(detail.message)
+      } else if (typeof detail === 'string') {
+        setApiError(detail)
+      } else {
+        setApiError('Login failed. Please check your credentials.')
+      }
     }
   })
 
   // Submit Handler for Staff
   const onStaffSubmit = handleStaffSubmit(async (values) => {
+    setApiError(null)
     try {
       const response = await loginStaff(values)
       const role = response.role as 'mentor' | 'admin'
@@ -124,7 +132,14 @@ export const LoginPage = () => {
         navigate(role === 'admin' ? '/admin' : '/mentor')
       }
     } catch (err: any) {
-      console.error(err)
+      const detail = err?.response?.data?.detail
+      if (detail && typeof detail === 'object' && detail.message) {
+        setApiError(detail.message)
+      } else if (typeof detail === 'string') {
+        setApiError(detail)
+      } else {
+        setApiError('Login failed. Please check your credentials.')
+      }
     }
   })
 
@@ -219,6 +234,13 @@ export const LoginPage = () => {
 
           {/* Form container */}
           <div className="auth-form-card p-8">
+            {/* API Error Banner */}
+            {apiError && (
+              <div className="mb-4 flex items-start gap-2 rounded-lg border border-status-danger/30 bg-status-danger/10 px-4 py-3">
+                <ShieldAlert size={15} className="mt-0.5 shrink-0 text-status-danger" />
+                <p className="text-xs font-medium text-status-danger">{apiError}</p>
+              </div>
+            )}
             {activeTab === 'student' ? (
               <form onSubmit={onStudentSubmit} className="space-y-5" noValidate>
                 {/* Student Roll Number */}
