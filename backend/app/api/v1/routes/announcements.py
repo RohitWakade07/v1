@@ -84,8 +84,8 @@ async def _fan_out_announcement(announcement: Announcement, db: AsyncSession):
 
         notif = Notification(
             recipient_id=recipient_id,
-            recipient_type=rtype,
-            source_type=NotificationSourceType.ANNOUNCEMENT,
+            recipient_type=rtype.value,
+            source_type=NotificationSourceType.ANNOUNCEMENT.value,
             source_id=announcement.id,
             title=announcement.title,
             message=announcement.body[:200],

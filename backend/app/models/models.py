@@ -339,8 +339,8 @@ class Notification(SQLModel, table=True):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
     recipient_id: uuid.UUID = Field(index=True)  # student.id or mentor.id
-    recipient_type: RecipientType
-    source_type: NotificationSourceType = Field(default=NotificationSourceType.SYSTEM)
+    recipient_type: str = Field(sa_column=Column(String(20), nullable=False))
+    source_type: str = Field(sa_column=Column(String(20), nullable=False, server_default="system"))
     source_id: Optional[uuid.UUID] = Field(default=None)  # announcement.id, submission.id, etc.
     title: str = Field(sa_column=Column(String(300), nullable=False))
     message: str = Field(sa_column=Column(Text, nullable=False))

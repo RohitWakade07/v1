@@ -114,8 +114,8 @@ async def create_submission(
 
     db.add(Notification(
         recipient_id=current_student.id,
-        recipient_type=RecipientType.STUDENT,
-        source_type=NotificationSourceType.SUBMISSION,
+        recipient_type=RecipientType.STUDENT.value,
+        source_type=NotificationSourceType.SUBMISSION.value,
         source_id=submission_result.submission_id,
         title="Submission Received",
         message="Your submission has been received and is queued for evaluation. We'll notify you once it's done!",
