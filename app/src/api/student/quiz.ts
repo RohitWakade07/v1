@@ -45,7 +45,9 @@ export interface QuizAttemptResult {
 
 // Student
 export const getStudentQuiz = async (assignmentId: string) => {
-  const { data } = await apiClient.get<QuizPublic>(`/student/assignments/${assignmentId}/quiz`)
+  const { data } = await apiClient.get<QuizPublic>(`/student/assignments/${assignmentId}/quiz`, {
+    headers: { 'x-skip-error-toast': 'true' }
+  })
   return data
 }
 
@@ -66,7 +68,9 @@ export const getQuizResult = async (quizId: string) => {
 
 // Admin
 export const getAdminQuiz = async (assignmentId: string) => {
-  const { data } = await apiClient.get<QuizPublic>(`/admin/assignments/${assignmentId}/quiz`)
+  const { data } = await apiClient.get<QuizPublic>(`/admin/assignments/${assignmentId}/quiz`, {
+    headers: { 'x-skip-error-toast': 'true' }
+  })
   return data
 }
 

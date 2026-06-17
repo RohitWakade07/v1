@@ -73,6 +73,7 @@ app.include_router(announcements.router, prefix=PREFIX)
 
 
 @app.get("/health", tags=["Health"])
+@app.get("/api/v1/health", tags=["Health"], include_in_schema=False)
 async def health():
     db_status = "ok"
     redis_status = "ok"
