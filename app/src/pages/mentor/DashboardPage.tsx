@@ -13,7 +13,7 @@ export const DashboardPage = () => {
   const { data: analytics, isLoading: analyticsLoading } = useMentorAnalytics()
   const { username, role } = useAuthStore()
 
-  const allAssignments = assignments ?? []
+  const allAssignments = Array.isArray(assignments) ? assignments : []
   const publishedCount = allAssignments.filter((a) => a.is_published).length
   const draftCount = allAssignments.length - publishedCount
   const recentAssignments = [...allAssignments]

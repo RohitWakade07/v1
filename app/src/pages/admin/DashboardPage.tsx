@@ -16,29 +16,33 @@ import { greeting, formatDate, shortId } from '@/lib/utils'
 export const DashboardPage = () => {
   const { username } = useAuthStore()
 
-  const { data: assignments = [], isLoading: aLoad } = useQuery({
+  const { data: rawAssignments, isLoading: aLoad } = useQuery({
     queryKey: ['admin-assignments'],
     queryFn: listAllAssignments,
     retry: false,
   })
+  const assignments = Array.isArray(rawAssignments) ? rawAssignments : []
 
-  const { data: students = [], isLoading: sLoad } = useQuery({
+  const { data: rawStudents, isLoading: sLoad } = useQuery({
     queryKey: ['admin-students'],
     queryFn: listStudents,
     retry: false,
   })
+  const students = Array.isArray(rawStudents) ? rawStudents : []
 
-  const { data: mentors = [], isLoading: mLoad } = useQuery({
+  const { data: rawMentors, isLoading: mLoad } = useQuery({
     queryKey: ['admin-mentors'],
     queryFn: listMentors,
     retry: false,
   })
+  const mentors = Array.isArray(rawMentors) ? rawMentors : []
 
-  const { data: sessions = [], isLoading: sessLoad } = useQuery({
+  const { data: rawSessions, isLoading: sessLoad } = useQuery({
     queryKey: ['admin-sessions'],
     queryFn: listAllSessions,
     retry: false,
   })
+  const sessions = Array.isArray(rawSessions) ? rawSessions : []
 
   const { data: health } = useQuery({
     queryKey: ['health'],

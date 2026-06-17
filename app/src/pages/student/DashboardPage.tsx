@@ -29,9 +29,9 @@ const DashboardPage = () => {
   const isLoading =
     assignmentsQuery.isLoading || submissionsQuery.isLoading || resultsQuery.isLoading
 
-  const assignments = assignmentsQuery.data ?? []
-  const submissions = submissionsQuery.data ?? []
-  const results = resultsQuery.data ?? []
+  const assignments = Array.isArray(assignmentsQuery.data) ? assignmentsQuery.data : []
+  const submissions = Array.isArray(submissionsQuery.data) ? submissionsQuery.data : []
+  const results = Array.isArray(resultsQuery.data) ? resultsQuery.data : []
   
   // Group results by assignment_id and find the maximum final_score for each assignment
   const bestScoresByAssignment: Record<string, number> = {}
