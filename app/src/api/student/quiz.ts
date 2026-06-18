@@ -43,6 +43,16 @@ export interface QuizAttemptResult {
   }>
 }
 
+export interface QuizAttemptSummary {
+  attempt_id: string
+  quiz_id: string
+  assignment_id: string
+  quiz_title: string
+  total_score: number
+  max_score: number
+  submitted_at: string | null
+}
+
 // Student
 export const getStudentQuiz = async (assignmentId: string) => {
   const { data } = await apiClient.get<QuizPublic>(`/student/assignments/${assignmentId}/quiz`, {
@@ -63,6 +73,11 @@ export const submitQuizAttempt = async (quizId: string, answers: Record<string, 
 
 export const getQuizResult = async (quizId: string) => {
   const { data } = await apiClient.get<QuizAttemptResult>(`/student/quizzes/${quizId}/result`)
+  return data
+}
+
+export const getStudentAllQuizResults = async () => {
+  const { data } = await apiClient.get<QuizAttemptSummary[]>('/student/quizzes/results')
   return data
 }
 

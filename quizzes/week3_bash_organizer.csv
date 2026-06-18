@@ -1,0 +1,6 @@
+question,option_a,option_b,option_c,option_d,correct_answer,type,marks
+"Which command is used to create a new directory?","mkdir","rmdir","cd","touch",a,single,1
+"How do you move or rename a file in Bash?","cp","mv","rm","rn",b,single,1
+"Which symbol represents the user's home directory in Bash?","/","." ,"~","..",c,single,1
+"Which of the following commands will list all files, including hidden ones, in long format?","ls -l","ls -a","ls -la","ls -h",c,single,1
+"What command is used to change file permissions?","chown","chmod","chgrp","umask",b,single,1

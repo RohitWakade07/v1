@@ -91,6 +91,8 @@ class AssignmentPublic(BaseModel):
     is_archived: bool
     resource_links: Optional[str] = "[]"  # JSON string: [{title, url}]
     late_penalty_pct: float = 0.0
+    submission_filename: Optional[str] = None
+    submission_instructions: Optional[str] = None
     created_by_id: uuid.UUID
     created_at: datetime
     updated_at: Optional[datetime] = None
@@ -110,6 +112,8 @@ class AssignmentUpdate(BaseModel):
     description: Optional[str] = None
     max_score: Optional[float] = None
     deadline: Optional[datetime] = None
+    submission_filename: Optional[str] = None
+    submission_instructions: Optional[str] = None
 
 
 class SubmissionSourceType(str, Enum):

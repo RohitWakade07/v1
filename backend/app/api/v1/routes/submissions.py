@@ -53,7 +53,7 @@ async def create_submission(
         )
     )
     rl = rl_result.scalar_one_or_none()
-    if rl and (datetime.utcnow() - rl.last_submitted_at).total_seconds() < 5:
+    if rl and (datetime.utcnow().replace(tzinfo=None) - rl.last_submitted_at.replace(tzinfo=None)).total_seconds() < 5:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail={"error": "RATE_LIMITED", "message": "Please wait 5 seconds before submitting again"},

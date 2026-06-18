@@ -1,0 +1,6 @@
+question,option_a,option_b,option_c,option_d,correct_answer,type,marks
+"Which command is used to search for a specific pattern within a text file?","find","grep","awk","sed",b,single,1
+"How can you redirect the output of a command to a file, overwriting the file if it exists?",">",">>","<","|",a,single,1
+"Which command is useful for printing specific columns from a log file?","cut","awk","Both A and B","grep",c,single,1
+"How do you count the number of lines, words, and characters in a file?","count","wc","len","size",b,single,1
+"Which of the following commands can be used to view the contents of a log file? (Select all that apply)","cat","less","head","tail","a,b,c,d",multiple,2

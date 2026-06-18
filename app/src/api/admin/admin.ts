@@ -39,6 +39,24 @@ export const unpublishAssignment = async (id: string): Promise<Assignment> => {
   return data
 }
 
+export interface AdminAssignmentUpdate {
+  title?: string
+  description?: string
+  max_score?: number
+  deadline?: string
+  is_published?: boolean
+  is_archived?: boolean
+  resource_links?: string
+  late_penalty_pct?: number
+  submission_filename?: string
+  submission_instructions?: string
+}
+
+export const adminUpdateAssignment = async (id: string, payload: AdminAssignmentUpdate): Promise<Assignment> => {
+  const { data } = await apiClient.patch<Assignment>(`/assignments/admin/${id}`, payload)
+  return data
+}
+
 export const listAllSessions = async (): Promise<GradingSession[]> => {
   const { data } = await apiClient.get<GradingSession[]>('/admin/sessions')
   return data

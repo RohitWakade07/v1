@@ -1,0 +1,6 @@
+question,option_a,option_b,option_c,option_d,correct_answer,type,marks
+Which language is used for structuring web pages?,HTML,CSS,Python,JavaScript,a,single,10
+Which of these are used for styling web pages?,CSS,Tailwind,SASS,HTML,"a,b,c",multiple,20
+What does DOM stand for?,Document Object Model,Data Object Model,Document Oriented Module,Digital Object Model,a,single,10
+Which tag is used to create a hyperlink in HTML?,<link>,<a>,<href>,<hyperlink>,b,single,10
+What is the purpose of JavaScript in web development?,Styling elements,Structuring content,Adding interactivity and logic,Managing databases,c,single,10

@@ -1,0 +1,6 @@
+question,option_a,option_b,option_c,option_d,correct_answer,type,marks
+What is Docker primarily used for?,Containerization,Database management,Frontend styling,Version control,a,single,10
+Which command builds a Docker image from a Dockerfile?,docker make,docker build,docker create,docker run,b,single,10
+Which of these are cloud hosting providers?,AWS,Google Cloud,Azure,Docker,"a,b,c",multiple,20
+What does CI/CD stand for?,Continuous Integration / Continuous Deployment,Constant Iteration / Constant Deployment,Cloud Integration / Cloud Delivery,Code Integration / Code Delivery,a,single,10
+What is the purpose of a reverse proxy like Nginx?,To block all incoming traffic,To route incoming requests to the appropriate backend server,To compile code,To store user data,b,single,10

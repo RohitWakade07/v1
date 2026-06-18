@@ -88,6 +88,16 @@ class QuizAttemptResult(BaseModel):
     question_results: List[dict]
 
 
+class QuizAttemptSummary(BaseModel):
+    attempt_id: uuid.UUID
+    quiz_id: uuid.UUID
+    assignment_id: uuid.UUID
+    quiz_title: str
+    total_score: int
+    max_score: int
+    submitted_at: Optional[datetime]
+
+
 # ── Admin: Quiz CRUD ──────────────────────────────────────────────────
 
 @router.post("/admin/assignments/{assignment_id}/quiz", response_model=QuizPublic, status_code=201, summary="Create quiz for assignment (admin)")
@@ -502,3 +512,30 @@ async def get_quiz_result_student(
         submitted_at=attempt.submitted_at,
         question_results=question_results,
     )
+
+
+@router.get("/student/quizzes/results", response_model=List[QuizAttemptSummary], summary="Get all quiz results for current student")
+async def get_all_quiz_results_student(
+    current_student: Student = Depends(get_approved_student),
+    db: AsyncSession = Depends(get_db),
+):
+    attempts_result = await db.execute(
+        select(QuizAttempt, Quiz)
+        .join(Quiz, QuizAttempt.quiz_id == Quiz.id)
+        .where(QuizAttempt.student_id == current_student.id, QuizAttempt.submitted_at.is_not(None))
+        .order_by(QuizAttempt.submitted_at.desc())
+    )
+    rows = attempts_result.all()
+    
+    results = []
+    for attempt, quiz in rows:
+        results.append(QuizAttemptSummary(
+            attempt_id=attempt.id,
+            quiz_id=quiz.id,
+            assignment_id=quiz.assignment_id,
+            quiz_title=quiz.title,
+            total_score=attempt.total_score,
+            max_score=attempt.max_score,
+            submitted_at=attempt.submitted_at,
+        ))
+    return results

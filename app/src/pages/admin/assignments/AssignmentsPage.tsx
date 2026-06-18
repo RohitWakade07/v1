@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Globe, Lock, PenTool, FileText } from 'lucide-react'
+import { Search, Globe, Lock, PenTool, FileText, Plus } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { PageWrapper } from '@/components/shared/PageWrapper'
 import { PageHeader } from '@/components/shared/PageHeader'
@@ -9,6 +9,7 @@ import { SkeletonRow } from '@/components/shared/SkeletonCard'
 import { listAllAssignments, publishAssignment, unpublishAssignment } from '@/api/admin/admin'
 import { formatDate, shortId } from '@/lib/utils'
 import { EditAssignmentModal } from './EditAssignmentModal'
+import { CreateAssignmentModal } from './CreateAssignmentModal'
 import { Assignment } from '@/types/api'
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -25,6 +26,7 @@ export const AssignmentsPage = () => {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<'all' | 'published' | 'draft'>('all')
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null)
+  const [showCreate, setShowCreate] = useState(false)
   const qc = useQueryClient()
 
   const { data: assignments = [], isLoading, error } = useQuery({
@@ -59,6 +61,14 @@ export const AssignmentsPage = () => {
       <PageHeader
         title="Assignments"
         description={`${assignments.length} total assignments`}
+        actions={
+          <button
+            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg bg-accent-teal text-white hover:bg-accent-teal/80 transition-colors"
+          >
+            <Plus size={14} /> New Assignment
+          </button>
+        }
       />
 
       {/* Filters */}
@@ -95,7 +105,7 @@ export const AssignmentsPage = () => {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-navy-800">
-                {['Assignment', 'Slug', 'Category', 'Max Score', 'Deadline', 'Status', 'Actions'].map((h) => (
+                {['Assignment', 'Slug', 'Category', 'Max Score', 'Penalty %', 'Deadline', 'Status', 'Actions'].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold tracking-widest text-text-secondary uppercase">
                     {h}
                   </th>
@@ -107,13 +117,13 @@ export const AssignmentsPage = () => {
                 Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)
               ) : error ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-text-secondary text-sm">
+                  <td colSpan={8} className="px-4 py-12 text-center text-text-secondary text-sm">
                     Could not load assignments.
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-text-secondary text-sm">
+                  <td colSpan={8} className="px-4 py-12 text-center text-text-secondary text-sm">
                     No assignments found.
                   </td>
                 </tr>
@@ -131,6 +141,7 @@ export const AssignmentsPage = () => {
                       </span>
                     </td>
                     <td className="px-4 py-3 font-mono text-text-primary">{a.max_score}</td>
+                    <td className="px-4 py-3 font-mono text-status-warning">{a.late_penalty_pct ?? 0}%</td>
                     <td className="px-4 py-3 text-text-secondary">{formatDate(a.deadline)}</td>
                     <td className="px-4 py-3">
                       <StatusBadge status={a.is_published ? 'published' : 'draft'} />
@@ -182,6 +193,11 @@ export const AssignmentsPage = () => {
       <EditAssignmentModal
         assignment={editingAssignment}
         onClose={() => setEditingAssignment(null)}
+      />
+
+      <CreateAssignmentModal
+        isOpen={showCreate}
+        onClose={() => setShowCreate(false)}
       />
     </PageWrapper>
   )

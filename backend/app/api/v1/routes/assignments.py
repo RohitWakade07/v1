@@ -38,6 +38,9 @@ async def list_assignments(
             deadline=a.deadline,
             is_published=a.is_published,
             is_archived=a.is_archived,
+            late_penalty_pct=a.late_penalty_pct or 0.0,
+            submission_filename=a.submission_filename,
+            submission_instructions=a.submission_instructions,
             created_by_id=a.created_by_id,
             created_at=a.created_at,
             updated_at=getattr(a, "updated_at", None),
@@ -79,6 +82,9 @@ async def get_assignment(
         deadline=assignment.deadline,
         is_published=assignment.is_published,
         is_archived=assignment.is_archived,
+            late_penalty_pct=assignment.late_penalty_pct or 0.0,
+            submission_filename=assignment.submission_filename,
+            submission_instructions=assignment.submission_instructions,
         created_by_id=assignment.created_by_id,
         created_at=assignment.created_at,
         updated_at=getattr(assignment, "updated_at", None),
@@ -126,6 +132,9 @@ async def create_assignment(
         deadline=assignment.deadline,
         is_published=assignment.is_published,
         is_archived=assignment.is_archived,
+            late_penalty_pct=assignment.late_penalty_pct or 0.0,
+            submission_filename=assignment.submission_filename,
+            submission_instructions=assignment.submission_instructions,
         created_by_id=assignment.created_by_id,
         created_at=assignment.created_at,
         updated_at=getattr(assignment, "updated_at", None),
@@ -176,6 +185,9 @@ async def publish_assignment(
         deadline=assignment.deadline,
         is_published=assignment.is_published,
         is_archived=assignment.is_archived,
+            late_penalty_pct=assignment.late_penalty_pct or 0.0,
+            submission_filename=assignment.submission_filename,
+            submission_instructions=assignment.submission_instructions,
         created_by_id=assignment.created_by_id,
         created_at=assignment.created_at,
         updated_at=getattr(assignment, "updated_at", None),
@@ -224,6 +236,9 @@ async def unpublish_assignment(
         deadline=assignment.deadline,
         is_published=assignment.is_published,
         is_archived=assignment.is_archived,
+            late_penalty_pct=assignment.late_penalty_pct or 0.0,
+            submission_filename=assignment.submission_filename,
+            submission_instructions=assignment.submission_instructions,
         created_by_id=assignment.created_by_id,
         created_at=assignment.created_at,
         updated_at=getattr(assignment, "updated_at", None),
@@ -291,8 +306,10 @@ async def update_assignment(
         deadline=assignment.deadline,
         is_published=assignment.is_published,
         is_archived=assignment.is_archived,
+            late_penalty_pct=assignment.late_penalty_pct or 0.0,
+            submission_filename=assignment.submission_filename,
+            submission_instructions=assignment.submission_instructions,
         resource_links=assignment.resource_links or "[]",
-        late_penalty_pct=assignment.late_penalty_pct or 0.0,
         created_by_id=assignment.created_by_id,
         created_at=assignment.created_at,
         updated_at=getattr(assignment, "updated_at", None),
@@ -313,6 +330,8 @@ class AdminAssignmentUpdate(BaseModel):
     is_archived: Optional[bool] = None
     resource_links: Optional[str] = None  # JSON string array of {title, url}
     late_penalty_pct: Optional[float] = None
+    submission_filename: Optional[str] = None
+    submission_instructions: Optional[str] = None
 
 
 @router.patch(
@@ -342,6 +361,8 @@ async def admin_update_assignment(
     if body.is_archived is not None: assignment.is_archived = body.is_archived
     if body.resource_links is not None: assignment.resource_links = body.resource_links
     if body.late_penalty_pct is not None: assignment.late_penalty_pct = body.late_penalty_pct
+    if body.submission_filename is not None: assignment.submission_filename = body.submission_filename
+    if body.submission_instructions is not None: assignment.submission_instructions = body.submission_instructions
     assignment.updated_at = datetime.utcnow()
 
     db.add(assignment)
@@ -356,8 +377,10 @@ async def admin_update_assignment(
         deadline=assignment.deadline,
         is_published=assignment.is_published,
         is_archived=assignment.is_archived,
+            late_penalty_pct=assignment.late_penalty_pct or 0.0,
+            submission_filename=assignment.submission_filename,
+            submission_instructions=assignment.submission_instructions,
         resource_links=assignment.resource_links or "[]",
-        late_penalty_pct=assignment.late_penalty_pct or 0.0,
         created_by_id=assignment.created_by_id,
         created_at=assignment.created_at,
         updated_at=assignment.updated_at,

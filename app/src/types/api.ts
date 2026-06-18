@@ -60,6 +60,8 @@ export interface AssignmentDetail extends AssignmentSummary {
   resource_links?: { title: string; url: string }[] | null
   allow_late_submissions?: boolean
   late_penalty_pct?: number
+  submission_filename?: string | null
+  submission_instructions?: string | null
 }
 
 // Full assignment (used by mentor + admin)
@@ -73,6 +75,10 @@ export interface Assignment {
   deadline?: string | null
   is_published: boolean
   is_archived: boolean
+  late_penalty_pct?: number
+  resource_links?: string | null
+  submission_filename?: string | null
+  submission_instructions?: string | null
   created_by_id: string
   created_at: string
   updated_at?: string

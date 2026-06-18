@@ -1,0 +1,52 @@
+
+<div id="erd2"></div>
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+await document.fonts.ready;
+mermaid.initialize({ startOnLoad:false, theme:'base', fontFamily:'"Anthropic Sans",sans-serif', themeVariables:{ darkMode:dark, fontSize:'13px', fontFamily:'"Anthropic Sans",sans-serif', lineColor:dark?'#9c9a92':'#73726c', textColor:dark?'#c2c0b6':'#3d3d3a' } });
+const { svg } = await mermaid.render('e2', `erDiagram
+  admins ||--o{ announcements : creates
+  announcements ||--o{ announcement_reads : "read by"
+  announcements ||--o{ notifications : "triggers"
+  notifications ||--o{ notification_reads : "read by"
+
+  announcements {
+    uuid id PK
+    uuid admin_id FK
+    string title
+    text body
+    enum audience "students, mentors, all"
+    timestamp expires_at
+    timestamp created_at
+    timestamp updated_at
+  }
+  announcement_reads {
+    uuid id PK
+    uuid announcement_id FK
+    uuid user_id FK
+    timestamp read_at
+  }
+  notifications {
+    uuid id PK
+    uuid recipient_id FK
+    enum recipient_type "student, mentor"
+    enum source_type "announcement, submission, quiz, system"
+    uuid source_id FK
+    string title
+    text message
+    bool is_read
+    timestamp created_at
+  }
+  notification_reads {
+    uuid id PK
+    uuid notification_id FK
+    uuid user_id FK
+    timestamp read_at
+  }
+`);
+document.getElementById('erd2').innerHTML = svg;
+document.querySelectorAll('#erd2 .node').forEach(n=>{const p=n.querySelector('path[d]');if(!p)return;const d=p.getAttribute('d'),nums=d.match(/-?[\d.]+/g)?.map(Number);if(!nums||nums.length<8)return;const xs=[nums[0],nums[2],nums[4],nums[6]],ys=[nums[1],nums[3],nums[5],nums[7]],x=Math.min(...xs),y=Math.min(...ys),w=Math.max(...xs)-x,h=Math.max(...ys)-y,r=document.createElementNS('http://www.w3.org/2000/svg','rect');r.setAttribute('x',x);r.setAttribute('y',y);r.setAttribute('width',w);r.setAttribute('height',h);r.setAttribute('rx','8');for(const a of['fill','stroke','stroke-width','class','style'])if(p.hasAttribute(a))r.setAttribute(a,p.getAttribute(a));p.replaceWith(r);});
+document.querySelectorAll('#erd2 .row-rect-odd path,#erd2 .row-rect-even path').forEach(p=>p.setAttribute('stroke','none'));
+</script>
+</div>

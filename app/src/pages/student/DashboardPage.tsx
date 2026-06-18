@@ -4,6 +4,7 @@ import { PageWrapper } from '@/components/shared/PageWrapper'
 import { useAssignments } from '@/hooks/student/useAssignments'
 import { useSubmissions } from '@/hooks/student/useSubmissions'
 import { useResults } from '@/hooks/student/useResults'
+import { useQuizResults } from '@/hooks/student/useQuizResults'
 import { StatCard } from '@/components/shared/StatCard'
 import { AssignmentSummaryWidget } from '@/components/student/dashboard/AssignmentSummaryWidget'
 import { RecentActivityFeed } from '@/components/student/dashboard/RecentActivityFeed'
@@ -25,13 +26,15 @@ const DashboardPage = () => {
   const assignmentsQuery = useAssignments()
   const submissionsQuery = useSubmissions()
   const resultsQuery = useResults()
+  const quizResultsQuery = useQuizResults()
 
   const isLoading =
-    assignmentsQuery.isLoading || submissionsQuery.isLoading || resultsQuery.isLoading
+    assignmentsQuery.isLoading || submissionsQuery.isLoading || resultsQuery.isLoading || quizResultsQuery.isLoading
 
   const assignments = Array.isArray(assignmentsQuery.data) ? assignmentsQuery.data : []
   const submissions = Array.isArray(submissionsQuery.data) ? submissionsQuery.data : []
   const results = Array.isArray(resultsQuery.data) ? resultsQuery.data : []
+  const quizResults = Array.isArray(quizResultsQuery.data) ? quizResultsQuery.data : []
   
   // Group results by assignment_id and find the maximum final_score for each assignment
   const bestScoresByAssignment: Record<string, number> = {}
@@ -44,7 +47,11 @@ const DashboardPage = () => {
       bestScoresByAssignment[r.assignment_id] = score
     }
   })
-  const totalScore = Object.values(bestScoresByAssignment).reduce((sum, val) => sum + val, 0)
+  // Include quiz scores in total score
+  let totalScore = Object.values(bestScoresByAssignment).reduce((sum, val) => sum + val, 0)
+  quizResults.forEach(qr => {
+    totalScore += qr.total_score
+  })
 
   return (
     <PageWrapper>
@@ -164,8 +171,33 @@ const DashboardPage = () => {
         </div>
 
         {/* Quick actions (spans 1 col) */}
-        <div className="xl:col-span-1">
+        <div className="xl:col-span-1 space-y-5">
           <QuickActionsPanel />
+
+          {/* Recent Quizzes */}
+          {!isLoading && quizResults.length > 0 && (
+            <div className="card-dark p-5">
+              <h3 className="font-display text-base font-semibold text-text-primary mb-3 flex items-center gap-2">
+                <Trophy size={16} className="text-accent-blue" />
+                Recent Quizzes
+              </h3>
+              <div className="space-y-3">
+                {quizResults.slice(0, 3).map((qr) => (
+                  <div key={qr.attempt_id} className="flex flex-col gap-1 rounded-lg p-3 bg-navy-900/40 border border-navy-800">
+                    <p className="text-sm font-medium text-text-primary line-clamp-1">{qr.quiz_title}</p>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-[10px] text-text-secondary">
+                        {qr.submitted_at ? formatDate(qr.submitted_at) : 'Completed'}
+                      </span>
+                      <span className="text-xs font-bold text-accent-blue">
+                        {qr.total_score} / {qr.max_score}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </PageWrapper>

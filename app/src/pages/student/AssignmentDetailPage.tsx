@@ -5,10 +5,11 @@ import { SkeletonCard } from '@/components/shared/SkeletonCard'
 import { useAssignment } from '@/hooks/student/useAssignments'
 import { AssignmentDetailPanel } from '@/components/student/assignments/AssignmentDetailPanel'
 import { useSubmissions, useSubmitAssignment } from '@/hooks/student/useSubmissions'
+import { useQuizResults } from '@/hooks/student/useQuizResults'
 import { SubmissionForm } from '@/components/student/submissions/SubmissionForm'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { formatDate } from '@/lib/utils'
-import { Activity, UploadCloud, ChevronRight, PenTool } from 'lucide-react'
+import { Activity, UploadCloud, ChevronRight, PenTool, CheckCircle } from 'lucide-react'
 import type { SubmissionSourceType } from '@/types/api'
 
 const AssignmentDetailPage = () => {
@@ -17,11 +18,15 @@ const AssignmentDetailPage = () => {
   const { data: allSubmissions, isLoading: submissionsLoading } = useSubmissions({
     refetchInterval: 5000,
   })
+  const { data: allQuizResults } = useQuizResults()
 
   const submitAssignmentMutation = useSubmitAssignment()
 
   const assignmentSubmissions = (allSubmissions ?? []).filter(
     (s) => s.assignment_id?.toLowerCase() === id?.toLowerCase()
+  )
+  const quizResult = (allQuizResults ?? []).find(
+    (qr) => qr.assignment_id?.toLowerCase() === id?.toLowerCase()
   )
 
   const handleSubmission = (sourceType: SubmissionSourceType, repoUrl?: string, file?: File) => {
@@ -71,15 +76,37 @@ const AssignmentDetailPage = () => {
               <PenTool size={18} className="text-purple-400" />
               Weekly Quiz
             </h3>
-            <p className="text-sm text-text-secondary mb-4">
-              Unlock the quiz by submitting your weekly assignment first.
-            </p>
-            <Link
-              to={`/student/assignments/${id}/quiz`}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-navy-800 px-4 py-2.5 text-sm font-medium text-text-primary hover:bg-navy-700 transition-colors"
-            >
-              Take Quiz
-            </Link>
+            {quizResult ? (
+              <div className="mt-4 rounded-xl border border-status-success/30 bg-status-success/10 p-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle size={16} className="text-status-success" />
+                    <span className="text-sm font-medium text-text-primary">Completed</span>
+                  </div>
+                  <span className="text-sm font-bold text-status-success">
+                    {quizResult.total_score} / {quizResult.max_score}
+                  </span>
+                </div>
+                <Link
+                  to={`/student/assignments/${id}/quiz`}
+                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-navy-800 px-4 py-2 text-xs font-medium text-text-primary hover:bg-navy-700 transition-colors"
+                >
+                  View Details
+                </Link>
+              </div>
+            ) : (
+              <>
+                <p className="text-sm text-text-secondary mb-4">
+                  Unlock the quiz by submitting your weekly assignment first.
+                </p>
+                <Link
+                  to={`/student/assignments/${id}/quiz`}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-navy-800 px-4 py-2.5 text-sm font-medium text-text-primary hover:bg-navy-700 transition-colors"
+                >
+                  Take Quiz
+                </Link>
+              </>
+            )}
           </div>
 
           {/* New Submission */}

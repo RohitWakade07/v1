@@ -1,0 +1,6 @@
+question,option_a,option_b,option_c,option_d,correct_answer,type,marks
+What does SQL stand for?,Structured Query Language,Simple Query Language,Standard Query Language,Sequential Query Language,a,single,10
+Which command is used to retrieve data from a database?,GET,FETCH,SELECT,PULL,c,single,10
+Which of the following are valid relational databases?,PostgreSQL,MongoDB,MySQL,Redis,"a,c",multiple,20
+What is a primary key?,A key used to encrypt the database,A unique identifier for a record in a table,The first column of a table,A foreign key,b,single,10
+Which statement is used to update data in a database?,MODIFY,CHANGE,UPDATE,ALTER,c,single,10

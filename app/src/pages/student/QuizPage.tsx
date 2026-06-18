@@ -23,6 +23,7 @@ export const QuizPage = () => {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [quizLocked, setQuizLocked] = useState(false)
+  const [unansweredIds, setUnansweredIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (!assignmentId) return
@@ -70,11 +71,13 @@ export const QuizPage = () => {
     if (!quiz) return
     const unanswered = questions.filter(q => !selectedAnswers[q.id] || selectedAnswers[q.id].length === 0)
     if (unanswered.length > 0) {
+      setUnansweredIds(new Set(unanswered.map(q => q.id)))
       setError(`Please answer all questions. ${unanswered.length} question(s) remaining.`)
       return
     }
     setSubmitting(true)
     setError(null)
+    setUnansweredIds(new Set())
     try {
       const res = await submitQuizAttempt(quiz.id, selectedAnswers)
       setResult(res)
@@ -110,10 +113,22 @@ export const QuizPage = () => {
     </div>
   )
 
-  if (!quiz && !error) return (
-    <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
-      <AlertTriangle size={36} className="text-status-warning" />
-      <p className="text-text-secondary">No active quiz for this assignment yet.</p>
+  if (!quiz) return (
+    <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
+      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-status-warning/10">
+        <AlertTriangle size={36} className="text-status-warning" />
+      </div>
+      <div>
+        <h2 className="font-display text-2xl font-bold text-text-primary">No Active Quiz</h2>
+        <p className="mt-2 text-text-secondary">{error || 'There is no active quiz for this assignment yet.'}</p>
+      </div>
+      <button
+        onClick={() => navigate(-1)}
+        className="mt-2 flex items-center gap-2 rounded-xl bg-navy-800 px-6 py-2.5 text-sm font-medium text-text-primary hover:bg-navy-700 transition-colors"
+      >
+        <ChevronLeft size={16} />
+        Go Back
+      </button>
     </div>
   )
 
@@ -190,8 +205,10 @@ export const QuizPage = () => {
       )}
 
       <div className="space-y-4">
-        {questions.map((q, i) => (
-          <div key={q.id} className="card-glass rounded-xl p-5">
+        {questions.map((q, i) => {
+          const isUnanswered = unansweredIds.has(q.id)
+          return (
+          <div key={q.id} className={`card-glass rounded-xl p-5 ${isUnanswered ? 'border border-status-danger ring-1 ring-status-danger' : ''}`}>
             <p className="font-medium text-text-primary">
               Q{i + 1}. {q.question_text}
               <span className="ml-2 text-xs text-text-secondary">({q.type === 'multiple' ? 'Select all that apply' : 'Single correct'})</span>
@@ -219,8 +236,13 @@ export const QuizPage = () => {
                 )
               })}
             </div>
+            {isUnanswered && (
+              <p className="mt-3 text-sm text-status-danger font-medium flex items-center gap-1">
+                <AlertTriangle size={14} /> Please select an answer.
+              </p>
+            )}
           </div>
-        ))}
+        )})}
       </div>
 
       <button
