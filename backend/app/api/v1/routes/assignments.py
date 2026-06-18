@@ -117,6 +117,10 @@ async def create_assignment(
         category=body.category,
         max_score=body.max_score,
         deadline=body.deadline,
+        late_penalty_pct=body.late_penalty_pct,
+        resource_links=body.resource_links or "[]",
+        submission_filename=body.submission_filename,
+        submission_instructions=body.submission_instructions,
         is_published=False,
         created_by_id=current_mentor.id,
     )

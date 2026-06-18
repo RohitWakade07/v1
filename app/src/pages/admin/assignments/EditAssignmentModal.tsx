@@ -2,19 +2,20 @@ import { useState, useEffect } from 'react'
 import { Modal } from '@/components/shared/Modal'
 import { Assignment } from '@/types/api'
 import { useAdminUpdateAssignment } from '@/hooks/admin/useAdminUpdateAssignment'
-import { Settings, FileText } from 'lucide-react'
+import { Settings, FileText, Link2 } from 'lucide-react'
+import { ResourceLinksEditor, ResourceLink } from '@/components/admin/ResourceLinksEditor'
 
 interface Props {
   assignment: Assignment | null
   onClose: () => void
 }
 
-type Tab = 'general' | 'submission'
+type Tab = 'general' | 'submission' | 'resources'
 
 export function EditAssignmentModal({ assignment, onClose }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('general')
 
-  // General Info fields
+  // General Info
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [deadline, setDeadline] = useState('')
@@ -22,9 +23,12 @@ export function EditAssignmentModal({ assignment, onClose }: Props) {
   const [latePenaltyPct, setLatePenaltyPct] = useState('0')
   const [category, setCategory] = useState('')
 
-  // Submission Info fields
+  // Submission Info
   const [submissionFilename, setSubmissionFilename] = useState('')
   const [submissionInstructions, setSubmissionInstructions] = useState('')
+
+  // Resources
+  const [resourceLinks, setResourceLinks] = useState<ResourceLink[]>([])
 
   const updateMut = useAdminUpdateAssignment()
 
@@ -38,6 +42,23 @@ export function EditAssignmentModal({ assignment, onClose }: Props) {
       setCategory(assignment.category || '')
       setSubmissionFilename(assignment.submission_filename || '')
       setSubmissionInstructions(assignment.submission_instructions || '')
+      // Parse existing resource_links from JSON string
+      try {
+        const raw = assignment.resource_links
+        if (raw && raw !== '[]') {
+          const parsed = JSON.parse(raw)
+          // Back-compat: add 'type' field if missing
+          setResourceLinks(parsed.map((r: Record<string,string>) => ({
+            title: r.title || '',
+            url: r.url || '',
+            type: (r.type as ResourceLink['type']) || 'link',
+          })))
+        } else {
+          setResourceLinks([])
+        }
+      } catch {
+        setResourceLinks([])
+      }
       setActiveTab('general')
     }
   }, [assignment])
@@ -55,14 +76,16 @@ export function EditAssignmentModal({ assignment, onClose }: Props) {
         late_penalty_pct: parseFloat(latePenaltyPct) || 0,
         submission_filename: submissionFilename || undefined,
         submission_instructions: submissionInstructions || undefined,
+        resource_links: JSON.stringify(resourceLinks),
       },
     })
     onClose()
   }
 
-  const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: 'general', label: 'General Info', icon: <Settings size={13} /> },
-    { id: 'submission', label: 'Submission Info', icon: <FileText size={13} /> },
+  const tabs: { id: Tab; label: string; icon: React.ReactNode; badge?: number }[] = [
+    { id: 'general', label: 'General', icon: <Settings size={13} /> },
+    { id: 'submission', label: 'Submission', icon: <FileText size={13} /> },
+    { id: 'resources', label: 'Resources', icon: <Link2 size={13} />, badge: resourceLinks.length || undefined },
   ]
 
   return (
@@ -73,7 +96,7 @@ export function EditAssignmentModal({ assignment, onClose }: Props) {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold border-b-2 transition-colors ${
+            className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold border-b-2 transition-colors relative ${
               activeTab === tab.id
                 ? 'border-accent-blue text-accent-blue'
                 : 'border-transparent text-text-secondary hover:text-text-primary'
@@ -81,114 +104,86 @@ export function EditAssignmentModal({ assignment, onClose }: Props) {
           >
             {tab.icon}
             {tab.label}
+            {tab.badge !== undefined && (
+              <span className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent-blue text-[9px] font-bold text-white">
+                {tab.badge}
+              </span>
+            )}
           </button>
         ))}
       </div>
 
-      <div className="space-y-4 min-h-[280px]">
+      <div className="space-y-4 min-h-[300px]">
+        {/* ── GENERAL TAB ── */}
         {activeTab === 'general' && (
           <>
             <div>
               <label className="block text-xs font-medium text-text-secondary mb-1">Title</label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="input-dark w-full"
-                placeholder="Assignment title"
-              />
+              <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}
+                className="input-dark w-full" placeholder="Assignment title" />
             </div>
             <div>
               <label className="block text-xs font-medium text-text-secondary mb-1">Description</label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="input-dark w-full resize-none"
-                rows={3}
-                placeholder="Brief description of the assignment"
-              />
+              <textarea value={description} onChange={(e) => setDescription(e.target.value)}
+                className="input-dark w-full resize-none" rows={3}
+                placeholder="Brief description of the assignment" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-text-secondary mb-1">Max Score</label>
-                <input
-                  type="number"
-                  value={maxScore}
-                  onChange={(e) => setMaxScore(e.target.value)}
-                  className="input-dark w-full"
-                  min="1"
-                />
+                <input type="number" value={maxScore} onChange={(e) => setMaxScore(e.target.value)}
+                  className="input-dark w-full" min="1" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-text-secondary mb-1">Late Penalty (%)</label>
-                <input
-                  type="number"
-                  value={latePenaltyPct}
-                  onChange={(e) => setLatePenaltyPct(e.target.value)}
-                  className="input-dark w-full"
-                  min="0"
-                  max="100"
-                  step="1"
-                  placeholder="0"
-                />
+                <input type="number" value={latePenaltyPct} onChange={(e) => setLatePenaltyPct(e.target.value)}
+                  className="input-dark w-full" min="0" max="100" step="1" placeholder="0" />
               </div>
             </div>
             <div>
               <label className="block text-xs font-medium text-text-secondary mb-1">Deadline (Local Time)</label>
-              <input
-                type="datetime-local"
-                value={deadline}
-                onChange={(e) => setDeadline(e.target.value)}
-                className="input-dark w-full"
-              />
+              <input type="datetime-local" value={deadline} onChange={(e) => setDeadline(e.target.value)}
+                className="input-dark w-full" />
             </div>
             <div>
               <label className="block text-xs font-medium text-text-secondary mb-1">Category</label>
-              <input
-                type="text"
-                value={category}
-                disabled
+              <input type="text" value={category} disabled
                 className="input-dark w-full opacity-50 cursor-not-allowed"
-                title="Category cannot be changed after creation"
-              />
+                title="Category cannot be changed after creation" />
               <p className="text-[10px] text-text-muted mt-1">Category is locked after creation.</p>
             </div>
           </>
         )}
 
+        {/* ── SUBMISSION TAB ── */}
         {activeTab === 'submission' && (
           <>
             <div>
               <label className="block text-xs font-medium text-text-secondary mb-1">
                 Required Submission Filename
               </label>
-              <input
-                type="text"
-                value={submissionFilename}
+              <input type="text" value={submissionFilename}
                 onChange={(e) => setSubmissionFilename(e.target.value)}
-                className="input-dark w-full font-mono"
-                placeholder="e.g. analyze.sh or RECOVERY.md"
-              />
+                className="input-dark w-full font-mono" placeholder="e.g. analyze.sh or RECOVERY.md" />
               <p className="text-[10px] text-text-muted mt-1">
-                The exact filename students must include in their ZIP. Leave blank to hide the file tree.
+                Exact filename students must include in their ZIP.
               </p>
             </div>
             <div>
               <label className="block text-xs font-medium text-text-secondary mb-1">
                 Submission Instructions
               </label>
-              <textarea
-                value={submissionInstructions}
+              <textarea value={submissionInstructions}
                 onChange={(e) => setSubmissionInstructions(e.target.value)}
-                className="input-dark w-full resize-none"
-                rows={8}
-                placeholder="Detailed submission instructions shown to students on the assignment page. Supports plain text."
-              />
-              <p className="text-[10px] text-text-muted mt-1">
-                These instructions replace the hardcoded steps on the assignment detail page.
-              </p>
+                className="input-dark w-full resize-none" rows={9}
+                placeholder="Step-by-step instructions shown to students on the assignment page." />
             </div>
           </>
+        )}
+
+        {/* ── RESOURCES TAB ── */}
+        {activeTab === 'resources' && (
+          <ResourceLinksEditor value={resourceLinks} onChange={setResourceLinks} />
         )}
       </div>
 

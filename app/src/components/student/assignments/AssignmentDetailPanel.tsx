@@ -162,24 +162,77 @@ export const AssignmentDetailPanel = ({ assignment }: AssignmentDetailPanelProps
 
       {resourceLinks.length > 0 && (
         <div className="rounded-xl border border-navy-800 bg-surface-main p-6 shadow-card">
-          <h3 className="font-display text-base font-semibold text-text-primary mb-4">Resource Links</h3>
-          <div className="space-y-2">
-            {resourceLinks.map((link: { url: string; title: string }, i: number) => (
-              <a
-                key={i}
-                href={link.url}
-                target="_blank"
-                rel="noreferrer"
-                className="block rounded-lg border border-navy-700 bg-navy-800/40 p-3 hover:border-navy-600 hover:bg-navy-800 transition-colors"
-              >
-                <div className="text-sm font-medium text-text-primary group-hover:text-accent-blue">
-                  {link.title}
-                </div>
-                <div className="mt-0.5 text-xs text-text-secondary truncate">
-                  {link.url}
-                </div>
-              </a>
-            ))}
+          <h3 className="font-display text-base font-semibold text-text-primary mb-4 flex items-center gap-2">
+            📎 Resources
+          </h3>
+          <div className="space-y-3">
+            {resourceLinks.map((link: { url: string; title: string; type?: string }, i: number) => {
+              const isVideo = link.type === 'video' || link.url?.includes('youtube') || link.url?.includes('youtu.be') || link.url?.includes('vimeo')
+              const isImage = link.type === 'image' || link.url?.match(/\.(png|jpg|jpeg|gif|webp|svg)(\?|$)/i)
+
+              const getYoutubeId = (url: string) => {
+                const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/)
+                return m ? m[1] : null
+              }
+
+              if (isVideo) {
+                const ytId = getYoutubeId(link.url || '')
+                return (
+                  <div key={i} className="rounded-lg border border-red-400/20 bg-red-400/5 overflow-hidden">
+                    <div className="flex items-center gap-2 px-3 py-2 border-b border-red-400/20">
+                      <span className="text-[10px] font-bold text-red-400 border border-red-400/30 px-1.5 py-0.5 rounded">▶ VIDEO</span>
+                      <span className="text-sm font-medium text-text-primary">{link.title}</span>
+                    </div>
+                    {ytId ? (
+                      <div className="aspect-video">
+                        <iframe
+                          src={`https://www.youtube.com/embed/${ytId}`}
+                          className="w-full h-full"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      </div>
+                    ) : (
+                      <a href={link.url} target="_blank" rel="noreferrer"
+                        className="block p-3 text-xs text-text-secondary hover:text-red-400 truncate transition-colors">
+                        {link.url}
+                      </a>
+                    )}
+                  </div>
+                )
+              }
+
+              if (isImage) {
+                return (
+                  <div key={i} className="rounded-lg border border-purple-400/20 bg-purple-400/5 overflow-hidden">
+                    <div className="flex items-center gap-2 px-3 py-2 border-b border-purple-400/20">
+                      <span className="text-[10px] font-bold text-purple-400 border border-purple-400/30 px-1.5 py-0.5 rounded">🖼 IMAGE</span>
+                      <span className="text-sm font-medium text-text-primary">{link.title}</span>
+                    </div>
+                    <a href={link.url} target="_blank" rel="noreferrer">
+                      <img src={link.url} alt={link.title}
+                        className="w-full max-h-64 object-contain bg-navy-950 p-2 hover:opacity-90 transition-opacity" />
+                    </a>
+                  </div>
+                )
+              }
+
+              return (
+                <a
+                  key={i}
+                  href={link.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-3 rounded-lg border border-navy-700 bg-navy-800/40 p-3 hover:border-accent-blue/40 hover:bg-navy-800 transition-colors group"
+                >
+                  <span className="text-[10px] font-bold text-accent-blue border border-accent-blue/30 px-1.5 py-0.5 rounded bg-accent-blue/10 shrink-0">🔗 LINK</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-text-primary group-hover:text-accent-blue transition-colors">{link.title}</div>
+                    <div className="mt-0.5 text-xs text-text-secondary truncate">{link.url}</div>
+                  </div>
+                </a>
+              )
+            })}
           </div>
         </div>
       )}

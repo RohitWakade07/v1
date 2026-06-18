@@ -105,6 +105,10 @@ class AssignmentCreate(BaseModel):
     category: AssignmentCategory
     max_score: float = 100.0
     deadline: Optional[datetime] = None
+    late_penalty_pct: float = 0.0
+    resource_links: Optional[str] = "[]"
+    submission_filename: Optional[str] = None
+    submission_instructions: Optional[str] = None
 
 
 class AssignmentUpdate(BaseModel):
