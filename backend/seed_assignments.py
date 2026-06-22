@@ -15,6 +15,7 @@ async def seed_assignments():
         await db.execute(text("DELETE FROM certificates"))
         await db.execute(text("DELETE FROM final_results"))
         await db.execute(text("DELETE FROM submission_results"))
+        await db.execute(text("DELETE FROM grading_jobs"))
         await db.execute(text("DELETE FROM submissions"))
         await db.execute(text("DELETE FROM proof_submissions"))
         await db.execute(text("DELETE FROM grading_sessions"))
@@ -167,9 +168,9 @@ async def seed_assignments():
         w10 = Assignment(
             id=uuid.uuid4(),
             slug="week10",
-            title="Week 10: TBD",
-            description="Placeholder for week 10.",
-            instructions="Submit README.md zip.",
+            title="Week 10: Indexing & Search Architecture",
+            description="Ranked Query Engine foundation. Integrate the inverted index into a complete query engine that returns top-5 ranked documents.",
+            instructions="Submit your repository ZIP. The engine should accept a query, look up terms, rank results by total frequency, and return documents.",
             category=AssignmentCategory.DETERMINISTIC_EXECUTION,
             max_score=5.0,
             deadline=datetime(2026, 8, 22),
@@ -183,9 +184,9 @@ async def seed_assignments():
         w11 = Assignment(
             id=uuid.uuid4(),
             slug="week11",
-            title="Week 11: TBD",
-            description="Placeholder for week 11.",
-            instructions="Submit README.md zip.",
+            title="Week 11: Final Capstone Development",
+            description="Intelligent Wikipedia Search Engine Part 1. Build a full search engine with dataset cleaning, inverted index, ranking, and a CLI.",
+            instructions="Submit your repository ZIP. Must include a corpus/ of at least 50 articles, a modular package, requirements.txt, and a main entrypoint.",
             category=AssignmentCategory.DETERMINISTIC_EXECUTION,
             max_score=5.0,
             deadline=datetime(2026, 8, 29),
@@ -199,9 +200,9 @@ async def seed_assignments():
         w12 = Assignment(
             id=uuid.uuid4(),
             slug="week12",
-            title="Week 12: TBD",
-            description="Placeholder for week 12.",
-            instructions="Submit README.md zip.",
+            title="Week 12: Final Capstone Demonstration",
+            description="Intelligent Wikipedia Search Engine Part 2. Finalization and demonstration of the complete system.",
+            instructions="Submit your repository ZIP. Must include a corpus/ of at least 50 articles, a modular package, requirements.txt, and a main entrypoint.",
             category=AssignmentCategory.DETERMINISTIC_EXECUTION,
             max_score=5.0,
             deadline=datetime(2026, 9, 5),

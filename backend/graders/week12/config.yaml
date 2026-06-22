@@ -1,7 +1,9 @@
 docker_image: "python:3.10-slim"
-execution_command: "python test_wrapper.py"
-timeout_seconds: 10
+execution_command: "pip install pexpect && python test_wrapper.py"
+timeout_seconds: 45
 target_file: "README.md"
 assets:
   - source: "test_wrapper.py"
     target: "test_wrapper.py"
+  - source: "test_corpus"
+    target: "test_corpus"
