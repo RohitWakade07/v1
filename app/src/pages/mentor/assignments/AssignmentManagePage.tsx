@@ -109,6 +109,39 @@ const WEEK_META = [
     file: 'build_index.py + lookup.py',
     marks: 5,
   },
+  {
+    slug: 'week10',
+    week: 10,
+    title: 'Week 10: TBD',
+    subtitle: 'Pending Specifications',
+    description: 'Placeholder for week 10.',
+    icon: Code2,
+    color: 'accent-teal',
+    file: 'README.md',
+    marks: 5,
+  },
+  {
+    slug: 'week11',
+    week: 11,
+    title: 'Week 11: TBD',
+    subtitle: 'Pending Specifications',
+    description: 'Placeholder for week 11.',
+    icon: Code2,
+    color: 'accent-blue',
+    file: 'README.md',
+    marks: 5,
+  },
+  {
+    slug: 'week12',
+    week: 12,
+    title: 'Week 12: TBD',
+    subtitle: 'Pending Specifications',
+    description: 'Placeholder for week 12.',
+    icon: Code2,
+    color: 'accent-teal',
+    file: 'README.md',
+    marks: 5,
+  },
 ]
 
 // ── Deadline Editor ───────────────────────────────────────────────────────────
@@ -336,11 +369,11 @@ export const AssignmentManagePage = () => {
         <div className="flex items-center gap-2 rounded-xl border border-navy-800 bg-surface-main px-4 py-2.5 shadow-card">
           <CheckCircle2 size={14} className="text-accent-teal" />
           <span className="text-sm font-semibold text-text-primary">{publishedCount}</span>
-          <span className="text-xs text-text-secondary">of 9 live</span>
+          <span className="text-xs text-text-secondary">of 12 live</span>
         </div>
         <div className="flex items-center gap-2 rounded-xl border border-navy-800 bg-surface-main px-4 py-2.5 shadow-card">
           <Lock size={14} className="text-text-muted" />
-          <span className="text-sm font-semibold text-text-primary">{9 - publishedCount}</span>
+          <span className="text-sm font-semibold text-text-primary">{12 - publishedCount}</span>
           <span className="text-xs text-text-secondary">drafts</span>
         </div>
         <div className="flex items-center gap-2 rounded-xl border border-navy-800 bg-surface-main px-4 py-2.5 shadow-card ml-auto text-xs text-text-muted">
@@ -350,7 +383,7 @@ export const AssignmentManagePage = () => {
 
       {isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 9 }).map((_, i) => (
+          {Array.from({ length: 12 }).map((_, i) => (
             <div key={i} className="h-32 rounded-xl border border-navy-800 bg-surface-main animate-pulse" />
           ))}
         </div>

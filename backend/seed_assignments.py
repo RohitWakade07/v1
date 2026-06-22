@@ -83,7 +83,135 @@ async def seed_assignments():
             updated_at=datetime.now()
         )
         
-        db.add_all([w1, w2, w3, w4])
+        # Week 5
+        w5 = Assignment(
+            id=uuid.uuid4(),
+            slug="week5",
+            title="Week 5: GitHub Collaboration",
+            description="Resolve merge conflicts and push a clean main branch with a shared TEAMWORK.md.",
+            instructions="Submit the zip.",
+            category=AssignmentCategory.GIT_VALIDATION,
+            max_score=5.0,
+            deadline=datetime(2026, 7, 18),
+            is_published=True,
+            created_by_id=mentor_id,
+            created_at=datetime.now(),
+            updated_at=datetime.now()
+        )
+        
+        # Week 6
+        w6 = Assignment(
+            id=uuid.uuid4(),
+            slug="week6",
+            title="Week 6: Text Corpus Analyzer",
+            description="Build an interactive Python CLI that provides word stats.",
+            instructions="Submit analyze.py zip.",
+            category=AssignmentCategory.DETERMINISTIC_EXECUTION,
+            max_score=5.0,
+            deadline=datetime(2026, 7, 25),
+            is_published=True,
+            created_by_id=mentor_id,
+            created_at=datetime.now(),
+            updated_at=datetime.now()
+        )
+        
+        # Week 7
+        w7 = Assignment(
+            id=uuid.uuid4(),
+            slug="week7",
+            title="Week 7: Wikipedia Collector",
+            description="Build a scraper that fetches Wikipedia pages from a URL list and saves each as a structured JSON file.",
+            instructions="Submit collect_wiki.py zip.",
+            category=AssignmentCategory.DETERMINISTIC_EXECUTION,
+            max_score=5.0,
+            deadline=datetime(2026, 8, 1),
+            is_published=True,
+            created_by_id=mentor_id,
+            created_at=datetime.now(),
+            updated_at=datetime.now()
+        )
+
+        # Week 8
+        w8 = Assignment(
+            id=uuid.uuid4(),
+            slug="week8",
+            title="Week 8: Metadata Organizer",
+            description="Build a modular Python package that processes the Week 7 corpus.",
+            instructions="Submit metadata_organizer zip.",
+            category=AssignmentCategory.DETERMINISTIC_EXECUTION,
+            max_score=5.0,
+            deadline=datetime(2026, 8, 8),
+            is_published=True,
+            created_by_id=mentor_id,
+            created_at=datetime.now(),
+            updated_at=datetime.now()
+        )
+
+        # Week 9
+        w9 = Assignment(
+            id=uuid.uuid4(),
+            slug="week9",
+            title="Week 9: Inverted Index",
+            description="Build an inverted index from their corpus and a lookup tool.",
+            instructions="Submit build_index.py and lookup.py zip.",
+            category=AssignmentCategory.DETERMINISTIC_EXECUTION,
+            max_score=5.0,
+            deadline=datetime(2026, 8, 15),
+            is_published=True,
+            created_by_id=mentor_id,
+            created_at=datetime.now(),
+            updated_at=datetime.now()
+        )
+
+        # Week 10
+        w10 = Assignment(
+            id=uuid.uuid4(),
+            slug="week10",
+            title="Week 10: TBD",
+            description="Placeholder for week 10.",
+            instructions="Submit README.md zip.",
+            category=AssignmentCategory.DETERMINISTIC_EXECUTION,
+            max_score=5.0,
+            deadline=datetime(2026, 8, 22),
+            is_published=False,
+            created_by_id=mentor_id,
+            created_at=datetime.now(),
+            updated_at=datetime.now()
+        )
+
+        # Week 11
+        w11 = Assignment(
+            id=uuid.uuid4(),
+            slug="week11",
+            title="Week 11: TBD",
+            description="Placeholder for week 11.",
+            instructions="Submit README.md zip.",
+            category=AssignmentCategory.DETERMINISTIC_EXECUTION,
+            max_score=5.0,
+            deadline=datetime(2026, 8, 29),
+            is_published=False,
+            created_by_id=mentor_id,
+            created_at=datetime.now(),
+            updated_at=datetime.now()
+        )
+
+        # Week 12
+        w12 = Assignment(
+            id=uuid.uuid4(),
+            slug="week12",
+            title="Week 12: TBD",
+            description="Placeholder for week 12.",
+            instructions="Submit README.md zip.",
+            category=AssignmentCategory.DETERMINISTIC_EXECUTION,
+            max_score=5.0,
+            deadline=datetime(2026, 9, 5),
+            is_published=False,
+            created_by_id=mentor_id,
+            created_at=datetime.now(),
+            updated_at=datetime.now()
+        )
+        
+        db.add_all([w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12])
         await db.commit()
         print("Successfully seeded assignments.")
 
