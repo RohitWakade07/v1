@@ -508,7 +508,7 @@ async def submit_quiz_attempt(
     )
 
 
-@router.get("/student/quizzes/{quiz_id}/result", response_model=QuizAttemptResult, summary="Get quiz result for current student")
+@router.get("/student/quizzes/{quiz_id}/result", response_model=Optional[QuizAttemptResult], summary="Get quiz result for current student")
 async def get_quiz_result_student(
     quiz_id: str,
     current_student: Student = Depends(get_approved_student),
@@ -517,7 +517,7 @@ async def get_quiz_result_student(
     qid = uuid.UUID(quiz_id)
     attempt = (await db.execute(select(QuizAttempt).where(QuizAttempt.quiz_id == qid, QuizAttempt.student_id == current_student.id))).scalar_one_or_none()
     if not attempt or not attempt.submitted_at:
-        raise HTTPException(404, detail={"error": "NOT_FOUND", "message": "No completed attempt found for this quiz"})
+        return None
 
     answers = (await db.execute(select(QuizAnswer).where(QuizAnswer.attempt_id == attempt.id))).scalars().all()
     question_results = []

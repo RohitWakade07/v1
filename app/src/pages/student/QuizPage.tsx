@@ -35,10 +35,12 @@ export const QuizPage = () => {
         // Try to get existing result
         try {
           const existing = await getQuizResult(q.id)
-          setResult(existing)
-          return
+          if (existing) {
+            setResult(existing)
+            return
+          }
         } catch {
-          // Not attempted yet, load questions
+          // Fallback if API still throws an error
         }
         const qs = await getStudentQuizQuestions(q.id)
         setQuestions(qs)
