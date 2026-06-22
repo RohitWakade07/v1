@@ -19,7 +19,7 @@ export const AdminQuizPage = () => {
   const [loading, setLoading] = useState(true)
 
   // Edit / Create Quiz state
-  const [quizForm, setQuizForm] = useState({ title: '', marks_per_question: 1, is_active: false })
+  const [quizForm, setQuizForm] = useState({ title: '', marks_per_question: 1, max_attempts: 1, is_active: false })
   const [savingQuiz, setSavingQuiz] = useState(false)
 
   // Question Modal state
@@ -47,7 +47,7 @@ export const AdminQuizPage = () => {
     try {
       const q = await getAdminQuiz(assignmentId)
       setQuiz(q)
-      setQuizForm({ title: q.title, marks_per_question: q.marks_per_question, is_active: q.is_active })
+      setQuizForm({ title: q.title, marks_per_question: q.marks_per_question, max_attempts: q.max_attempts || 1, is_active: q.is_active })
       const qs = await getAdminQuizQuestions(q.id)
       setQuestions(qs)
     } catch (err: any) {
@@ -204,7 +204,7 @@ export const AdminQuizPage = () => {
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="mb-1 block text-xs font-medium text-text-secondary">Quiz Title</label>
             <input
@@ -221,6 +221,16 @@ export const AdminQuizPage = () => {
               className="input-dark w-full"
               value={quizForm.marks_per_question}
               onChange={e => setQuizForm(f => ({ ...f, marks_per_question: Number(e.target.value) }))}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-text-secondary">Max Attempts Allowed</label>
+            <input
+              type="number"
+              min="1"
+              className="input-dark w-full"
+              value={quizForm.max_attempts}
+              onChange={e => setQuizForm(f => ({ ...f, max_attempts: Number(e.target.value) }))}
             />
           </div>
         </div>

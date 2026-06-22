@@ -8,7 +8,7 @@ export function useAdminUpdateAssignment() {
   
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: AdminAssignmentUpdate }) => adminUpdateAssignment(id, data),
-    onSuccess: (_, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-assignments'] })
       queryClient.invalidateQueries({ queryKey: ['assignments'] })
       addNotification({

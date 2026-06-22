@@ -584,12 +584,13 @@ class QuizOption(SQLModel, table=True):
 class QuizAttempt(SQLModel, table=True):
     __tablename__ = "quiz_attempts"
     __table_args__ = (
-        UniqueConstraint("quiz_id", "student_id", name="uq_one_attempt_per_student"),
+        UniqueConstraint("quiz_id", "student_id", "attempt_number", name="uq_attempt_per_student"),
     )
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
     quiz_id: uuid.UUID = Field(foreign_key="quizzes.id", index=True)
     student_id: uuid.UUID = Field(foreign_key="students.id", index=True)
+    attempt_number: int = Field(default=1, sa_column=Column(Integer, nullable=False, server_default="1"))
     total_score: int = Field(default=0)
     max_score: int = Field(default=0)
     started_at: datetime = Field(default_factory=datetime.utcnow)

@@ -57,6 +57,7 @@ class QuizPublic(BaseModel):
     assignment_id: uuid.UUID
     title: str
     marks_per_question: int
+    max_attempts: int
     is_active: bool
     created_at: datetime
     updated_at: datetime
@@ -65,12 +66,14 @@ class QuizPublic(BaseModel):
 class QuizCreate(BaseModel):
     title: str
     marks_per_question: int = 1
+    max_attempts: int = 1
     is_active: bool = False
 
 
 class QuizUpdate(BaseModel):
     title: Optional[str] = None
     marks_per_question: Optional[int] = None
+    max_attempts: Optional[int] = None
     is_active: Optional[bool] = None
 
 
@@ -84,6 +87,8 @@ class QuizAttemptResult(BaseModel):
     quiz_id: uuid.UUID
     total_score: int
     max_score: int
+    attempt_number: int
+    max_attempts: int
     submitted_at: Optional[datetime]
     question_results: List[dict]
 
@@ -95,6 +100,8 @@ class QuizAttemptSummary(BaseModel):
     quiz_title: str
     total_score: int
     max_score: int
+    attempt_number: int
+    max_attempts: int
     submitted_at: Optional[datetime]
 
 
@@ -357,7 +364,7 @@ async def get_quiz_student(
             Submission.status.in_([SubmissionStatus.COMPLETED, SubmissionStatus.FAILED]),
         )
     )
-    if not submission_result.scalar_one_or_none():
+    if not submission_result.scalars().first():
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={"error": "QUIZ_LOCKED", "message": "Quiz unlocks only after you submit the weekly task"},
@@ -392,6 +399,8 @@ async def get_all_quiz_results_student(
             quiz_title=quiz.title,
             total_score=attempt.total_score,
             max_score=attempt.max_score,
+            attempt_number=attempt.attempt_number,
+            max_attempts=quiz.max_attempts,
             submitted_at=attempt.submitted_at,
         ))
     return results
@@ -408,10 +417,11 @@ async def get_quiz_questions_student(
     if not quiz:
         raise HTTPException(404, detail={"error": "NOT_FOUND", "message": "Quiz not found"})
 
-    # Check if already attempted
-    attempt = (await db.execute(select(QuizAttempt).where(QuizAttempt.quiz_id == qid, QuizAttempt.student_id == current_student.id))).scalar_one_or_none()
-    if attempt and attempt.submitted_at:
-        raise HTTPException(403, detail={"error": "ALREADY_ATTEMPTED", "message": "You have already submitted this quiz"})
+    # Check attempts count
+    attempts = (await db.execute(select(QuizAttempt).where(QuizAttempt.quiz_id == qid, QuizAttempt.student_id == current_student.id))).scalars().all()
+    completed_attempts = [a for a in attempts if a.submitted_at is not None]
+    if len(completed_attempts) >= quiz.max_attempts:
+        raise HTTPException(403, detail={"error": "MAX_ATTEMPTS_REACHED", "message": f"You have reached the maximum allowed attempts ({quiz.max_attempts}) for this quiz"})
 
     qs = (await db.execute(select(QuizQuestion).where(QuizQuestion.quiz_id == qid).order_by(QuizQuestion.order_index))).scalars().all()
     result = []
@@ -440,18 +450,21 @@ async def submit_quiz_attempt(
     if not quiz:
         raise HTTPException(404, detail={"error": "NOT_FOUND", "message": "Quiz not found"})
 
-    # Enforce one attempt
-    existing = (await db.execute(select(QuizAttempt).where(QuizAttempt.quiz_id == qid, QuizAttempt.student_id == current_student.id))).scalar_one_or_none()
-    if existing and existing.submitted_at:
-        raise HTTPException(409, detail={"error": "ALREADY_ATTEMPTED", "message": "You have already submitted this quiz"})
+    # Enforce attempt limit
+    attempts = (await db.execute(select(QuizAttempt).where(QuizAttempt.quiz_id == qid, QuizAttempt.student_id == current_student.id))).scalars().all()
+    completed_attempts = [a for a in attempts if a.submitted_at is not None]
+    if len(completed_attempts) >= quiz.max_attempts:
+        raise HTTPException(409, detail={"error": "MAX_ATTEMPTS_REACHED", "message": f"You have reached the maximum allowed attempts ({quiz.max_attempts}) for this quiz"})
 
-    # Create or get attempt
-    if not existing:
-        attempt = QuizAttempt(quiz_id=qid, student_id=current_student.id)
+    # Check if there is an unsubmitted attempt we can reuse
+    unsubmitted = [a for a in attempts if a.submitted_at is None]
+    if unsubmitted:
+        attempt = unsubmitted[0]
+    else:
+        attempt_number = len(attempts) + 1
+        attempt = QuizAttempt(quiz_id=qid, student_id=current_student.id, attempt_number=attempt_number)
         db.add(attempt)
         await db.flush()
-    else:
-        attempt = existing
 
     # Load all questions and evaluate
     qs = (await db.execute(select(QuizQuestion).where(QuizQuestion.quiz_id == qid))).scalars().all()
@@ -515,7 +528,18 @@ async def get_quiz_result_student(
     db: AsyncSession = Depends(get_db),
 ):
     qid = uuid.UUID(quiz_id)
-    attempt = (await db.execute(select(QuizAttempt).where(QuizAttempt.quiz_id == qid, QuizAttempt.student_id == current_student.id))).scalar_one_or_none()
+    quiz = (await db.execute(select(Quiz).where(Quiz.id == qid))).scalar_one_or_none()
+    if not quiz:
+        raise HTTPException(404, detail={"error": "NOT_FOUND", "message": "Quiz not found"})
+
+    # Get the latest attempt
+    attempts_result = await db.execute(
+        select(QuizAttempt)
+        .where(QuizAttempt.quiz_id == qid, QuizAttempt.student_id == current_student.id)
+        .order_by(QuizAttempt.attempt_number.desc())
+    )
+    attempt = attempts_result.scalars().first()
+
     if not attempt or not attempt.submitted_at:
         return None
 
@@ -537,6 +561,8 @@ async def get_quiz_result_student(
         quiz_id=qid,
         total_score=attempt.total_score,
         max_score=attempt.max_score,
+        attempt_number=attempt.attempt_number,
+        max_attempts=quiz.max_attempts,
         submitted_at=attempt.submitted_at,
         question_results=question_results,
     )

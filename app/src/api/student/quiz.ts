@@ -5,6 +5,7 @@ export interface QuizPublic {
   assignment_id: string
   title: string
   marks_per_question: number
+  max_attempts: number
   is_active: boolean
   created_at: string
   updated_at: string
@@ -21,9 +22,14 @@ export interface QuizQuestion {
   id: string
   question_text: string
   type: 'single' | 'multiple'
-  marks: number | null
+  marks?: number
   order_index: number
-  options: QuizOption[]
+  options: Array<{
+    id: string
+    option_text: string
+    order_index: number
+    is_correct?: boolean
+  }>
 }
 
 export interface QuizAttemptResult {
@@ -31,6 +37,8 @@ export interface QuizAttemptResult {
   quiz_id: string
   total_score: number
   max_score: number
+  attempt_number: number
+  max_attempts: number
   submitted_at: string | null
   question_results: Array<{
     question_id: string
@@ -50,6 +58,8 @@ export interface QuizAttemptSummary {
   quiz_title: string
   total_score: number
   max_score: number
+  attempt_number: number
+  max_attempts: number
   submitted_at: string | null
 }
 
@@ -89,12 +99,12 @@ export const getAdminQuiz = async (assignmentId: string) => {
   return data
 }
 
-export const createAdminQuiz = async (assignmentId: string, payload: { title: string; marks_per_question: number; is_active: boolean }) => {
+export const createAdminQuiz = async (assignmentId: string, payload: { title: string; marks_per_question: number; max_attempts: number; is_active: boolean }) => {
   const { data } = await apiClient.post<QuizPublic>(`/admin/assignments/${assignmentId}/quiz`, payload)
   return data
 }
 
-export const updateAdminQuiz = async (quizId: string, payload: Partial<{ title: string; marks_per_question: number; is_active: boolean }>) => {
+export const updateAdminQuiz = async (quizId: string, payload: Partial<{ title: string; marks_per_question: number; max_attempts: number; is_active: boolean }>) => {
   const { data } = await apiClient.patch<QuizPublic>(`/admin/quizzes/${quizId}`, payload)
   return data
 }
