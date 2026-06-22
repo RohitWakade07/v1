@@ -2,7 +2,11 @@ import json
 import os
 import sys
 import subprocess
-import pexpect
+try:
+    import pexpect
+except ImportError:
+    subprocess.run([sys.executable, "-m", "pip", "install", "pexpect"], check=True)
+    import pexpect
 import time
 import shutil
 
