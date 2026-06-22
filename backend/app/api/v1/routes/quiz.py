@@ -516,6 +516,8 @@ async def submit_quiz_attempt(
         quiz_id=qid,
         total_score=total_score,
         max_score=max_score,
+        attempt_number=attempt.attempt_number,
+        max_attempts=quiz.max_attempts,
         submitted_at=attempt.submitted_at,
         question_results=question_results,
     )
@@ -553,6 +555,7 @@ async def get_quiz_result_student(
             "question_text": q.question_text if q else "",
             "is_correct": a.is_correct,
             "marks_awarded": a.marks_awarded,
+            "marks_possible": q.marks if q and q.marks is not None else quiz.marks_per_question if quiz else 1,
             "selected_option_ids": [str(ao.option_id) for ao in selected],
         })
 
