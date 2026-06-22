@@ -63,6 +63,7 @@ class AssignmentCategory(str, Enum):
     NETWORK_VALIDATION      = "network_validation"
     DOCUMENTATION_REVIEW    = "documentation_review"
     MANUAL_REVIEW           = "manual_review"
+    WEEK6                   = "week6"
 
 
 # ── Student ───────────────────────────────────────────────────────────

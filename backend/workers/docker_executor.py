@@ -48,6 +48,7 @@ def run_fresh_container(language: str, image_name: str) -> Any:
     container_name = f"grader-{language}-{uuid.uuid4().hex[:12]}"
     logger.info(f"[CONTAINER:SPAWN] image={image_name} name={container_name} language={language}")
 
+    volume_name = os.environ.get("GRADER_VOLUME_NAME", "backend_grader_jobs")
     container = get_docker_client().containers.run(
         image=image_name,
         command="tail -f /dev/null",
@@ -64,7 +65,7 @@ def run_fresh_container(language: str, image_name: str) -> Any:
         cap_drop=["ALL"],
         security_opt=["no-new-privileges"],
         volumes={
-            "grader_jobs": {"bind": "/tmp/autograder_jobs", "mode": "rw"},
+            volume_name: {"bind": "/tmp/autograder_jobs", "mode": "rw"},
         },
         detach=True,
     )

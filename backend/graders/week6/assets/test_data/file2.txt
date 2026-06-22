@@ -1,0 +1,3 @@
+python is cool
+python is fun
+we love python

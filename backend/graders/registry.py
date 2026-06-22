@@ -5,7 +5,7 @@ from pathlib import Path
 from graders.base_grader import BaseGrader
 
 def get_grader(assignment_id: str) -> type[BaseGrader]:
-    valid_slugs = ["week1", "week2", "week3", "week4"]
+    valid_slugs = ["week1", "week2", "week3", "week4", "week6"]
     if assignment_id not in valid_slugs:
         raise ValueError(
             f"No grader registered for assignment_id='{assignment_id}'. "

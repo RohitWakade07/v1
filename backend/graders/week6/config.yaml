@@ -1,0 +1,9 @@
+docker_image: "python:3.10-slim"
+execution_command: "python test_wrapper.py"
+timeout_seconds: 15
+target_file: "analyze.py"
+assets:
+  - source: "test_wrapper.py"
+    target: "test_wrapper.py"
+  - source: "test_data"
+    target: "test_data"

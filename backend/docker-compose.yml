@@ -82,6 +82,7 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
+      - SERVICE_TYPE=worker
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
       - REDIS_HOST=redis
