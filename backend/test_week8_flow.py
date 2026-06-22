@@ -1,6 +1,6 @@
 """
 Full integration test for Week 6 Grader:
-1. Admin login -> create week11 assignment
+1. Admin login -> create week8 assignment
 2. Student login -> submit ZIP with analyze.py
 3. Poll submission status
 """
@@ -44,18 +44,18 @@ admin_headers = {"Authorization": f"Bearer {admin_token}"}
 divider("Step 2: Find or Create Week 6 Assignment")
 resp = requests.get(f"{BASE}/assignments", headers=admin_headers)
 assignments = resp.json() if resp.status_code == 200 else []
-week11_assignment = next((a for a in assignments if a["slug"] == "week11"), None)
+week8_assignment = next((a for a in assignments if a["slug"] == "week8"), None)
 
-if week11_assignment:
-    print(f"   Found existing Week 6 Assignment: {week11_assignment['id']}")
-    assignment_id = week11_assignment["id"]
+if week8_assignment:
+    print(f"   Found existing Week 6 Assignment: {week8_assignment['id']}")
+    assignment_id = week8_assignment["id"]
 else:
-    slug = "week11"
+    slug = "week8"
     create_payload = {
         "slug": slug,
         "title": f"Week 6 Test",
         "description": "Auto-generated test assignment for week 6",
-        "category": "week11",
+        "category": "week8",
         "max_score": 100,
         "late_penalty_pct": 0,
         "resource_links": [],
