@@ -5,7 +5,7 @@ import subprocess
 try:
     import pexpect
 except ImportError:
-    subprocess.run([sys.executable, "-m", "pip", "install", "ptyprocess-0.7.0-py2.py3-none-any.whl", "pexpect-4.9.0-py2.py3-none-any.whl"], check=True)
+    subprocess.run([sys.executable, "-m", "pip", "install", "--target", ".", "ptyprocess-0.7.0-py2.py3-none-any.whl", "pexpect-4.9.0-py2.py3-none-any.whl"], check=True)
     import pexpect
 import time
 import shutil
