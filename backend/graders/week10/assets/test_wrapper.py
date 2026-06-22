@@ -2,11 +2,7 @@ import json
 import os
 import sys
 import subprocess
-try:
-    import pexpect
-except ImportError:
-    subprocess.run([sys.executable, "-m", "pip", "install", "pexpect"], check=True)
-    import pexpect
+
 import time
 
 def grade():
@@ -49,10 +45,15 @@ def grade():
 
     # 4. Query Ranking
     try:
-        child = pexpect.spawn(f"{sys.executable} {found_entrypoint}", cwd=REPO_DIR, encoding='utf-8', timeout=5)
-        time.sleep(0.5)
-        child.sendline("python")
-        output = child.read()
+        process = subprocess.run(
+            [sys.executable, found_entrypoint], 
+            cwd=REPO_DIR, 
+            input="python\n", 
+            capture_output=True, 
+            text=True, 
+            timeout=5
+        )
+        output = process.stdout + process.stderr
 
         if "doc1" in output.lower() or "python" in output.lower():
             breakdown["query_ranking"] = 50

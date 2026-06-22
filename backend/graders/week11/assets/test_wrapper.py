@@ -2,11 +2,7 @@ import json
 import os
 import sys
 import subprocess
-try:
-    import pexpect
-except ImportError:
-    subprocess.run([sys.executable, "-m", "pip", "install", "pexpect"], check=True)
-    import pexpect
+
 import time
 import shutil
 
@@ -77,32 +73,29 @@ def grade():
     
     # Query Tests
     try:
-        child = pexpect.spawn(f"{sys.executable} {found_entrypoint}", cwd=REPO_DIR, encoding='utf-8', timeout=5)
-        time.sleep(1)
+        process = subprocess.run(
+            [sys.executable, found_entrypoint], 
+            cwd=REPO_DIR, 
+            input="mock article\npython\n", 
+            capture_output=True, 
+            text=True, 
+            timeout=5
+        )
+        output = process.stdout + process.stderr
         
         # Test 1: Multi-word query
-        child.sendline("mock article")
-        output1 = child.read_nonblocking(size=1000, timeout=5)
-        if "doc5" in output1.lower() or "mock" in output1.lower():
+        if "doc5" in output.lower() or "mock" in output.lower():
             breakdown["multi_word"] = 35
             feedback_messages.append("Multi-Word Query (35/35): Successfully handled a multi-word query.")
         else:
-            feedback_messages.append(f"Multi-Word Query (10/35): Did not return expected results for 'mock article'. Output: {output1.strip()[:100]}")
+            feedback_messages.append(f"Multi-Word Query (10/35): Did not return expected results for 'mock article'. Output: {output.strip()[:100]}")
             
-        try:
-            child.sendline("python")
-            output2 = child.read_nonblocking(size=1000, timeout=5)
-            if "doc1" in output2.lower() or "python" in output2.lower():
-                breakdown["ranked"] = 35
-                feedback_messages.append("Ranked Retrieval (35/35): Successfully retrieved top documents for term 'python'.")
-            else:
-                feedback_messages.append(f"Ranked Retrieval (10/35): Did not return expected results for 'python'. Output: {output2.strip()[:100]}")
-        except Exception:
-            if breakdown["multi_word"] == 35:
-                breakdown["ranked"] = 35
-                feedback_messages.append("Ranked Retrieval (35/35): Script exited after first query, assuming single-query run.")
-            else:
-                feedback_messages.append("Ranked Retrieval (0/35): Script exited early.")
+        # Test 2: Ranked Retrieval
+        if "doc1" in output.lower() or "python" in output.lower():
+            breakdown["ranked"] = 35
+            feedback_messages.append("Ranked Retrieval (35/35): Successfully retrieved top documents for term 'python'.")
+        else:
+            feedback_messages.append(f"Ranked Retrieval (10/35): Did not return expected results for 'python'. Output: {output.strip()[:100]}")
             
     except Exception as e:
         feedback_messages.append(f"Query Testing (0/70): Failed to execute interactive query: {e}")
