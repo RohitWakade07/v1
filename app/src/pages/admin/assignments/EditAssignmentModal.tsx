@@ -42,23 +42,12 @@ export function EditAssignmentModal({ assignment, onClose }: Props) {
       setCategory(assignment.category || '')
       setSubmissionFilename(assignment.submission_filename || '')
       setSubmissionInstructions(assignment.submission_instructions || '')
-      // Parse existing resource_links from JSON string
-      try {
-        const raw = assignment.resource_links
-        if (raw && raw !== '[]') {
-          const parsed = JSON.parse(raw)
-          // Back-compat: add 'type' field if missing
-          setResourceLinks(parsed.map((r: Record<string,string>) => ({
-            title: r.title || '',
-            url: r.url || '',
-            type: (r.type as ResourceLink['type']) || 'link',
-          })))
-        } else {
-          setResourceLinks([])
-        }
-      } catch {
-        setResourceLinks([])
-      }
+      // Resource links are now natively passed as an array
+      setResourceLinks((assignment.resource_links || []).map((r) => ({
+        title: r.title || '',
+        url: r.url || '',
+        type: (r.type as ResourceLink['type']) || 'link',
+      })))
       setActiveTab('general')
     }
   }, [assignment])
@@ -76,7 +65,7 @@ export function EditAssignmentModal({ assignment, onClose }: Props) {
         late_penalty_pct: parseFloat(latePenaltyPct) || 0,
         submission_filename: submissionFilename || undefined,
         submission_instructions: submissionInstructions || undefined,
-        resource_links: JSON.stringify(resourceLinks),
+        resource_links: resourceLinks,
       },
     })
     onClose()

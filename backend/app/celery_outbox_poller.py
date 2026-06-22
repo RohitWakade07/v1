@@ -53,8 +53,10 @@ async def poll_outbox():
                     except Exception as e:
                         logger.error(f"Failed to dispatch record {record.id}: {e}")
                         record.retry_count += 1
-                
+
                 await db.commit()
         except Exception as e:
             logger.error(f"Outbox poller DB error: {e}")
-            await asyncio.sleep(5)
+        finally:
+            # Always sleep before the next iteration to avoid a hot spin-loop
+            await asyncio.sleep(2)

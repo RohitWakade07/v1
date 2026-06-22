@@ -85,7 +85,7 @@ export function CreateAssignmentModal({ isOpen, onClose }: Props) {
       late_penalty_pct: parseFloat(latePenaltyPct) || 0,
       submission_filename: submissionFilename || undefined,
       submission_instructions: submissionInstructions || undefined,
-      resource_links: JSON.stringify(resourceLinks),
+      resource_links: resourceLinks,
     })
   }
 

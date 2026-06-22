@@ -369,6 +369,34 @@ async def get_quiz_student(
     return QuizPublic(**quiz.__dict__)
 
 
+
+@router.get("/student/quizzes/results", response_model=List[QuizAttemptSummary], summary="Get all quiz results for current student")
+async def get_all_quiz_results_student(
+    current_student: Student = Depends(get_approved_student),
+    db: AsyncSession = Depends(get_db),
+):
+    attempts_result = await db.execute(
+        select(QuizAttempt, Quiz)
+        .join(Quiz, QuizAttempt.quiz_id == Quiz.id)
+        .where(QuizAttempt.student_id == current_student.id, QuizAttempt.submitted_at.is_not(None))
+        .order_by(QuizAttempt.submitted_at.desc())
+    )
+    rows = attempts_result.all()
+
+    results = []
+    for attempt, quiz in rows:
+        results.append(QuizAttemptSummary(
+            attempt_id=attempt.id,
+            quiz_id=quiz.id,
+            assignment_id=quiz.assignment_id,
+            quiz_title=quiz.title,
+            total_score=attempt.total_score,
+            max_score=attempt.max_score,
+            submitted_at=attempt.submitted_at,
+        ))
+    return results
+
+
 @router.get("/student/quizzes/{quiz_id}/questions", response_model=List[QuizQuestionPublic], summary="Get quiz questions for student (options hidden is_correct)")
 async def get_quiz_questions_student(
     quiz_id: str,
@@ -512,30 +540,3 @@ async def get_quiz_result_student(
         submitted_at=attempt.submitted_at,
         question_results=question_results,
     )
-
-
-@router.get("/student/quizzes/results", response_model=List[QuizAttemptSummary], summary="Get all quiz results for current student")
-async def get_all_quiz_results_student(
-    current_student: Student = Depends(get_approved_student),
-    db: AsyncSession = Depends(get_db),
-):
-    attempts_result = await db.execute(
-        select(QuizAttempt, Quiz)
-        .join(Quiz, QuizAttempt.quiz_id == Quiz.id)
-        .where(QuizAttempt.student_id == current_student.id, QuizAttempt.submitted_at.is_not(None))
-        .order_by(QuizAttempt.submitted_at.desc())
-    )
-    rows = attempts_result.all()
-    
-    results = []
-    for attempt, quiz in rows:
-        results.append(QuizAttemptSummary(
-            attempt_id=attempt.id,
-            quiz_id=quiz.id,
-            assignment_id=quiz.assignment_id,
-            quiz_title=quiz.title,
-            total_score=attempt.total_score,
-            max_score=attempt.max_score,
-            submitted_at=attempt.submitted_at,
-        ))
-    return results

@@ -35,6 +35,13 @@ async def lifespan(app: FastAPI):
     poller_task = asyncio.create_task(poll_outbox())
 
     yield
+
+    # Cancel the background poller task cleanly on shutdown
+    poller_task.cancel()
+    try:
+        await poller_task
+    except asyncio.CancelledError:
+        pass
     await close_redis()
     print("[shutdown] connections closed")
 

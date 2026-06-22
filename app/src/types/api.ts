@@ -76,7 +76,7 @@ export interface Assignment {
   is_published: boolean
   is_archived: boolean
   late_penalty_pct?: number
-  resource_links?: string | null
+  resource_links?: Array<{ title: string; url: string; type?: string }> | null
   submission_filename?: string | null
   submission_instructions?: string | null
   created_by_id: string

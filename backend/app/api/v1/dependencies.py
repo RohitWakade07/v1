@@ -1,6 +1,6 @@
 import uuid
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials  # HTTPAuthorizationCredentials used in get_token_from_request
 from jose import JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
@@ -56,11 +56,11 @@ async def get_current_student(
 
 
 async def get_current_mentor(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    token: str = Depends(get_token_from_request),
     db: AsyncSession = Depends(get_db),
 ) -> Mentor:
     try:
-        payload = decode_access_token(credentials.credentials)
+        payload = decode_access_token(token)
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

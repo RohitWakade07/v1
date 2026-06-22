@@ -39,6 +39,7 @@ async def list_assignments(
             is_published=a.is_published,
             is_archived=a.is_archived,
             late_penalty_pct=a.late_penalty_pct or 0.0,
+            resource_links=a.resource_links,
             submission_filename=a.submission_filename,
             submission_instructions=a.submission_instructions,
             created_by_id=a.created_by_id,
@@ -82,9 +83,10 @@ async def get_assignment(
         deadline=assignment.deadline,
         is_published=assignment.is_published,
         is_archived=assignment.is_archived,
-            late_penalty_pct=assignment.late_penalty_pct or 0.0,
-            submission_filename=assignment.submission_filename,
-            submission_instructions=assignment.submission_instructions,
+        late_penalty_pct=assignment.late_penalty_pct or 0.0,
+        resource_links=assignment.resource_links,
+        submission_filename=assignment.submission_filename,
+        submission_instructions=assignment.submission_instructions,
         created_by_id=assignment.created_by_id,
         created_at=assignment.created_at,
         updated_at=getattr(assignment, "updated_at", None),
@@ -118,14 +120,15 @@ async def create_assignment(
         max_score=body.max_score,
         deadline=body.deadline,
         late_penalty_pct=body.late_penalty_pct,
-        resource_links=body.resource_links or "[]",
+        resource_links=body.resource_links if body.resource_links is not None else [],
         submission_filename=body.submission_filename,
         submission_instructions=body.submission_instructions,
         is_published=False,
         created_by_id=current_mentor.id,
     )
     db.add(assignment)
-    await db.flush()
+    await db.commit()
+    await db.refresh(assignment)
     return AssignmentPublic(
         id=assignment.id,
         slug=assignment.slug,
@@ -136,9 +139,10 @@ async def create_assignment(
         deadline=assignment.deadline,
         is_published=assignment.is_published,
         is_archived=assignment.is_archived,
-            late_penalty_pct=assignment.late_penalty_pct or 0.0,
-            submission_filename=assignment.submission_filename,
-            submission_instructions=assignment.submission_instructions,
+        late_penalty_pct=assignment.late_penalty_pct or 0.0,
+        resource_links=assignment.resource_links,
+        submission_filename=assignment.submission_filename,
+        submission_instructions=assignment.submission_instructions,
         created_by_id=assignment.created_by_id,
         created_at=assignment.created_at,
         updated_at=getattr(assignment, "updated_at", None),
@@ -178,7 +182,8 @@ async def publish_assignment(
 
     assignment.is_published = True
     db.add(assignment)
-    await db.flush()
+    await db.commit()
+    await db.refresh(assignment)
     return AssignmentPublic(
         id=assignment.id,
         slug=assignment.slug,
@@ -189,9 +194,10 @@ async def publish_assignment(
         deadline=assignment.deadline,
         is_published=assignment.is_published,
         is_archived=assignment.is_archived,
-            late_penalty_pct=assignment.late_penalty_pct or 0.0,
-            submission_filename=assignment.submission_filename,
-            submission_instructions=assignment.submission_instructions,
+        late_penalty_pct=assignment.late_penalty_pct or 0.0,
+        resource_links=assignment.resource_links,
+        submission_filename=assignment.submission_filename,
+        submission_instructions=assignment.submission_instructions,
         created_by_id=assignment.created_by_id,
         created_at=assignment.created_at,
         updated_at=getattr(assignment, "updated_at", None),
@@ -229,7 +235,8 @@ async def unpublish_assignment(
         )
     assignment.is_published = False
     db.add(assignment)
-    await db.flush()
+    await db.commit()
+    await db.refresh(assignment)
     return AssignmentPublic(
         id=assignment.id,
         slug=assignment.slug,
@@ -240,9 +247,10 @@ async def unpublish_assignment(
         deadline=assignment.deadline,
         is_published=assignment.is_published,
         is_archived=assignment.is_archived,
-            late_penalty_pct=assignment.late_penalty_pct or 0.0,
-            submission_filename=assignment.submission_filename,
-            submission_instructions=assignment.submission_instructions,
+        late_penalty_pct=assignment.late_penalty_pct or 0.0,
+        resource_links=assignment.resource_links,
+        submission_filename=assignment.submission_filename,
+        submission_instructions=assignment.submission_instructions,
         created_by_id=assignment.created_by_id,
         created_at=assignment.created_at,
         updated_at=getattr(assignment, "updated_at", None),
@@ -299,7 +307,8 @@ async def update_assignment(
 
     assignment.updated_at = datetime.utcnow()
     db.add(assignment)
-    await db.flush()
+    await db.commit()
+    await db.refresh(assignment)
     return AssignmentPublic(
         id=assignment.id,
         slug=assignment.slug,
@@ -310,13 +319,13 @@ async def update_assignment(
         deadline=assignment.deadline,
         is_published=assignment.is_published,
         is_archived=assignment.is_archived,
-            late_penalty_pct=assignment.late_penalty_pct or 0.0,
-            submission_filename=assignment.submission_filename,
-            submission_instructions=assignment.submission_instructions,
-        resource_links=assignment.resource_links or "[]",
+        late_penalty_pct=assignment.late_penalty_pct or 0.0,
+        resource_links=assignment.resource_links,
+        submission_filename=assignment.submission_filename,
+        submission_instructions=assignment.submission_instructions,
         created_by_id=assignment.created_by_id,
         created_at=assignment.created_at,
-        updated_at=getattr(assignment, "updated_at", None),
+        updated_at=assignment.updated_at,
     )
 
 
@@ -332,7 +341,7 @@ class AdminAssignmentUpdate(BaseModel):
     deadline: Optional[datetime] = None
     is_published: Optional[bool] = None
     is_archived: Optional[bool] = None
-    resource_links: Optional[str] = None  # JSON string array of {title, url}
+    resource_links: Optional[list] = None
     late_penalty_pct: Optional[float] = None
     submission_filename: Optional[str] = None
     submission_instructions: Optional[str] = None
@@ -370,7 +379,8 @@ async def admin_update_assignment(
     assignment.updated_at = datetime.utcnow()
 
     db.add(assignment)
-    await db.flush()
+    await db.commit()
+    await db.refresh(assignment)
     return AssignmentPublic(
         id=assignment.id,
         slug=assignment.slug,
@@ -381,10 +391,10 @@ async def admin_update_assignment(
         deadline=assignment.deadline,
         is_published=assignment.is_published,
         is_archived=assignment.is_archived,
-            late_penalty_pct=assignment.late_penalty_pct or 0.0,
-            submission_filename=assignment.submission_filename,
-            submission_instructions=assignment.submission_instructions,
-        resource_links=assignment.resource_links or "[]",
+        late_penalty_pct=assignment.late_penalty_pct or 0.0,
+        resource_links=assignment.resource_links,
+        submission_filename=assignment.submission_filename,
+        submission_instructions=assignment.submission_instructions,
         created_by_id=assignment.created_by_id,
         created_at=assignment.created_at,
         updated_at=assignment.updated_at,

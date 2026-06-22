@@ -22,7 +22,7 @@ def divider(title):
 
 def check(resp, label, expect=200):
     ok = resp.status_code in ([expect] if isinstance(expect, int) else expect)
-    status_icon = "✅" if ok else "❌"
+    status_icon = "[OK]" if ok else "[ERROR]"
     print(f"{status_icon} {label}: {resp.status_code}")
     if not ok:
         print(f"   ERROR: {resp.text[:300]}")
@@ -45,10 +45,10 @@ print(f"   Role: {resp.json().get('role')}")
 # ─────────────────────────────────────────────
 divider("Step 2: Create Assignment via Admin API")
 slug = f"test-assign-{random.randint(1000,9999)}"
-resources = json.dumps([
+resources = [
     {"title": "Week Tutorial", "url": "https://docs.python.org", "type": "link"},
     {"title": "Demo Video", "url": "https://youtube.com/watch?v=dQw4w9WgXcQ", "type": "video"},
-])
+]
 create_payload = {
     "slug": slug,
     "title": f"Test Assignment {slug}",
@@ -79,11 +79,11 @@ for r in parsed:
 # STEP 3: Admin Edit (update resources via PATCH)
 # ─────────────────────────────────────────────
 divider("Step 3: Admin Edit Assignment (PATCH)")
-updated_resources = json.dumps([
+updated_resources = [
     {"title": "Updated Tutorial", "url": "https://developer.mozilla.org", "type": "link"},
     {"title": "Architecture Diagram", "url": "https://picsum.photos/800/400", "type": "image"},
     {"title": "Demo Video", "url": "https://youtube.com/watch?v=dQw4w9WgXcQ", "type": "video"},
-])
+]
 resp = requests.patch(
     f"{BASE}/assignments/admin/{assignment_id}",
     json={"resource_links": updated_resources, "late_penalty_pct": 10},
@@ -149,7 +149,7 @@ if classrooms:
             )
             print(f"   Approved {e.get('student_roll','?')}: {approve_resp.status_code}")
 else:
-    print("   ⚠️  No classrooms found, student may not be approved. Continuing...")
+    print("   [WARNING]  No classrooms found, student may not be approved. Continuing...")
 
 # ─────────────────────────────────────────────
 # STEP 7: Student Views Assignment
@@ -195,7 +195,7 @@ if resp.status_code in (200, 201, 202):
     print(f"   Attempt #: {sub.get('attempt_number')}")
 
     # Poll status
-    print("\n   ⏳ Polling status (up to 30s)...")
+    print("\n   [WAIT] Polling status (up to 30s)...")
     for _ in range(6):
         time.sleep(5)
         poll = requests.get(f"{BASE}/submissions/{sub_id}", headers=student_headers)

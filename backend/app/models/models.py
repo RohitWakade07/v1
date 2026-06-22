@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Optional, List
+from typing import Optional, Any, List
 
 from sqlalchemy import String, Text, Integer, UniqueConstraint, Index, Float
 from sqlalchemy.dialects.postgresql import JSONB
@@ -123,7 +123,7 @@ class Assignment(SQLModel, table=True):
     is_published: bool = Field(default=False)
     is_archived: bool = Field(default=False)
     # Resource links: list of {title: str, url: str} stored as JSON
-    resource_links: Optional[str] = Field(default="[]", sa_column=Column(Text, nullable=False, server_default="[]"))
+    resource_links: Any = Field(default=[], sa_column=Column(JSONB, nullable=False, server_default='[]'))
     # Late submission penalty as a percentage (0-100)
     late_penalty_pct: float = Field(default=0.0, sa_column=Column(Float, nullable=False, server_default="0.0"))
     # Submission info fields (editable by admin)

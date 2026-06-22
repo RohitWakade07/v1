@@ -42,8 +42,8 @@ const RegisterPage = () => {
     // 2. Automatically log in to obtain the access token
     const loginResponse = await loginStudent(values.rollNumber, values.password)
 
-    // Save token to localStorage temporarily to authorize getStudentProfile
-    localStorage.setItem('sgp.token', loginResponse.access_token)
+    // Save token to auth store temporarily to authorize getStudentProfile
+    useAuthStore.setState({ token: loginResponse.access_token })
 
     // 3. Fetch the complete profile details
     let profileData = {

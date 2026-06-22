@@ -17,9 +17,7 @@ export const AssignmentDetailPanel = ({ assignment }: AssignmentDetailPanelProps
   const urgent = isUrgent(assignment.deadline)
   const resourceLinks = Array.isArray(assignment.resource_links)
     ? assignment.resource_links
-    : typeof assignment.resource_links === 'string'
-      ? (() => { try { return JSON.parse(assignment.resource_links) } catch { return [] } })()
-      : []
+    : []
 
   return (
     <div className="space-y-5">

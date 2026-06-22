@@ -89,7 +89,7 @@ class AssignmentPublic(BaseModel):
     deadline: Optional[datetime]
     is_published: bool
     is_archived: bool
-    resource_links: Optional[str] = "[]"  # JSON string: [{title, url}]
+    resource_links: Optional[list] = []
     late_penalty_pct: float = 0.0
     submission_filename: Optional[str] = None
     submission_instructions: Optional[str] = None
@@ -106,7 +106,7 @@ class AssignmentCreate(BaseModel):
     max_score: float = 100.0
     deadline: Optional[datetime] = None
     late_penalty_pct: float = 0.0
-    resource_links: Optional[str] = "[]"
+    resource_links: Optional[list] = []
     submission_filename: Optional[str] = None
     submission_instructions: Optional[str] = None
 

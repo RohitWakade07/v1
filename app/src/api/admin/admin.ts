@@ -46,7 +46,7 @@ export interface AdminAssignmentUpdate {
   deadline?: string
   is_published?: boolean
   is_archived?: boolean
-  resource_links?: string
+  resource_links?: Array<{ title: string; url: string; type?: string }>
   late_penalty_pct?: number
   submission_filename?: string
   submission_instructions?: string

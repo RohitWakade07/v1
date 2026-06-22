@@ -31,8 +31,6 @@ interface AuthState {
   hydrate: () => void
 }
 
-const TOKEN_KEY = 'sgp.token'
-
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
@@ -79,14 +77,14 @@ export const useAuthStore = create<AuthState>()(
           mentorUuid: null,
         }),
 
-      // Validates stored token on app load — clears if expired
+      // Validates stored token on app load — clears if expired.
+      // The persist middleware's onRehydrateStorage handles the initial
+      // rehydration check; this is a safety net for subsequent calls.
       hydrate: () => {
-        const token = localStorage.getItem(TOKEN_KEY)
-        if (!token) return
-        if (isTokenExpired(token)) {
-          localStorage.removeItem(TOKEN_KEY)
+        const { token, logout } = useAuthStore.getState()
+        if (token && isTokenExpired(token)) {
+          logout()
         }
-        // zustand/persist already restores the rest of the state from storage
       },
     }),
     {

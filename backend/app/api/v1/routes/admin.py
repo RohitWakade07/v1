@@ -119,7 +119,7 @@ async def list_all_mentors(
             username=m.username,
             full_name=m.full_name,
             email=m.email,
-            role=m.role,
+            role=m.role.value if hasattr(m.role, "value") else str(m.role),
             is_active=m.is_active,
             created_at=m.created_at,
         )
@@ -193,8 +193,8 @@ async def list_all_submissions_admin(
             assignment_id=str(sub.assignment_id),
             assignment_title=assignment.title,
             assignment_slug=assignment.slug,
-            status=sub.status,
-            source_type=sub.source_type,
+            status=sub.status.value if hasattr(sub.status, "value") else str(sub.status),
+            source_type=sub.source_type.value if hasattr(sub.source_type, "value") else str(sub.source_type),
             attempt_number=sub.attempt_number,
             score=sub.score,
             max_score=sub.max_score,
@@ -298,7 +298,7 @@ async def create_mentor(
         username=mentor.username,
         full_name=mentor.full_name,
         email=mentor.email,
-        role=mentor.role,
+        role=mentor.role.value if hasattr(mentor.role, "value") else str(mentor.role),
         is_active=mentor.is_active,
         created_at=mentor.created_at,
     )

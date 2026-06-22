@@ -260,14 +260,9 @@ async def mark_announcement_read_mentor(
 
 # ── Notifications (unified) ───────────────────────────────────────────
 
-@router.get("/notifications", response_model=List[NotificationPublic], summary="Get top 5 notifications for current user")
-async def get_notifications(
-    current_student: Optional[Student] = None,
-    current_mentor: Optional[Mentor] = None,
-    db: AsyncSession = Depends(get_db),
-):
-    """Returns top 5 notifications. Auth is determined by which token is provided."""
-    raise HTTPException(501, detail="Use /student/notifications or /mentor/notifications")
+# NOTE: Use /student/notifications or /mentor/notifications directly.
+# A single /notifications endpoint cannot safely distinguish auth type without
+# a dedicated token parameter — the role-specific routes below are the correct approach.
 
 
 @router.get("/student/notifications", response_model=List[NotificationPublic], summary="Get top 5 notifications for student")

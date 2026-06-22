@@ -175,7 +175,7 @@ async def approve_enrollment(
 
     enrollment.status = "APPROVED"
     db.add(enrollment)
-    await db.flush()
+    await db.commit()
     return {"message": "Student enrollment approved successfully"}
 
 
@@ -210,7 +210,7 @@ async def reject_enrollment(
 
     enrollment.status = "REJECTED"
     db.add(enrollment)
-    await db.flush()
+    await db.commit()
     return {"message": "Student enrollment rejected successfully"}
 
 
@@ -270,7 +270,7 @@ async def join_classroom(
         status="PENDING",
     )
     db.add(enrollment)
-    await db.flush()
+    await db.commit()
 
     return {
         "message": f"Successfully requested to join classroom '{classroom.name}'. Pending mentor approval.",

@@ -125,6 +125,9 @@ async def async_grade_submission(submission_id: str, celery_task_id: str):
         logger.info(f"[GRADE:LOCK] Lock acquired successfully key={lock_key} ttl=300s")
 
         # ── 6. Execute grading ─────────────────────────────────────────────
+        grading_result = None
+        exec_meta = None
+        status_str = "FAILED"
         try:
             logger.info(f"[GRADE:EXEC] Starting DockerExecutor for submission_id={submission_id} slug={assignment.slug} source_type={submission.source_type.value}")
             executor = DockerExecutor()
@@ -149,7 +152,9 @@ async def async_grade_submission(submission_id: str, celery_task_id: str):
             logger.debug(f"[GRADE:EXEC] checks count: {len(grading_result.checks)}")
             for i, check in enumerate(grading_result.checks):
                 logger.debug(f"[GRADE:EXEC] check[{i}] name={check.name} passed={check.passed} marks={check.marks}/{check.max_marks}")
-
+        except Exception as exec_err:
+            logger.error(f"[GRADE:EXEC] Execution raised exception: {type(exec_err).__name__}: {exec_err}", exc_info=True)
+            raise
         finally:
             logger.info(f"[GRADE:LOCK] Releasing lock key={lock_key}")
             await redis_client.delete(lock_key)
@@ -221,8 +226,10 @@ async def async_grade_submission(submission_id: str, celery_task_id: str):
             raise
 
     logger.info(f"[GRADE:COMPLETE] submission_id={submission_id} fully processed")
+    # Always dispose the engine — do it outside the `async with` so the
+    # session is already closed before we tear down the engine.
     await local_engine.dispose()
-    
+
     return {
         "status": status_str,
         "score": grading_result.score,
