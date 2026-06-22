@@ -554,6 +554,7 @@ class Quiz(SQLModel, table=True):
     assignment_id: uuid.UUID = Field(foreign_key="assignments.id", index=True, unique=True)
     title: str = Field(sa_column=Column(String(300), nullable=False))
     marks_per_question: int = Field(default=1)
+    max_attempts: int = Field(default=1, sa_column=Column(Integer, nullable=False, server_default="1"))
     is_active: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
