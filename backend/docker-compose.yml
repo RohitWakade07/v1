@@ -53,17 +53,6 @@ services:
     container_name: grading_backend
     restart: unless-stopped
     env_file: .env
-    environment:
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
-      - REDIS_HOST=redis
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/1
-      - MINIO_ENDPOINT=http://minio:9000
-      - MINIO_ACCESS_KEY=minioadmin
-      - MINIO_SECRET_KEY=minioadmin
-      - MINIO_BUCKET_SUBMISSIONS=submissions
-      - MINIO_BUCKET_ASSETS=grader-assets
     ports:
       - "8000:8000"
     depends_on:
@@ -81,18 +70,6 @@ services:
     container_name: grading_worker
     restart: unless-stopped
     env_file: .env
-    environment:
-      - SERVICE_TYPE=worker
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
-      - REDIS_HOST=redis
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/1
-      - MINIO_ENDPOINT=http://minio:9000
-      - MINIO_ACCESS_KEY=minioadmin
-      - MINIO_SECRET_KEY=minioadmin
-      - MINIO_BUCKET_SUBMISSIONS=submissions
-      - MINIO_BUCKET_ASSETS=grader-assets
     volumes:
       # Mount the host Docker socket so the worker can spin up sibling containers
       - /var/run/docker.sock:/var/run/docker.sock
