@@ -39,6 +39,8 @@ export function CreateAssignmentModal({ isOpen, onClose }: Props) {
   // Submission
   const [submissionFilename, setSubmissionFilename] = useState('')
   const [submissionInstructions, setSubmissionInstructions] = useState('')
+  const [expectedStructure, setExpectedStructure] = useState('')
+  const [expectedMediaUrl, setExpectedMediaUrl] = useState('')
 
   // Resources
   const [resourceLinks, setResourceLinks] = useState<ResourceLink[]>([])
@@ -192,8 +194,22 @@ export function CreateAssignmentModal({ isOpen, onClose }: Props) {
               <label className="block text-xs font-medium text-text-secondary mb-1">Submission Instructions</label>
               <textarea value={submissionInstructions}
                 onChange={(e) => setSubmissionInstructions(e.target.value)}
-                className="input-dark w-full resize-none" rows={10}
+                className="input-dark w-full resize-none" rows={4}
                 placeholder="Step-by-step instructions shown to students..." />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-text-secondary mb-1">Expected Structure (Paths)</label>
+              <textarea value={expectedStructure}
+                onChange={(e) => setExpectedStructure(e.target.value)}
+                className="input-dark w-full resize-none font-mono text-xs" rows={4}
+                placeholder="src/main.js\nsrc/utils.js\npackage.json" />
+              <p className="text-[10px] text-text-muted mt-1">One path per line. Will be rendered as a tree.</p>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-text-secondary mb-1">Expected Media URL</label>
+              <input type="text" value={expectedMediaUrl}
+                onChange={(e) => setExpectedMediaUrl(e.target.value)}
+                className="input-dark w-full font-mono" placeholder="https://example.com/structure-image.png" />
             </div>
           </>
         )}

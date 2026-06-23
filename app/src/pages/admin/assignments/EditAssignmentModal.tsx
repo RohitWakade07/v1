@@ -26,6 +26,8 @@ export function EditAssignmentModal({ assignment, onClose }: Props) {
   // Submission Info
   const [submissionFilename, setSubmissionFilename] = useState('')
   const [submissionInstructions, setSubmissionInstructions] = useState('')
+  const [expectedStructure, setExpectedStructure] = useState('')
+  const [expectedMediaUrl, setExpectedMediaUrl] = useState('')
 
   // Resources
   const [resourceLinks, setResourceLinks] = useState<ResourceLink[]>([])
@@ -42,6 +44,8 @@ export function EditAssignmentModal({ assignment, onClose }: Props) {
       setCategory(assignment.category || '')
       setSubmissionFilename(assignment.submission_filename || '')
       setSubmissionInstructions(assignment.submission_instructions || '')
+      setExpectedStructure(assignment.expected_structure || '')
+      setExpectedMediaUrl(assignment.expected_media_url || '')
       // Resource links are now natively passed as an array
       setResourceLinks((assignment.resource_links || []).map((r) => ({
         title: r.title || '',
@@ -65,8 +69,8 @@ export function EditAssignmentModal({ assignment, onClose }: Props) {
         late_penalty_pct: parseFloat(latePenaltyPct) || 0,
         submission_filename: submissionFilename || undefined,
         submission_instructions: submissionInstructions || undefined,
-          expected_structure: expectedStructure || undefined,
-          expected_media_url: expectedMediaUrl || undefined,
+        expected_structure: expectedStructure || undefined,
+        expected_media_url: expectedMediaUrl || undefined,
         resource_links: resourceLinks,
       },
     })
@@ -166,8 +170,22 @@ export function EditAssignmentModal({ assignment, onClose }: Props) {
               </label>
               <textarea value={submissionInstructions}
                 onChange={(e) => setSubmissionInstructions(e.target.value)}
-                className="input-dark w-full resize-none" rows={9}
+                className="input-dark w-full resize-none" rows={4}
                 placeholder="Step-by-step instructions shown to students on the assignment page." />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-text-secondary mb-1">Expected Structure (Paths)</label>
+              <textarea value={expectedStructure}
+                onChange={(e) => setExpectedStructure(e.target.value)}
+                className="input-dark w-full resize-none font-mono text-xs" rows={4}
+                placeholder="src/main.js\nsrc/utils.js\npackage.json" />
+              <p className="text-[10px] text-text-muted mt-1">One path per line. Will be rendered as a tree.</p>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-text-secondary mb-1">Expected Media URL</label>
+              <input type="text" value={expectedMediaUrl}
+                onChange={(e) => setExpectedMediaUrl(e.target.value)}
+                className="input-dark w-full font-mono" placeholder="https://example.com/structure-image.png" />
             </div>
           </>
         )}

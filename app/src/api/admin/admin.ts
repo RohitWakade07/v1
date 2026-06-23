@@ -50,6 +50,8 @@ export interface AdminAssignmentUpdate {
   late_penalty_pct?: number
   submission_filename?: string
   submission_instructions?: string
+  expected_structure?: string
+  expected_media_url?: string
 }
 
 export const adminUpdateAssignment = async (id: string, payload: AdminAssignmentUpdate): Promise<Assignment> => {
@@ -73,5 +75,5 @@ export const getHealth = async (): Promise<HealthResponse> => {
 }
 
 export const deleteAssignment = async (assignmentId: string): Promise<void> => {
-  await apiClient.delete(/assignments/admin/);
+  await apiClient.delete(`/assignments/admin/${assignmentId}`);
 };

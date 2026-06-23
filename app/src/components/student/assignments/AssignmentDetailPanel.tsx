@@ -30,7 +30,7 @@ const buildTree = (paths: string[]) => {
   return root;
 };
 
-const renderTreeNodes = (node: TreeNode, depth = 0, isLast = true, prefix = '') => {
+const renderTreeNodes = (node: TreeNode, depth = 0, prefix = '') => {
   const entries = Object.values(node.children);
   return entries.map((child, idx) => {
     const isChildLast = idx === entries.length - 1;
@@ -47,7 +47,7 @@ const renderTreeNodes = (node: TreeNode, depth = 0, isLast = true, prefix = '') 
         </div>
         {Object.keys(child.children).length > 0 && (
           <div className="flex flex-col">
-            {renderTreeNodes(child, depth + 1, isChildLast, depth === 0 ? '' : prefix + (isChildLast ? '    ' : '│   '))}
+            {renderTreeNodes(child, depth + 1, depth === 0 ? '' : prefix + (isChildLast ? '    ' : '│   '))}
           </div>
         )}
       </div>
@@ -183,8 +183,7 @@ export const AssignmentDetailPanel = ({ assignment }: AssignmentDetailPanelProps
 
                     {assignment.expected_structure ? (
                       <div className="file-tree-block p-4 rounded-lg bg-navy-900 border border-navy-800 overflow-x-auto">
-                        {renderTreeNodes(buildTree(assignment.expected_structure.split('
-').map(p => p.trim()).filter(Boolean)))}
+                        {renderTreeNodes(buildTree(assignment.expected_structure.split('\n').map(p => p.trim()).filter(Boolean)))}
                       </div>
                     ) : (
                       <div className="file-tree-block">
@@ -216,7 +215,6 @@ export const AssignmentDetailPanel = ({ assignment }: AssignmentDetailPanelProps
                     )}
                   </div>
                 </div>
-              )}
               )}
             </div>
           )
