@@ -62,6 +62,8 @@ export interface AssignmentDetail extends AssignmentSummary {
   late_penalty_pct?: number
   submission_filename?: string | null
   submission_instructions?: string | null
+  expected_structure?: string | null
+  expected_media_url?: string | null
 }
 
 // Full assignment (used by mentor + admin)
@@ -79,6 +81,8 @@ export interface Assignment {
   resource_links?: Array<{ title: string; url: string; type?: string }> | null
   submission_filename?: string | null
   submission_instructions?: string | null
+  expected_structure?: string | null
+  expected_media_url?: string | null
   created_by_id: string
   created_at: string
   updated_at?: string

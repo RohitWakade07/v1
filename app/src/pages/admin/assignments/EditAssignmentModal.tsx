@@ -65,6 +65,8 @@ export function EditAssignmentModal({ assignment, onClose }: Props) {
         late_penalty_pct: parseFloat(latePenaltyPct) || 0,
         submission_filename: submissionFilename || undefined,
         submission_instructions: submissionInstructions || undefined,
+          expected_structure: expectedStructure || undefined,
+          expected_media_url: expectedMediaUrl || undefined,
         resource_links: resourceLinks,
       },
     })

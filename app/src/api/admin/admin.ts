@@ -71,3 +71,7 @@ export const getHealth = async (): Promise<HealthResponse> => {
   const { data } = await apiClient.get<HealthResponse>('/health')
   return data
 }
+
+export const deleteAssignment = async (assignmentId: string): Promise<void> => {
+  await apiClient.delete(/assignments/admin/);
+};

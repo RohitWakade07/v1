@@ -42,6 +42,8 @@ async def list_assignments(
             resource_links=a.resource_links,
             submission_filename=a.submission_filename,
             submission_instructions=a.submission_instructions,
+            expected_structure=a.expected_structure,
+            expected_media_url=a.expected_media_url,
             created_by_id=a.created_by_id,
             created_at=a.created_at,
             updated_at=getattr(a, "updated_at", None),
@@ -87,6 +89,8 @@ async def get_assignment(
         resource_links=assignment.resource_links,
         submission_filename=assignment.submission_filename,
         submission_instructions=assignment.submission_instructions,
+          expected_structure=assignment.expected_structure,
+          expected_media_url=assignment.expected_media_url,
         created_by_id=assignment.created_by_id,
         created_at=assignment.created_at,
         updated_at=getattr(assignment, "updated_at", None),
@@ -123,6 +127,8 @@ async def create_assignment(
         resource_links=body.resource_links if body.resource_links is not None else [],
         submission_filename=body.submission_filename,
         submission_instructions=body.submission_instructions,
+          expected_structure=body.expected_structure,
+          expected_media_url=body.expected_media_url,
         is_published=False,
         created_by_id=current_mentor.id,
     )
@@ -143,6 +149,8 @@ async def create_assignment(
         resource_links=assignment.resource_links,
         submission_filename=assignment.submission_filename,
         submission_instructions=assignment.submission_instructions,
+          expected_structure=assignment.expected_structure,
+          expected_media_url=assignment.expected_media_url,
         created_by_id=assignment.created_by_id,
         created_at=assignment.created_at,
         updated_at=getattr(assignment, "updated_at", None),
@@ -198,6 +206,8 @@ async def publish_assignment(
         resource_links=assignment.resource_links,
         submission_filename=assignment.submission_filename,
         submission_instructions=assignment.submission_instructions,
+          expected_structure=assignment.expected_structure,
+          expected_media_url=assignment.expected_media_url,
         created_by_id=assignment.created_by_id,
         created_at=assignment.created_at,
         updated_at=getattr(assignment, "updated_at", None),
@@ -251,6 +261,8 @@ async def unpublish_assignment(
         resource_links=assignment.resource_links,
         submission_filename=assignment.submission_filename,
         submission_instructions=assignment.submission_instructions,
+          expected_structure=assignment.expected_structure,
+          expected_media_url=assignment.expected_media_url,
         created_by_id=assignment.created_by_id,
         created_at=assignment.created_at,
         updated_at=getattr(assignment, "updated_at", None),
@@ -323,6 +335,8 @@ async def update_assignment(
         resource_links=assignment.resource_links,
         submission_filename=assignment.submission_filename,
         submission_instructions=assignment.submission_instructions,
+          expected_structure=assignment.expected_structure,
+          expected_media_url=assignment.expected_media_url,
         created_by_id=assignment.created_by_id,
         created_at=assignment.created_at,
         updated_at=assignment.updated_at,
@@ -345,6 +359,8 @@ class AdminAssignmentUpdate(BaseModel):
     late_penalty_pct: Optional[float] = None
     submission_filename: Optional[str] = None
     submission_instructions: Optional[str] = None
+    expected_structure: Optional[str] = None
+    expected_media_url: Optional[str] = None
 
 
 @router.patch(
@@ -376,6 +392,10 @@ async def admin_update_assignment(
     if body.late_penalty_pct is not None: assignment.late_penalty_pct = body.late_penalty_pct
     if body.submission_filename is not None: assignment.submission_filename = body.submission_filename
     if body.submission_instructions is not None: assignment.submission_instructions = body.submission_instructions
+        if body.expected_structure is not None: assignment.expected_structure = body.expected_structure
+        if body.expected_media_url is not None: assignment.expected_media_url = body.expected_media_url
+    if body.expected_structure is not None: assignment.expected_structure = body.expected_structure
+    if body.expected_media_url is not None: assignment.expected_media_url = body.expected_media_url
     assignment.updated_at = datetime.utcnow()
 
     db.add(assignment)
@@ -395,7 +415,32 @@ async def admin_update_assignment(
         resource_links=assignment.resource_links,
         submission_filename=assignment.submission_filename,
         submission_instructions=assignment.submission_instructions,
+          expected_structure=assignment.expected_structure,
+          expected_media_url=assignment.expected_media_url,
         created_by_id=assignment.created_by_id,
         created_at=assignment.created_at,
         updated_at=assignment.updated_at,
     )
+
+@router.delete(
+    "/admin/{assignment_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Admin delete assignment (soft delete by setting is_archived=True)",
+    responses={403: {"model": ErrorResponse}, 404: {"model": ErrorResponse}},
+)
+async def admin_delete_assignment(
+    assignment_id: str,
+    _: Mentor = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    import uuid as _uuid
+    assignment = (await db.execute(
+        select(Assignment).where(Assignment.id == _uuid.UUID(assignment_id))
+    )).scalar_one_or_none()
+    
+    if not assignment:
+        raise HTTPException(404, detail={"error": "NOT_FOUND", "message": "Assignment not found"})
+        
+    assignment.is_archived = True
+    await db.commit()
+    return None

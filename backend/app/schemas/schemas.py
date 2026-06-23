@@ -93,6 +93,8 @@ class AssignmentPublic(BaseModel):
     late_penalty_pct: float = 0.0
     submission_filename: Optional[str] = None
     submission_instructions: Optional[str] = None
+    expected_structure: Optional[str] = None
+    expected_media_url: Optional[str] = None
     created_by_id: uuid.UUID
     created_at: datetime
     updated_at: Optional[datetime] = None
@@ -109,6 +111,8 @@ class AssignmentCreate(BaseModel):
     resource_links: Optional[list] = []
     submission_filename: Optional[str] = None
     submission_instructions: Optional[str] = None
+    expected_structure: Optional[str] = None
+    expected_media_url: Optional[str] = None
 
 
 class AssignmentUpdate(BaseModel):
@@ -118,6 +122,8 @@ class AssignmentUpdate(BaseModel):
     deadline: Optional[datetime] = None
     submission_filename: Optional[str] = None
     submission_instructions: Optional[str] = None
+    expected_structure: Optional[str] = None
+    expected_media_url: Optional[str] = None
 
 
 class SubmissionSourceType(str, Enum):

@@ -4,6 +4,57 @@ import { CategoryBadge } from '@/components/shared/StatusBadge'
 import { formatDate, formatRelative } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 
+
+interface TreeNode {
+  name: string;
+  children: Record<string, TreeNode>;
+  isFile: boolean;
+}
+
+const buildTree = (paths: string[]) => {
+  const root: TreeNode = { name: 'root', children: {}, isFile: false };
+  paths.forEach(path => {
+    const parts = path.split('/').filter(Boolean);
+    let current = root;
+    parts.forEach((part, i) => {
+      if (!current.children[part]) {
+        current.children[part] = {
+          name: part,
+          children: {},
+          isFile: i === parts.length - 1 && !path.endsWith('/')
+        };
+      }
+      current = current.children[part];
+    });
+  });
+  return root;
+};
+
+const renderTreeNodes = (node: TreeNode, depth = 0, isLast = true, prefix = '') => {
+  const entries = Object.values(node.children);
+  return entries.map((child, idx) => {
+    const isChildLast = idx === entries.length - 1;
+    const branch = depth === 0 ? '' : (isChildLast ? '└── ' : '├── ');
+    
+    return (
+      <div key={child.name + depth + idx}>
+        <div className="flex items-center gap-2 font-mono text-sm text-text-primary" style={{ paddingLeft: depth === 0 ? 0 : '0.5rem' }}>
+          {depth > 0 && <span className="text-navy-500 whitespace-pre">{prefix + branch}</span>}
+          <span className={child.isFile ? "text-accent-teal" : "text-accent-blue"}>
+            {child.isFile ? '📄' : '📦'}
+          </span>
+          <span>{child.name}</span>
+        </div>
+        {Object.keys(child.children).length > 0 && (
+          <div className="flex flex-col">
+            {renderTreeNodes(child, depth + 1, isChildLast, depth === 0 ? '' : prefix + (isChildLast ? '    ' : '│   '))}
+          </div>
+        )}
+      </div>
+    );
+  });
+};
+
 const isUrgent = (deadline?: string) => {
   if (!deadline) return false
   return new Date(deadline).getTime() - Date.now() < 48 * 3600 * 1000
@@ -121,36 +172,51 @@ export const AssignmentDetailPanel = ({ assignment }: AssignmentDetailPanelProps
                     </ul>
                   </div>
 
-                  <div className="space-y-3">
+                                    <div className="space-y-3">
                     <p className="text-sm text-text-primary font-medium">Expected ZIP Structure:</p>
-                    <div className="file-tree-block">
-                      <div className="tree-root flex items-center gap-2 mb-1">
-                        <span className="text-accent-blue">📦</span> submission.zip
+                    
+                    {assignment.expected_media_url && (
+                      <div className="mb-4 rounded-lg overflow-hidden border border-navy-700">
+                        <img src={assignment.expected_media_url} alt="Expected Structure" className="w-full object-contain bg-navy-900" />
                       </div>
-                      {isRepo ? (
-                        <>
-                          <div className="tree-leaf flex items-center gap-2 ml-1">
-                            <span className="tree-branch">├──</span> 
-                            <span className="text-accent-blue">📁</span> .git/
-                          </div>
-                          <div className="tree-leaf flex items-center gap-2 ml-1">
-                            <span className="tree-branch">├──</span> 
-                            <span className="text-accent-teal">📄</span> .gitignore
-                          </div>
+                    )}
+
+                    {assignment.expected_structure ? (
+                      <div className="file-tree-block p-4 rounded-lg bg-navy-900 border border-navy-800 overflow-x-auto">
+                        {renderTreeNodes(buildTree(assignment.expected_structure.split('
+').map(p => p.trim()).filter(Boolean)))}
+                      </div>
+                    ) : (
+                      <div className="file-tree-block">
+                        <div className="tree-root flex items-center gap-2 mb-1">
+                          <span className="text-accent-blue">📦</span> submission.zip
+                        </div>
+                        {isRepo ? (
+                          <>
+                            <div className="tree-leaf flex items-center gap-2 ml-1">
+                              <span className="tree-branch">├──</span> 
+                              <span className="text-accent-blue">📦</span> .git/
+                            </div>
+                            <div className="tree-leaf flex items-center gap-2 ml-1">
+                              <span className="tree-branch">├──</span> 
+                              <span className="text-accent-teal">📄</span> .gitignore
+                            </div>
+                            <div className="tree-leaf flex items-center gap-2 ml-1">
+                              <span className="tree-branch">└──</span> 
+                              <span className="text-accent-teal">📄</span> {filename}
+                            </div>
+                          </>
+                        ) : (
                           <div className="tree-leaf flex items-center gap-2 ml-1">
                             <span className="tree-branch">└──</span> 
                             <span className="text-accent-teal">📄</span> {filename}
                           </div>
-                        </>
-                      ) : (
-                        <div className="tree-leaf flex items-center gap-2 ml-1">
-                          <span className="tree-branch">└──</span> 
-                          <span className="text-accent-teal">📄</span> {filename}
-                        </div>
-                      )}
-                    </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
+              )}
               )}
             </div>
           )

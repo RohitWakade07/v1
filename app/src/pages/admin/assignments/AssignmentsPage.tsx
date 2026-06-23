@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Globe, Lock, PenTool, FileText, Plus } from 'lucide-react'
+import { Search, Globe, Lock, PenTool, FileText, Plus, Trash2 } from \'lucide-react\'
 import { Link } from 'react-router-dom'
 import { PageWrapper } from '@/components/shared/PageWrapper'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { SkeletonRow } from '@/components/shared/SkeletonCard'
-import { listAllAssignments, publishAssignment, unpublishAssignment } from '@/api/admin/admin'
+import { listAllAssignments, publishAssignment, unpublishAssignment, deleteAssignment } from \'@/api/admin/admin\'
 import { formatDate, shortId } from '@/lib/utils'
 import { EditAssignmentModal } from './EditAssignmentModal'
 import { CreateAssignmentModal } from './CreateAssignmentModal'
@@ -28,6 +28,12 @@ export const AssignmentsPage = () => {
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null)
   const [showCreate, setShowCreate] = useState(false)
   const qc = useQueryClient()
+  const deleteMut = useMutation({
+    mutationFn: deleteAssignment,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-assignments'] })
+    },
+  })
 
   const { data: assignments = [], isLoading, error } = useQuery({
     queryKey: ['admin-assignments'],
@@ -176,6 +182,17 @@ export const AssignmentsPage = () => {
                       >
                         <FileText size={11} /> Quiz
                       </Link>
+                        <button
+                          onClick={() => {
+                            if (window.confirm("Are you sure you want to delete this assignment?")) {
+                              deleteMut.mutate(a.id);
+                            }
+                          }}
+                          disabled={deleteMut.isPending}
+                          className="flex items-center gap-1 text-xs text-status-error hover:text-status-error/80 border border-status-error/30 rounded px-2 py-1 transition-colors"
+                        >
+                          <Trash2 size={11} /> Delete
+                        </button>
                     </td>
                   </tr>
                 ))

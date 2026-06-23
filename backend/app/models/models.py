@@ -130,6 +130,8 @@ class Assignment(SQLModel, table=True):
     # Submission info fields (editable by admin)
     submission_filename: Optional[str] = Field(default=None, sa_column=Column(String(300), nullable=True))
     submission_instructions: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
+    expected_structure: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
+    expected_media_url: Optional[str] = Field(default=None, sa_column=Column(String(500), nullable=True))
     created_by_id: uuid.UUID = Field(foreign_key="mentors.id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

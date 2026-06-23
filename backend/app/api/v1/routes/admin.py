@@ -219,7 +219,7 @@ async def list_all_assignments_admin(
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
-        select(Assignment).order_by(Assignment.created_at.desc())
+        select(Assignment).where(Assignment.is_archived == False).order_by(Assignment.created_at.desc())
     )
     assignments = result.scalars().all()
     return [
@@ -236,6 +236,8 @@ async def list_all_assignments_admin(
             late_penalty_pct=a.late_penalty_pct or 0.0,
             submission_filename=a.submission_filename,
             submission_instructions=a.submission_instructions,
+              expected_structure=a.expected_structure,
+              expected_media_url=a.expected_media_url,
             created_by_id=a.created_by_id,
             created_at=a.created_at,
             updated_at=a.updated_at,
