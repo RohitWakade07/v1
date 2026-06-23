@@ -392,8 +392,6 @@ async def admin_update_assignment(
     if body.late_penalty_pct is not None: assignment.late_penalty_pct = body.late_penalty_pct
     if body.submission_filename is not None: assignment.submission_filename = body.submission_filename
     if body.submission_instructions is not None: assignment.submission_instructions = body.submission_instructions
-        if body.expected_structure is not None: assignment.expected_structure = body.expected_structure
-        if body.expected_media_url is not None: assignment.expected_media_url = body.expected_media_url
     if body.expected_structure is not None: assignment.expected_structure = body.expected_structure
     if body.expected_media_url is not None: assignment.expected_media_url = body.expected_media_url
     assignment.updated_at = datetime.utcnow()
