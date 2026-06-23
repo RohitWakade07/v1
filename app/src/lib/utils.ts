@@ -5,7 +5,7 @@ export const cn = (...inputs: ClassValue[]) => twMerge(clsx(inputs))
 
 export const formatDate = (value?: string | null): string => {
   if (!value) return 'N/A'
-  const date = new Date(value)
+  const date = new Date(value + (value.endsWith('Z') ? '' : 'Z'))
   return new Intl.DateTimeFormat('en-GB', {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -14,7 +14,7 @@ export const formatDate = (value?: string | null): string => {
 
 export const formatDateTime = (iso: string | undefined | null): string => {
   if (!iso) return '—'
-  const d = new Date(iso)
+  const d = new Date(iso + (iso.endsWith('Z') ? '' : 'Z'))
   return d.toLocaleString('en-IN', {
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
@@ -23,7 +23,7 @@ export const formatDateTime = (iso: string | undefined | null): string => {
 
 export const formatRelative = (value?: string | null): string => {
   if (!value) return 'N/A'
-  const date = new Date(value)
+  const date = new Date(value + (value.endsWith('Z') ? '' : 'Z'))
   const diffMs = date.getTime() - Date.now()
   const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
   const minutes = Math.round(diffMs / 60000)

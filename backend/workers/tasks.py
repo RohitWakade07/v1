@@ -138,6 +138,18 @@ async def async_grade_submission(submission_id: str, celery_task_id: str):
                 repo_url=submission.repo_url,
                 zip_object_key=submission.zip_object_key,
             )
+            
+            if grading_result and assignment.max_score is not None:
+                orig_max = grading_result.max_score
+                target_max = float(assignment.max_score)
+                if orig_max > 0 and orig_max != target_max:
+                    scale_factor = target_max / orig_max
+                    for check in grading_result.checks:
+                        check.marks = round(check.marks * scale_factor, 2)
+                        check.max_marks = round(check.max_marks * scale_factor, 2)
+                    grading_result.score = round(grading_result.score * scale_factor, 2)
+                    grading_result.max_score = target_max
+
             logger.info(
                 f"[GRADE:EXEC] Execution finished: status={status_str} "
                 f"score={grading_result.score}/{grading_result.max_score} "
