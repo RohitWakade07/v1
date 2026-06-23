@@ -20,7 +20,8 @@ class Week11Grader(BaseGrader):
             # But the student's program might have printed things to stdout before crashing, or our wrapper captured it.
             # Wait, the wrapper uses capture_output=True, so the student's output is not mixed with the wrapper's print.
             # So stdout should JUST be the JSON.
-            result_data = json.loads(stdout.strip())
+            json_line = next((line for line in reversed(stdout.strip().splitlines()) if line.strip().startswith("{")), stdout.strip())
+            result_data = json.loads(json_line)
         except json.JSONDecodeError:
             logger.error(f"Failed to parse wrapper JSON. stdout: {stdout}")
             return GradingResult(

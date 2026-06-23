@@ -5,7 +5,7 @@ import subprocess
 try:
     import pexpect
 except ImportError:
-    subprocess.run([sys.executable, "-m", "pip", "install", "--target", ".", "ptyprocess-0.7.0-py2.py3-none-any.whl", "pexpect-4.9.0-py2.py3-none-any.whl"], check=True)
+    subprocess.run([sys.executable, "-m", "pip", "install", "--target", ".", "ptyprocess-0.7.0-py2.py3-none-any.whl", "pexpect-4.9.0-py2.py3-none-any.whl"], check=True, capture_output=True)
     import pexpect
 import time
 import shutil
@@ -52,7 +52,7 @@ def grade():
 
     # Dependencies
     if has_reqs:
-        subprocess.run([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"], cwd=REPO_DIR)
+        subprocess.run([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"], cwd=REPO_DIR, capture_output=True)
         
     # Inject Mock Corpus for Testing
     instructor_corpus = os.path.join(REPO_DIR, "..", "test_corpus") # It gets mounted from assets/test_corpus usually, but let's just assume it's next to test_wrapper.py
@@ -67,7 +67,7 @@ def grade():
     has_build = os.path.exists("build_index.py")
     if has_build:
         try:
-            subprocess.run([sys.executable, "build_index.py"], cwd=REPO_DIR, timeout=30)
+            subprocess.run([sys.executable, "build_index.py"], cwd=REPO_DIR, timeout=30, capture_output=True)
         except Exception:
             pass
             
