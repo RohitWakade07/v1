@@ -1,86 +1,97 @@
 # =========================
+# OS
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# Node.js / Frontend
+# =========================
+node_modules/
+dist/
+.next/
+.nuxt/
+.npm
+.yarn-integrity
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+frontend/.vite/
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# =========================
 # Backend-specific
 # =========================
-backend/.venv/
-backend/venv/
 backend/.env
 backend/.env.*
 !backend/.env.example
-backend/__pycache__/
 backend/*.db
 backend/*.sqlite3
 backend/logs/
 backend/tmp/
 backend/temp/
+backend/postgres_data/
+backend/pgdata/
+backend/keys/
+backend/backend_log*.txt
+backend/sync_test.txt
+backend/challenge.json
+backend/proof.json
+backend/*.zip
+backend/week4_100_marks/
+backend/week4_partial_marks/
 
-# Python caches anywhere
-**/__pycache__/
-**/*.py[cod]
-**/.pytest_cache/
-**/.mypy_cache/
-**/.ruff_cache/
-**/.coverage
-**/htmlcov/
+# =========================
+# Environment — never commit secrets
+# =========================
+.env
+.env.local
+.env.*.local
+!.env.example
 
-# Build artifacts
-**/build/
-**/dist/
-**/*.egg-info/
-
-# IDE
+# =========================
+# Editor / IDE
+# =========================
 .vscode/
 .idea/
+*.swp
+*~
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
+# =========================
+# Build output & Logs
+# =========================
+build/
 *.log
 nohup.out
 
-# Docker / local volumes
-backend/postgres_data/
-backend/pgdata/
+# =========================
+# Docker
+# =========================
 docker-compose.override.yml
 
+# =========================
 # Secrets / keys
+# =========================
 *.pem
 *.key
 *.crt
 secrets.json
 
+# =========================
 # Jupyter
-**/.ipynb_checkpoints/
-
-# Frontend build artifacts
-app/node_modules/
-app/dist/
-app/.env
-app/.env.*
-!app/.env.example
-node_modules/
-dist/
-
-# Scratch / test files that must not be committed
-backend/backend_log*.txt
-backend/sync_test.txt
-backend/challenge.json
-backend/proof.json
-backend/check_db.py
-backend/alter_db.py
-backend/seed.py
-backend/seed_admin.py
-backend/*.zip
-backend/week4_100_marks/
-backend/week4_partial_marks/
-
-# RSA private key — NEVER commit
-backend/keys/
-*.pem
-*.key
-
-
-# Ignore accidental duplicate project copy and nested grader deploy repo
-Copy of EEP Software final _ /
-Copy of EEP Software final _ /autograder-system/week1_evaluator/deploy/
+# =========================
+.ipynb_checkpoints/
