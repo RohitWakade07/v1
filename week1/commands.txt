@@ -1,1 +1,14 @@
-mkdir hello
+mkdir -p eep-software
+cd eep-software
+for i in $(seq -w 1 12); do
+  mkdir "week-$i"
+  touch "week-$i/README.md"
+done
+mkdir notes scripts capstone
+touch workspace-report.txt
+cd ..
+
+cat << 'EOF' > .bashrc
+alias ll='ls -l'
+alias gs='git status'
+EOF
