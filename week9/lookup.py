@@ -1,1 +1,1 @@
-print('doc_id: d1')
+print("mock result")
