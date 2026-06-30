@@ -27,7 +27,6 @@ export const submitAssignment = async (
     formData,
     {
       headers: {
-        'Content-Type': 'multipart/form-data',
         'x-skip-error-toast': 'true',
       },
     },
