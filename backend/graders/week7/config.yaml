@@ -5,5 +5,3 @@ target_file: "collect_wiki.py"
 assets:
   - source: "test_wrapper.py"
     target: "test_wrapper.py"
-  - source: "urls.txt"
-    target: "urls.txt"
