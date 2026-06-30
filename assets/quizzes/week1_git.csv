@@ -1,6 +1,0 @@
-question,option_a,option_b,option_c,option_d,correct_answer,type,marks
-"Which Git command is used to initialize a new repository?","git start","git init","git create","git new",b,single,1
-"How do you check the state of your working directory and staging area?","git log","git status","git show","git diff",b,single,1
-"Which commands are used to upload your local commits to a remote repository? (Select all that apply)","git push","git pull","git fetch","git push origin main","a,d",multiple,2
-"What does the 'git clone' command do?","Creates a copy of an existing remote repository on your local machine","Copies a branch within the same repository","Deletes a repository","Merges two repositories",a,single,1
-"Which file is used to tell Git to ignore certain files or directories?",.gitconfig,.gitignore,.gitattributes,.gitkeep,b,single,1

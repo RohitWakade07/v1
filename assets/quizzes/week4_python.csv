@@ -1,6 +1,0 @@
-question,option_a,option_b,option_c,option_d,correct_answer,type,marks
-"How do you define a function in Python?","function my_func():","def my_func():","create my_func():","func my_func():",b,single,1
-"Which data structure in Python is ordered and mutable?","Tuple","String","List","Set",c,single,1
-"How do you read user input from the console in Python 3?","input()","raw_input()","scan()","read()",a,single,1
-"Which of the following are valid ways to import a module in Python? (Select all that apply)","import math","from math import sqrt","include math","import math as m","a,b,d",multiple,2
-"What is the purpose of the 'if __name__ == ""__main__"":' statement?","It creates a main loop","It checks if the script is being run directly rather than being imported","It initializes the main thread","It defines the main class",b,single,1

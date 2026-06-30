@@ -1,6 +1,0 @@
-question,option_a,option_b,option_c,option_d,correct_answer,type,marks
-What command is used to initialize a new Git repository?,git init,git start,git new,git create,a,single,10
-How do you check the state of your working directory in Git?,git status,git state,git log,git check,a,single,10
-Which of the following are valid Git commands?,git commit,git push,git upload,git pull,"a,b,d",multiple,20
-What does 'git clone' do?,Creates an exact copy of a remote repository locally,Deletes a repository,Merges branches,Uploads files to GitHub,a,single,10
-What command is used to save changes to the local repository?,git save,git commit,git push,git add,b,single,10

@@ -1,7 +1,0 @@
-docker_image: "python:3.10-slim"
-execution_command: "python test_wrapper.py"
-timeout_seconds: 30
-target_file: "collect_wiki.py"
-assets:
-  - source: "test_wrapper.py"
-    target: "test_wrapper.py"
