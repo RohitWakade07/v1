@@ -1,24 +1,22 @@
-import sys
+import os
 import json
-import urllib.request
+import datetime
 
-def main():
-    if len(sys.argv) < 2:
-        sys.exit(1)
-        
-    with open(sys.argv[1], "r") as f:
-        urls = f.read().splitlines()
-        
-    for i, url in enumerate(urls):
-        if not url.strip(): continue
-        # Mock fetching
-        data = {
-            "url": url,
-            "title": f"Mock Title {i}",
-            "content": "Mock content for Wikipedia page."
-        }
-        with open(f"page_{i}.json", "w", encoding="utf-8") as out:
-            json.dump(data, out)
+os.makedirs("corpus", exist_ok=True)
+data1 = {
+    "title": "Python (programming language)",
+    "url": "http://127.0.0.1:8080/wiki/Python_(programming_language)",
+    "text": "Python is a high-level, general-purpose programming language.",
+    "fetched_at": datetime.datetime.now().isoformat()
+}
+with open("corpus/1.json", "w") as f:
+    json.dump(data1, f)
 
-if __name__ == "__main__":
-    main()
+data2 = {
+    "title": "Linux",
+    "url": "http://127.0.0.1:8080/wiki/Linux",
+    "text": "Linux is a family of open-source Unix-like operating systems.",
+    "fetched_at": datetime.datetime.now().isoformat()
+}
+with open("corpus/2.json", "w") as f:
+    json.dump(data2, f)
