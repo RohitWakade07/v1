@@ -37,7 +37,7 @@ def clone_repository(repo_url: str, dest_dir: Path) -> None:
     
     if not branch and not subpath:
         subprocess.run(
-            ["git", "clone", "--depth", "1", base_url, str(dest_dir)],
+            ["git", "clone", base_url, str(dest_dir)],
             check=True,
             capture_output=True,
             text=True,
@@ -45,7 +45,7 @@ def clone_repository(repo_url: str, dest_dir: Path) -> None:
         return
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        clone_cmd = ["git", "clone", "--depth", "1"]
+        clone_cmd = ["git", "clone"]
         if branch:
             clone_cmd.extend(["-b", branch])
         clone_cmd.extend([base_url, temp_dir])

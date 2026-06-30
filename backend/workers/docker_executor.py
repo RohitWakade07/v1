@@ -186,7 +186,7 @@ class DockerExecutor:
                 base_url, branch, subpath = parse_github_url(repo_url)
                 
                 if not branch and not subpath:
-                    cmd = ["git", "clone", "--depth=1", base_url, str(submission_dir)]
+                    cmd = ["git", "clone", base_url, str(submission_dir)]
                     proc = await asyncio.create_subprocess_exec(
                         *cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
                     )
@@ -199,7 +199,7 @@ class DockerExecutor:
                 else:
                     import tempfile
                     with tempfile.TemporaryDirectory() as temp_dir:
-                        cmd = ["git", "clone", "--depth=1"]
+                        cmd = ["git", "clone"]
                         if branch:
                             cmd.extend(["-b", branch])
                         cmd.extend([base_url, temp_dir])
@@ -223,6 +223,9 @@ class DockerExecutor:
                     logger.info(f"[PHASE1:GIT] Subdirectory clone OK in {elapsed}ms")
             else:
                 raise ValueError(f"Unknown source type: {source_type}")
+
+            if (submission_dir / ".git").exists():
+                subprocess.run(["git", "config", "core.fileMode", "false"], cwd=str(submission_dir))
 
             # ── Load config ────────────────────────────────────────────────
             config_path = Path(__file__).parent.parent / "graders" / assignment_slug / "config.yaml"
