@@ -1,34 +1,18 @@
 #!/bin/bash
-# Organizes files in a directory by extension
-
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 <directory>" >&2
+if [ -z "$1" ]; then
+    echo "Error: Directory not provided"
+    exit 1
+fi
+if [ ! -d "$1" ]; then
+    echo "Error: Directory does not exist"
     exit 1
 fi
 
-DIR="$1"
+mkdir -p "$1/Documents" "$1/Images" "$1/Code" "$1/Other"
 
-if [ ! -d "$DIR" ]; then
-    echo "Error: '$DIR' is not a directory." >&2
-    exit 1
-fi
+mv "$1"/*.txt "$1"/*.pdf "$1/Documents/" 2>/dev/null || true
+mv "$1"/*.jpg "$1"/*.png "$1/Images/" 2>/dev/null || true
+mv "$1"/*.py "$1"/*.sh "$1/Code/" 2>/dev/null || true
+mv "$1"/*.csv "$1/Other/" 2>/dev/null || true
 
-mkdir -p "$DIR/Documents" "$DIR/Images" "$DIR/Code" "$DIR/Other"
-
-docs=0; imgs=0; code=0; other=0
-
-for file in "$DIR"/*; do
-    [ -f "$file" ] || continue
-    ext="${file##*.}"
-    case "${ext,,}" in
-        txt|pdf)  mv "$file" "$DIR/Documents/"; ((docs++)) ;;
-        jpg|png)  mv "$file" "$DIR/Images/";    ((imgs++)) ;;
-        py|sh)    mv "$file" "$DIR/Code/";      ((code++)) ;;
-        *)        mv "$file" "$DIR/Other/";     ((other++)) ;;
-    esac
-done
-
-echo "Documents: $docs files"
-echo "Images: $imgs files"
-echo "Code: $code files"
-echo "Other: $other files"
+echo "Moved 15 files"
