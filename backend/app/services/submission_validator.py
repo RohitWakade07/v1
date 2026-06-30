@@ -9,7 +9,7 @@ from fastapi import HTTPException, status
 from app.services.workspace_manager import clone_repository, list_workspace_files, safe_extract_zip
 
 GITHUB_URL_PATTERN = re.compile(
-    r"^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:\.git)?$"
+    r"^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:\.git)?(?:/tree/.+)?$"
 )
 
 
