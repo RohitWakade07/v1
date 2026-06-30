@@ -118,6 +118,8 @@ class Settings(BaseSettings):
 
     # Rate limiting
     LOGIN_RATE_LIMIT_PER_MINUTE: int = 10
+    REGISTER_RATE_LIMIT_PER_MINUTE: int = 5
+    API_RATE_LIMIT_PER_MINUTE: int = 20
 
     # Celery & Redis
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"

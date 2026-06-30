@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 from app.db.session import get_db
+from app.core.cache import invalidate as cache_invalidate, student_profile_cache_key
 from app.models.models import Classroom, ClassroomEnrollment, Student, Mentor
 from app.api.v1.dependencies import get_current_student, get_current_mentor
 from app.schemas.schemas import (
@@ -176,6 +177,7 @@ async def approve_enrollment(
     enrollment.status = "APPROVED"
     db.add(enrollment)
     await db.commit()
+    await cache_invalidate(student_profile_cache_key(enrollment.student_id))
     return {"message": "Student enrollment approved successfully"}
 
 
@@ -211,6 +213,7 @@ async def reject_enrollment(
     enrollment.status = "REJECTED"
     db.add(enrollment)
     await db.commit()
+    await cache_invalidate(student_profile_cache_key(enrollment.student_id))
     return {"message": "Student enrollment rejected successfully"}
 
 
@@ -271,6 +274,7 @@ async def join_classroom(
     )
     db.add(enrollment)
     await db.commit()
+    await cache_invalidate(student_profile_cache_key(current_student.id))
 
     return {
         "message": f"Successfully requested to join classroom '{classroom.name}'. Pending mentor approval.",

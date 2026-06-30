@@ -6,6 +6,12 @@ from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
+from app.core.cache import (
+    TTL_SESSION,
+    get_or_set,
+    invalidate as cache_invalidate,
+    session_cache_key,
+)
 from app.models.models import (
     Assignment,
     GradingSession,
@@ -114,6 +120,7 @@ class SessionService:
         session.status = SessionStatus.RUNNING
         db.add(session)
         await db.flush()
+        await cache_invalidate(session_cache_key(session_id, student_id))
         return SessionService._to_status_response(session)
 
     @staticmethod
@@ -142,6 +149,7 @@ class SessionService:
         session.status = SessionStatus.PROOF_GENERATED
         db.add(session)
         await db.flush()
+        await cache_invalidate(session_cache_key(session_id, student_id))
         return SessionService._to_status_response(session)
 
     @staticmethod
@@ -163,10 +171,12 @@ class SessionService:
         student_id: uuid.UUID,
         db: AsyncSession,
     ) -> SessionStatusResponse:
-        session = await SessionService._get_owned_session(
-            session_id, student_id, db
-        )
-        return SessionService._to_status_response(session)
+        async def _fetch() -> dict:
+            session = await SessionService._get_owned_session(session_id, student_id, db)
+            return SessionService._to_status_response(session).model_dump(mode="json")
+
+        data = await get_or_set(session_cache_key(session_id, student_id), _fetch, TTL_SESSION)
+        return SessionStatusResponse(**data)
 
     @staticmethod
     async def get_my_sessions(
@@ -204,6 +214,7 @@ class SessionService:
         session.status = SessionStatus.ABORTED
         db.add(session)
         await db.flush()
+        await cache_invalidate(session_cache_key(session_id, student_id))
         return SessionService._to_status_response(session)
 
     # ── Internal helpers ──────────────────────────────────────────────
@@ -254,6 +265,7 @@ class SessionService:
             session.status = SessionStatus.CHALLENGE_ISSUED
             db.add(session)
             await db.flush()
+            await cache_invalidate(session_cache_key(session_id, student.id))
 
         # 2. Fetch Assignment
         result = await db.execute(
@@ -271,6 +283,7 @@ class SessionService:
             session.proof_nonce = str(uuid.uuid4())
             db.add(session)
             await db.flush()
+            await cache_invalidate(session_cache_key(session_id, student.id))
 
         # 4. Fetch AssignmentConfig
         config_result = await db.execute(

@@ -1,8 +1,11 @@
 import uuid
+from datetime import datetime
 from typing import List, Optional
-from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import HTTPException, status
 
+from fastapi import HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.cache import assignment_cache_key, invalidate as cache_invalidate
 from app.models.models import Assignment, AssignmentConfig, Mentor
 from app.repositories.assignment_repo import assignment_repo, assignment_config_repo
 from app.schemas.schemas import AssignmentCreate, AssignmentUpdate, AssignmentConfigUpdate
@@ -38,7 +41,9 @@ class AssignmentService:
         if assignment.created_by_id != mentor.id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to update this assignment")
         
-        return await assignment_repo.update(db, db_obj=assignment, obj_in=data)
+        updated = await assignment_repo.update(db, db_obj=assignment, obj_in=data)
+        await cache_invalidate(assignment_cache_key(assignment_id))
+        return updated
 
     async def publish_assignment(self, db: AsyncSession, assignment_id: uuid.UUID, mentor: Mentor) -> Assignment:
         assignment = await self.get_assignment(db, assignment_id)
@@ -46,7 +51,9 @@ class AssignmentService:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
         
         assignment.is_published = True
-        return await assignment_repo.update(db, db_obj=assignment, obj_in={"is_published": True})
+        updated = await assignment_repo.update(db, db_obj=assignment, obj_in={"is_published": True})
+        await cache_invalidate(assignment_cache_key(assignment_id))
+        return updated
 
     async def unpublish_assignment(self, db: AsyncSession, assignment_id: uuid.UUID, mentor: Mentor) -> Assignment:
         assignment = await self.get_assignment(db, assignment_id)
@@ -54,7 +61,9 @@ class AssignmentService:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
         
         assignment.is_published = False
-        return await assignment_repo.update(db, db_obj=assignment, obj_in={"is_published": False})
+        updated = await assignment_repo.update(db, db_obj=assignment, obj_in={"is_published": False})
+        await cache_invalidate(assignment_cache_key(assignment_id))
+        return updated
 
     async def get_config(self, db: AsyncSession, assignment_id: uuid.UUID, mentor: Mentor) -> AssignmentConfig:
         assignment = await self.get_assignment(db, assignment_id)

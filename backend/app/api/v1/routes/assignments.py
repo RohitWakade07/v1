@@ -1,15 +1,44 @@
-import json
+import uuid
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
+from app.core.cache import (
+    TTL_ASSIGNMENT,
+    assignment_cache_key,
+    get_or_set,
+    invalidate as cache_invalidate,
+)
 from app.db.session import get_db
 from app.models.models import Assignment, Student, Mentor, UserRole
 from app.api.v1.dependencies import get_current_student, get_current_mentor, get_approved_student, get_current_admin
 from app.schemas.schemas import AssignmentPublic, AssignmentCreate, AssignmentUpdate, ErrorResponse
 
 router = APIRouter(prefix="/assignments", tags=["Assignments"])
+
+
+def _assignment_to_public(a: Assignment) -> AssignmentPublic:
+    return AssignmentPublic(
+        id=a.id,
+        slug=a.slug,
+        title=a.title,
+        description=a.description,
+        category=a.category,
+        max_score=a.max_score,
+        deadline=a.deadline,
+        is_published=a.is_published,
+        is_archived=a.is_archived,
+        late_penalty_pct=a.late_penalty_pct or 0.0,
+        resource_links=a.resource_links,
+        submission_filename=a.submission_filename,
+        submission_instructions=a.submission_instructions,
+        expected_structure=a.expected_structure,
+        expected_media_url=a.expected_media_url,
+        created_by_id=a.created_by_id,
+        created_at=a.created_at,
+        updated_at=getattr(a, "updated_at", None),
+    )
 
 
 @router.get(
@@ -63,38 +92,25 @@ async def get_assignment(
     db: AsyncSession = Depends(get_db),
 ):
     import uuid
-    result = await db.execute(
-        select(Assignment).where(
-            Assignment.id == uuid.UUID(assignment_id),
-            Assignment.is_published == True,
+    aid = uuid.UUID(assignment_id)
+
+    async def _fetch():
+        result = await db.execute(
+            select(Assignment).where(
+                Assignment.id == aid,
+                Assignment.is_published == True,
+            )
         )
-    )
-    assignment = result.scalar_one_or_none()
-    if not assignment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Assignment not found",
-        )
-    return AssignmentPublic(
-        id=assignment.id,
-        slug=assignment.slug,
-        title=assignment.title,
-        description=assignment.description,
-        category=assignment.category,
-        max_score=assignment.max_score,
-        deadline=assignment.deadline,
-        is_published=assignment.is_published,
-        is_archived=assignment.is_archived,
-        late_penalty_pct=assignment.late_penalty_pct or 0.0,
-        resource_links=assignment.resource_links,
-        submission_filename=assignment.submission_filename,
-        submission_instructions=assignment.submission_instructions,
-          expected_structure=assignment.expected_structure,
-          expected_media_url=assignment.expected_media_url,
-        created_by_id=assignment.created_by_id,
-        created_at=assignment.created_at,
-        updated_at=getattr(assignment, "updated_at", None),
-    )
+        assignment = result.scalar_one_or_none()
+        if not assignment:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Assignment not found",
+            )
+        return _assignment_to_public(assignment).model_dump(mode="json")
+
+    data = await get_or_set(assignment_cache_key(aid), _fetch, TTL_ASSIGNMENT)
+    return AssignmentPublic(**data)
 
 
 @router.post(
@@ -192,26 +208,8 @@ async def publish_assignment(
     db.add(assignment)
     await db.commit()
     await db.refresh(assignment)
-    return AssignmentPublic(
-        id=assignment.id,
-        slug=assignment.slug,
-        title=assignment.title,
-        description=assignment.description,
-        category=assignment.category,
-        max_score=assignment.max_score,
-        deadline=assignment.deadline,
-        is_published=assignment.is_published,
-        is_archived=assignment.is_archived,
-        late_penalty_pct=assignment.late_penalty_pct or 0.0,
-        resource_links=assignment.resource_links,
-        submission_filename=assignment.submission_filename,
-        submission_instructions=assignment.submission_instructions,
-          expected_structure=assignment.expected_structure,
-          expected_media_url=assignment.expected_media_url,
-        created_by_id=assignment.created_by_id,
-        created_at=assignment.created_at,
-        updated_at=getattr(assignment, "updated_at", None),
-    )
+    await cache_invalidate(assignment_cache_key(assignment.id))
+    return _assignment_to_public(assignment)
 
 
 @router.post(
@@ -247,26 +245,8 @@ async def unpublish_assignment(
     db.add(assignment)
     await db.commit()
     await db.refresh(assignment)
-    return AssignmentPublic(
-        id=assignment.id,
-        slug=assignment.slug,
-        title=assignment.title,
-        description=assignment.description,
-        category=assignment.category,
-        max_score=assignment.max_score,
-        deadline=assignment.deadline,
-        is_published=assignment.is_published,
-        is_archived=assignment.is_archived,
-        late_penalty_pct=assignment.late_penalty_pct or 0.0,
-        resource_links=assignment.resource_links,
-        submission_filename=assignment.submission_filename,
-        submission_instructions=assignment.submission_instructions,
-          expected_structure=assignment.expected_structure,
-          expected_media_url=assignment.expected_media_url,
-        created_by_id=assignment.created_by_id,
-        created_at=assignment.created_at,
-        updated_at=getattr(assignment, "updated_at", None),
-    )
+    await cache_invalidate(assignment_cache_key(assignment.id))
+    return _assignment_to_public(assignment)
 
 
 @router.patch(
@@ -321,26 +301,8 @@ async def update_assignment(
     db.add(assignment)
     await db.commit()
     await db.refresh(assignment)
-    return AssignmentPublic(
-        id=assignment.id,
-        slug=assignment.slug,
-        title=assignment.title,
-        description=assignment.description,
-        category=assignment.category,
-        max_score=assignment.max_score,
-        deadline=assignment.deadline,
-        is_published=assignment.is_published,
-        is_archived=assignment.is_archived,
-        late_penalty_pct=assignment.late_penalty_pct or 0.0,
-        resource_links=assignment.resource_links,
-        submission_filename=assignment.submission_filename,
-        submission_instructions=assignment.submission_instructions,
-          expected_structure=assignment.expected_structure,
-          expected_media_url=assignment.expected_media_url,
-        created_by_id=assignment.created_by_id,
-        created_at=assignment.created_at,
-        updated_at=assignment.updated_at,
-    )
+    await cache_invalidate(assignment_cache_key(assignment.id))
+    return _assignment_to_public(assignment)
 
 
 # ── Admin: Full assignment CRUD (no ownership restriction) ─────────────
@@ -399,26 +361,8 @@ async def admin_update_assignment(
     db.add(assignment)
     await db.commit()
     await db.refresh(assignment)
-    return AssignmentPublic(
-        id=assignment.id,
-        slug=assignment.slug,
-        title=assignment.title,
-        description=assignment.description,
-        category=assignment.category,
-        max_score=assignment.max_score,
-        deadline=assignment.deadline,
-        is_published=assignment.is_published,
-        is_archived=assignment.is_archived,
-        late_penalty_pct=assignment.late_penalty_pct or 0.0,
-        resource_links=assignment.resource_links,
-        submission_filename=assignment.submission_filename,
-        submission_instructions=assignment.submission_instructions,
-          expected_structure=assignment.expected_structure,
-          expected_media_url=assignment.expected_media_url,
-        created_by_id=assignment.created_by_id,
-        created_at=assignment.created_at,
-        updated_at=assignment.updated_at,
-    )
+    await cache_invalidate(assignment_cache_key(assignment.id))
+    return _assignment_to_public(assignment)
 
 @router.delete(
     "/admin/{assignment_id}",
@@ -441,4 +385,5 @@ async def admin_delete_assignment(
         
     assignment.is_archived = True
     await db.commit()
+    await cache_invalidate(assignment_cache_key(assignment.id))
     return None

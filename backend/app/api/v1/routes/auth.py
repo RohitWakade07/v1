@@ -6,8 +6,8 @@ from sqlmodel import select
 
 from app.core.security import hash_password
 from app.core.config import settings
+from app.core.rate_limit import check_rate_limit, client_ip
 from app.db.session import get_db
-from app.db.redis import get_redis, rate_limit_key
 from app.models.models import Student, Mentor, UserRole, Classroom, ClassroomEnrollment
 from app.services.auth_service import AuthService
 from app.api.v1.dependencies import get_current_student, get_current_mentor
@@ -52,17 +52,11 @@ async def student_login(
     body: StudentLoginRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    redis = await get_redis()
-    ip = request.client.host
-    key = rate_limit_key(ip, "student_login")
-    count = await redis.incr(key)
-    if count == 1:
-        await redis.expire(key, 60)
-    if count > settings.LOGIN_RATE_LIMIT_PER_MINUTE:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail={"error": "RATE_LIMITED", "message": "Too many login attempts. Try again in a minute."},
-        )
+    await check_rate_limit(
+        client_ip(request),
+        "student_login",
+        limit=settings.LOGIN_RATE_LIMIT_PER_MINUTE,
+    )
 
     result = await AuthService.login_student(body.roll_number, body.password, db)
     if not result.success:
@@ -73,12 +67,19 @@ async def student_login(
 @router.post(
     "/mentor/login",
     response_model=TokenResponse,
-    responses={401: {"model": ErrorResponse}, 403: {"model": ErrorResponse}, 404: {"model": ErrorResponse}},
+    responses={401: {"model": ErrorResponse}, 403: {"model": ErrorResponse}, 404: {"model": ErrorResponse}, 429: {"model": ErrorResponse}},
 )
 async def mentor_login(
+    request: Request,
     body: MentorLoginRequest,
     db: AsyncSession = Depends(get_db),
 ):
+    await check_rate_limit(
+        client_ip(request),
+        "mentor_login",
+        limit=settings.LOGIN_RATE_LIMIT_PER_MINUTE,
+    )
+
     result = await AuthService.login_mentor(body.username, body.password, db)
     if not result.success:
         _raise_auth_error(result)
@@ -89,12 +90,19 @@ async def mentor_login(
     "/student/register",
     response_model=StudentPublic,
     status_code=status.HTTP_201_CREATED,
-    responses={409: {"model": ErrorResponse}, 422: {"model": ErrorResponse}},
+    responses={409: {"model": ErrorResponse}, 422: {"model": ErrorResponse}, 429: {"model": ErrorResponse}},
 )
 async def register_student(
+    request: Request,
     body: StudentCreate,
     db: AsyncSession = Depends(get_db),
 ):
+    await check_rate_limit(
+        client_ip(request),
+        "student_register",
+        limit=settings.REGISTER_RATE_LIMIT_PER_MINUTE,
+    )
+
     # Check roll number uniqueness
     existing_roll = await db.execute(
         select(Student).where(Student.roll_number == body.roll_number.upper())

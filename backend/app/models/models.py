@@ -5,7 +5,7 @@ from typing import Optional, Any, List
 
 from sqlalchemy import String, Text, Integer, UniqueConstraint, Index, Float
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlmodel import Field, SQLModel, Column
+from sqlmodel import Field, SQLModel, Column, Relationship
 
 
 # ── Enums ─────────────────────────────────────────────────────────────
@@ -573,6 +573,8 @@ class QuizQuestion(SQLModel, table=True):
     order_index: int = Field(default=0)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
+    options: List["QuizOption"] = Relationship(back_populates="question")
+
 
 class QuizOption(SQLModel, table=True):
     __tablename__ = "quiz_options"
@@ -582,6 +584,8 @@ class QuizOption(SQLModel, table=True):
     option_text: str = Field(sa_column=Column(Text, nullable=False))
     is_correct: bool = Field(default=False)
     order_index: int = Field(default=0)
+
+    question: Optional["QuizQuestion"] = Relationship(back_populates="options")
 
 
 class QuizAttempt(SQLModel, table=True):
@@ -609,6 +613,9 @@ class QuizAnswer(SQLModel, table=True):
     is_correct: bool = Field(default=False)
     marks_awarded: int = Field(default=0)
 
+    question: Optional["QuizQuestion"] = Relationship()
+    selected_options: List["QuizAnswerOption"] = Relationship(back_populates="answer")
+
 
 class QuizAnswerOption(SQLModel, table=True):
     __tablename__ = "quiz_answer_options"
@@ -616,6 +623,8 @@ class QuizAnswerOption(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
     answer_id: uuid.UUID = Field(foreign_key="quiz_answers.id")
     option_id: uuid.UUID = Field(foreign_key="quiz_options.id")
+
+    answer: Optional["QuizAnswer"] = Relationship(back_populates="selected_options")
 
 
 # ── Announcements ─────────────────────────────────────────────────────

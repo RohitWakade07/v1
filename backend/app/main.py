@@ -17,6 +17,7 @@ from app.api.v1.routes import (
     submissions,
     quiz,
     announcements,
+    proof,
 )
 
 
@@ -77,6 +78,7 @@ app.include_router(students.router,      prefix=PREFIX)
 app.include_router(classrooms.router,    prefix=PREFIX)
 app.include_router(quiz.router,          prefix=PREFIX)
 app.include_router(announcements.router, prefix=PREFIX)
+app.include_router(proof.router,         prefix=PREFIX)
 
 
 @app.get("/health", tags=["Health"])

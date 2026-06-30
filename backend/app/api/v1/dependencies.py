@@ -114,3 +114,17 @@ async def get_approved_student(
             detail="Classroom approval required. Your enrollment request is either pending or you have not joined a class."
         )
     return student
+
+
+async def get_approved_student_ratelimited(
+    student: Student = Depends(get_approved_student),
+) -> Student:
+    from app.core.config import settings
+    from app.core.rate_limit import check_rate_limit
+
+    await check_rate_limit(
+        str(student.id),
+        "student_api",
+        limit=settings.API_RATE_LIMIT_PER_MINUTE,
+    )
+    return student

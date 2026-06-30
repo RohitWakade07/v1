@@ -7,6 +7,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
 from pydantic import BaseModel
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -15,7 +16,7 @@ from app.models.models import (
     Quiz, QuizQuestion, QuizOption, QuizAttempt, QuizAnswer, QuizAnswerOption,
     QuestionType, Assignment, Student, Submission, SubmissionStatus,
 )
-from app.api.v1.dependencies import get_current_admin, get_current_student, get_approved_student
+from app.api.v1.dependencies import get_current_admin, get_current_student, get_approved_student, get_approved_student_ratelimited
 
 router = APIRouter(tags=["Quiz"])
 
@@ -409,7 +410,7 @@ async def get_all_quiz_results_student(
 @router.get("/student/quizzes/{quiz_id}/questions", response_model=List[QuizQuestionPublic], summary="Get quiz questions for student (options hidden is_correct)")
 async def get_quiz_questions_student(
     quiz_id: str,
-    current_student: Student = Depends(get_approved_student),
+    current_student: Student = Depends(get_approved_student_ratelimited),
     db: AsyncSession = Depends(get_db),
 ):
     qid = uuid.UUID(quiz_id)
@@ -423,17 +424,23 @@ async def get_quiz_questions_student(
     if len(completed_attempts) >= quiz.max_attempts:
         raise HTTPException(403, detail={"error": "MAX_ATTEMPTS_REACHED", "message": f"You have reached the maximum allowed attempts ({quiz.max_attempts}) for this quiz"})
 
-    qs = (await db.execute(select(QuizQuestion).where(QuizQuestion.quiz_id == qid).order_by(QuizQuestion.order_index))).scalars().all()
+    qs_result = await db.execute(
+        select(QuizQuestion)
+        .where(QuizQuestion.quiz_id == qid)
+        .order_by(QuizQuestion.order_index)
+        .options(selectinload(QuizQuestion.options))
+    )
+    qs = qs_result.scalars().unique().all()
     result = []
     for q in qs:
-        opts = (await db.execute(select(QuizOption).where(QuizOption.question_id == q.id).order_by(QuizOption.order_index))).scalars().all()
+        opts = sorted(q.options, key=lambda o: o.order_index)
         result.append(QuizQuestionPublic(
             id=q.id,
             question_text=q.question_text,
             type=q.type,
             marks=q.marks,
             order_index=q.order_index,
-            options=[QuizOptionPublic(id=o.id, option_text=o.option_text, order_index=o.order_index) for o in opts],  # is_correct hidden
+            options=[QuizOptionPublic(id=o.id, option_text=o.option_text, order_index=o.order_index) for o in opts],
         ))
     return result
 
@@ -442,7 +449,7 @@ async def get_quiz_questions_student(
 async def submit_quiz_attempt(
     quiz_id: str,
     body: QuizAttemptSubmit,
-    current_student: Student = Depends(get_approved_student),
+    current_student: Student = Depends(get_approved_student_ratelimited),
     db: AsyncSession = Depends(get_db),
 ):
     qid = uuid.UUID(quiz_id)
@@ -466,8 +473,12 @@ async def submit_quiz_attempt(
         db.add(attempt)
         await db.flush()
 
-    # Load all questions and evaluate
-    qs = (await db.execute(select(QuizQuestion).where(QuizQuestion.quiz_id == qid))).scalars().all()
+    qs_result = await db.execute(
+        select(QuizQuestion)
+        .where(QuizQuestion.quiz_id == qid)
+        .options(selectinload(QuizQuestion.options))
+    )
+    qs = qs_result.scalars().unique().all()
     total_score = 0
     max_score = 0
     question_results = []
@@ -476,7 +487,7 @@ async def submit_quiz_attempt(
         marks_for_q = q.marks if q.marks is not None else quiz.marks_per_question
         max_score += marks_for_q
 
-        opts = (await db.execute(select(QuizOption).where(QuizOption.question_id == q.id))).scalars().all()
+        opts = q.options
         correct_option_ids = {str(o.id) for o in opts if o.is_correct}
         selected_ids = set(body.answers.get(str(q.id), []))
 
@@ -545,18 +556,25 @@ async def get_quiz_result_student(
     if not attempt or not attempt.submitted_at:
         return None
 
-    answers = (await db.execute(select(QuizAnswer).where(QuizAnswer.attempt_id == attempt.id))).scalars().all()
+    answers_result = await db.execute(
+        select(QuizAnswer)
+        .where(QuizAnswer.attempt_id == attempt.id)
+        .options(
+            selectinload(QuizAnswer.question),
+            selectinload(QuizAnswer.selected_options),
+        )
+    )
+    answers = answers_result.scalars().unique().all()
     question_results = []
     for a in answers:
-        q = (await db.execute(select(QuizQuestion).where(QuizQuestion.id == a.question_id))).scalar_one_or_none()
-        selected = (await db.execute(select(QuizAnswerOption).where(QuizAnswerOption.answer_id == a.id))).scalars().all()
+        q = a.question
         question_results.append({
             "question_id": str(a.question_id),
             "question_text": q.question_text if q else "",
             "is_correct": a.is_correct,
             "marks_awarded": a.marks_awarded,
             "marks_possible": q.marks if q and q.marks is not None else quiz.marks_per_question if quiz else 1,
-            "selected_option_ids": [str(ao.option_id) for ao in selected],
+            "selected_option_ids": [str(ao.option_id) for ao in a.selected_options],
         })
 
     return QuizAttemptResult(
