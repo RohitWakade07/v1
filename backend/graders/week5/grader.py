@@ -282,8 +282,8 @@ class Week5Grader(BaseGrader):
         checks.append(CheckResult(
             name=f"Multiple Contributors ({len(unique_authors)} found)",
             passed=multiple_contributors,
-            marks=0.5 if multiple_contributors else 0.0,
-            max_marks=0.5,
+            marks=1.0 if multiple_contributors else 0.0,
+            max_marks=1.0,
             reason=(
                 f"Found {len(unique_authors)} unique contributor(s): {', '.join(list(unique_authors)[:3])}"
             ),
