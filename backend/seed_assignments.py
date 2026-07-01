@@ -5,12 +5,19 @@ from datetime import datetime
 from sqlalchemy import text
 from sqlmodel import select
 from app.db.session import AsyncSessionLocal
-from app.models.models import Assignment, AssignmentCategory
-
-mentor_id = uuid.UUID("43c18c21-fb72-45a4-abb0-159ada17837c")
+from app.models.models import Assignment, AssignmentCategory, Mentor, UserRole
 
 async def seed_assignments():
     async with AsyncSessionLocal() as db:
+        # Fetch the admin user dynamically
+        result = await db.execute(select(Mentor).where(Mentor.role == UserRole.ADMIN))
+        admin = result.scalars().first()
+        if not admin:
+            print("Error: No admin user found. Please run seed_admin.py first.")
+            return
+        
+        mentor_id = admin.id
+
         # Delete existing data
         await db.execute(text("DELETE FROM certificates"))
         await db.execute(text("DELETE FROM final_results"))
