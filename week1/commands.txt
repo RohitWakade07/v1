@@ -1,14 +1,31 @@
 mkdir -p eep-software
-cd eep-software
-for i in $(seq -w 1 12); do
-  mkdir "week-$i"
-  touch "week-$i/README.md"
-done
-mkdir notes scripts capstone
-touch workspace-report.txt
-cd ..
-
-cat << 'EOF' > .bashrc
-alias ll='ls -l'
-alias gs='git status'
-EOF
+mkdir -p eep-software/week-01
+mkdir -p eep-software/week-02
+mkdir -p eep-software/week-03
+mkdir -p eep-software/week-04
+mkdir -p eep-software/week-05
+mkdir -p eep-software/week-06
+mkdir -p eep-software/week-07
+mkdir -p eep-software/week-08
+mkdir -p eep-software/week-09
+mkdir -p eep-software/week-10
+mkdir -p eep-software/week-11
+mkdir -p eep-software/week-12
+mkdir -p eep-software/notes
+mkdir -p eep-software/scripts
+mkdir -p eep-software/capstone
+echo "# Week 01" > eep-software/week-01/README.md
+echo "# Week 02" > eep-software/week-02/README.md
+echo "# Week 03" > eep-software/week-03/README.md
+echo "# Week 04" > eep-software/week-04/README.md
+echo "# Week 05" > eep-software/week-05/README.md
+echo "# Week 06" > eep-software/week-06/README.md
+echo "# Week 07" > eep-software/week-07/README.md
+echo "# Week 08" > eep-software/week-08/README.md
+echo "# Week 09" > eep-software/week-09/README.md
+echo "# Week 10" > eep-software/week-10/README.md
+echo "# Week 11" > eep-software/week-11/README.md
+echo "# Week 12" > eep-software/week-12/README.md
+echo "Directory tree of eep-software workspace" > eep-software/workspace-report.txt
+echo "alias ll='ls -al'" > .bashrc
+echo "alias gs='git status'" >> .bashrc

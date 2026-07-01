@@ -1,0 +1,1 @@
+import{i as e,n as t,r as n}from"./client-BncPQHUd.js";var r=()=>t(`/mentor/assignments`),i=e=>t(`/mentor/assignments/${e}`),a=t=>e(`/assignments`,t),o=t=>e(`/assignments/${t}/publish`,{}),s=t=>e(`/assignments/${t}/unpublish`,{}),c=(e,t)=>n(`/assignments/${e}`,t);export{s as a,o as i,i as n,c as o,r,a as t};

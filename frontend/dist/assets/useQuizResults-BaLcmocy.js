@@ -1,0 +1,1 @@
+import{t as e}from"./authStore-TP2wEd_n.js";import{V as t}from"./index-T8YBDzP1.js";import{l as n}from"./quiz-ChA9yLBK.js";var r=r=>{let i=e(e=>e.isAuthenticated),a=e(e=>e.role);return t({queryKey:[`student-quiz-results`],queryFn:n,enabled:i&&a===`student`,refetchInterval:r?.refetchInterval})};export{r as t};
