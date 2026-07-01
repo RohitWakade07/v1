@@ -226,7 +226,7 @@ async def seed_assignments():
             title="Week 12: Final Capstone Demonstration",
             description="Finalization and live demonstration of the complete Intelligent Wikipedia Search Engine system.",
             instructions="Submit your final repository ZIP. Ensure your search engine is fully functional, properly documented with a README, and handles complex multi-word queries correctly.",
-            category=AssignmentCategory.DETERMINISTIC_EXECUTION,
+            category=AssignmentCategory.MANUAL_REVIEW,
             max_score=5.0,
             deadline=datetime(2026, 9, 5),
             is_published=False,
