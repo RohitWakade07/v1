@@ -91,3 +91,4 @@ volumes:
   redis_data:
   minio_data:
   grader_jobs:
+    name: backend_grader_jobs
