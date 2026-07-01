@@ -332,6 +332,7 @@ python populate_all.py
 | Name | Role |
 |------|------|
 | Rohit Wakade | Intern |
+| Werewolf Leader | Intern |
 | Sidharth Priyadarshi, Prem Kumar | Mentor |
 
 ---
