@@ -88,4 +88,4 @@ volumes:
   redis_data:
   minio_data:
   grader_jobs:
-    name: backend_grader_jobs
+    name: ${GRADER_VOLUME_NAME:-backend_grader_jobs}
