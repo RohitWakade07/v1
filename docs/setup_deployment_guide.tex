@@ -1,0 +1,1275 @@
+
+\documentclass[12pt,a4paper]{article}
+
+% ── Packages ─────────────────────────────────────────────────────────────
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{tcolorbox}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{titlesec}
+\usepackage{fontawesome5}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{parskip}
+\usepackage{longtable}
+\usepackage{amsmath}
+
+% ── Colour Palette ─────────────────────────────────────────────────────
+\definecolor{setupBlue}{HTML}{1A1A2E}
+\definecolor{setupAccent}{HTML}{16213E}
+\definecolor{setupCyan}{HTML}{0F3460}
+\definecolor{setupGreen}{HTML}{0EA5E9}
+\definecolor{successGreen}{HTML}{06A77D}
+\definecolor{warnOrange}{HTML}{F4A261}
+\definecolor{dangerRed}{HTML}{E63946}
+\definecolor{codebg}{HTML}{0D1117}
+\definecolor{codetext}{HTML}{E6EDF3}
+\definecolor{codeborder}{HTML}{30363D}
+\definecolor{inlinecode}{HTML}{F4F6F9}
+\definecolor{lightgray}{HTML}{F8F9FA}
+\definecolor{darkgray}{HTML}{495057}
+\definecolor{midgray}{HTML}{6C757D}
+\definecolor{promptcolor}{HTML}{58A6FF}
+
+% ── Hyperlinks ─────────────────────────────────────────────────────────
+\hypersetup{
+  colorlinks=true,
+  linkcolor=setupGreen,
+  urlcolor=setupGreen,
+  pdftitle={EEP Auto-Grading Platform -- Setup and Deployment Guide},
+  pdfauthor={E-Yantra, IIT Bombay},
+}
+
+% ── Code Listing Style (dark terminal look) ───────────────────────────
+\lstdefinestyle{terminal}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small\color{codetext},
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{codeborder},
+  framesep=5pt,
+  xleftmargin=8pt,
+  xrightmargin=8pt,
+  showstringspaces=false,
+  extendedchars=false,
+  inputencoding=utf8,
+  commentstyle=\color{midgray}\itshape,
+  keywordstyle=\color{promptcolor}\bfseries,
+  stringstyle=\color{successGreen},
+  numberstyle=\tiny\color{midgray},
+  numbers=none,
+}
+
+\lstdefinestyle{envfile}{
+  backgroundcolor=\color{inlinecode},
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{codeborder},
+  framesep=5pt,
+  xleftmargin=8pt,
+  xrightmargin=8pt,
+  showstringspaces=false,
+  extendedchars=false,
+  inputencoding=utf8,
+  commentstyle=\color{midgray}\itshape,
+  keywordstyle=\color{setupCyan}\bfseries,
+  stringstyle=\color{successGreen},
+}
+
+\lstset{style=terminal}
+
+% ── Custom tcolorbox environments ──────────────────────────────────────
+\tcbuselibrary{skins,breakable}
+
+\newtcolorbox{infobox}[1][Note]{
+  colback=setupGreen!10,
+  colframe=setupGreen,
+  fonttitle=\bfseries,
+  title={\faInfoCircle\enspace #1},
+  breakable,
+}
+
+\newtcolorbox{warnbox}[1][Warning]{
+  colback=warnOrange!12,
+  colframe=warnOrange!80!black,
+  fonttitle=\bfseries,
+  title={\faExclamationTriangle\enspace #1},
+  breakable,
+}
+
+\newtcolorbox{dangerbox}[1][Critical]{
+  colback=dangerRed!8,
+  colframe=dangerRed,
+  fonttitle=\bfseries,
+  title={\faSkull\enspace #1},
+  breakable,
+}
+
+\newtcolorbox{successbox}[1][Done]{
+  colback=successGreen!10,
+  colframe=successGreen,
+  fonttitle=\bfseries,
+  title={\faCheckCircle\enspace #1},
+  breakable,
+}
+
+\newtcolorbox{troublebox}[1][Troubleshoot]{
+  colback=dangerRed!5,
+  colframe=dangerRed!60!black,
+  fonttitle=\bfseries,
+  title={\faBug\enspace #1},
+  breakable,
+}
+
+% ── Section Title Styling ──────────────────────────────────────────────
+\titleformat{\section}
+  {\Large\bfseries\color{setupCyan}}
+  {\thesection}{1em}{}[\color{setupGreen}\rule{\linewidth}{1.5pt}]
+
+\titleformat{\subsection}
+  {\large\bfseries\color{setupCyan}}
+  {\thesubsection}{0.8em}{}
+
+\titleformat{\subsubsection}
+  {\normalsize\bfseries\color{darkgray}}
+  {\thesubsubsection}{0.7em}{}
+
+% ── Header / Footer ───────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{setupCyan}\small\bfseries EEP Auto-Grading Platform}
+\fancyhead[R]{\color{darkgray}\small Setup \& Deployment Guide}
+\fancyfoot[C]{\color{darkgray}\small\thepage}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\headrule}{\color{setupGreen}\hrule width\headwidth height\headrulewidth}
+
+% ── Phase / Step counters ─────────────────────────────────────────────
+\newcounter{stepnum}
+\newcommand{\step}[1]{%
+  \stepcounter{stepnum}%
+  \vspace{8pt}%
+  \noindent\colorbox{setupCyan}{\color{white}\bfseries\small\ \thestepnum\ }%
+  \hspace{4pt}\textbf{#1}%
+  \par\vspace{2pt}%
+}
+
+% ─────────────────────────────────────────────────────────────────────
+\begin{document}
+% ─────────────────────────────────────────────────────────────────────
+
+% ── Title Page ────────────────────────────────────────────────────────
+\begin{titlepage}
+  \centering
+  \vspace*{1.5cm}
+
+  {\color{setupCyan}\rule{\linewidth}{4pt}}
+  \vspace{0.5cm}
+
+  {\Huge\bfseries\color{setupCyan} EEP Auto-Grading Platform}\\[0.7em]
+  {\LARGE\color{setupGreen} Setup \& Deployment Guide}\\[0.4em]
+  {\large\color{darkgray} Complete step-by-step setup with troubleshooting}\\[0.2em]
+  {\normalsize\color{midgray} E-Yantra Summer Internship Program (EYSIP)}
+
+  \vspace{0.5cm}
+  {\color{setupCyan}\rule{\linewidth}{4pt}}
+
+  \vspace{1.2cm}
+
+  \begin{tcolorbox}[colback=lightgray, colframe=setupGreen, width=0.92\linewidth]
+    \centering
+    \large Covers \textbf{local development}, \textbf{production deployment},\\
+    \textbf{environment configuration}, and \textbf{troubleshooting} for\\
+    the full EEP Auto-Grading stack.
+  \end{tcolorbox}
+
+  \vspace{0.8cm}
+
+  \begin{tcolorbox}[colback=codebg, colframe=codeborder, width=0.9\linewidth]
+    \color{codetext}\ttfamily\small
+    \faLayerGroup\enspace \textbf{Stack:} FastAPI + PostgreSQL + Redis + Celery + MinIO + Docker\\
+    \faCube\enspace \textbf{Frontend:} React 18 + Vite + Tailwind CSS\\
+    \faCloud\enspace \textbf{Infra:} Railway (API) + AWS EC2 (Worker) + Vercel (Frontend)
+  \end{tcolorbox}
+
+  \vfill
+
+  \begin{tabular}{rl}
+    \textbf{Document Version:} & 1.0 \\
+    \textbf{Platform Version:} & v2.0 \\
+    \textbf{Audience:}         & DevOps / Platform Administrator \\
+    \textbf{Organisation:}     & E-Yantra, IIT Bombay \\
+  \end{tabular}
+
+  \vspace{0.8cm}
+  {\color{darkgray}\small Last updated: \today}
+\end{titlepage}
+
+% ── Table of Contents ─────────────────────────────────────────────────
+\tableofcontents
+\newpage
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Architecture Overview}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{lstlisting}[style=terminal]
+ +------------------+     REST / SSE      +----------------------+
+ |  React Frontend  | ------------------> |  FastAPI Backend API |
+ |  (Vercel CDN)    |                     |  (Railway PaaS)      |
+ +------------------+                     +----------+-----------+
+                                                     |  Celery tasks
+                                         +-----------v-----------+
+                                         |  PostgreSQL + Redis   |
+                                         |  (Railway Plugins)    |
+                                         +-----------+-----------+
+                                                     |  picks up job
+                                         +-----------v-----------+
+                                         |  Celery Worker (EC2)  |
+                                         |  +------------------+ |
+                                         |  |  Docker Sandbox  | |
+                                         |  |  (student code)  | |
+                                         |  +------------------+ |
+                                         |  MinIO (S3 storage)  |
+                                         +----------------------+
+\end{lstlisting}
+
+\subsection{Hosting Split}
+
+\begin{center}
+\begin{tabularx}{\linewidth}{>{\bfseries}llX}
+\toprule
+Component & Host & Reason \\
+\midrule
+PostgreSQL + Redis & Railway & Managed, low-latency to API \\
+FastAPI API        & Railway & Auto-scaling, zero-ops \\
+React Frontend     & Vercel  & Global CDN, instant Git deploys \\
+Celery Worker + MinIO & AWS EC2 & Requires host Docker socket \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{infobox}[Why EC2 for the Worker?]
+  The Celery grading worker must \textbf{mount \texttt{/var/run/docker.sock}} to spawn isolated sibling containers per submission. PaaS platforms (Railway, Heroku) use containerized environments that do not expose the host Docker daemon. A plain EC2 VM provides direct host Docker socket access.
+\end{infobox}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Prerequisites}
+% ─────────────────────────────────────────────────────────────────────
+
+\subsection{Local Development Machine}
+
+\begin{center}
+\begin{tabularx}{\linewidth}{>{\bfseries}lX}
+\toprule
+Requirement & Notes \\
+\midrule
+Docker Desktop 4.x+  & Includes Docker Compose v2. \url{https://www.docker.com/products/docker-desktop/} \\
+Node.js 18+          & LTS recommended. \url{https://nodejs.org} \\
+Python 3.10+         & For local venv and seeding scripts \\
+Git                  & For cloning and version control \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Production / Cloud}
+
+\begin{center}
+\begin{tabularx}{\linewidth}{>{\bfseries}lX}
+\toprule
+Service & Purpose \\
+\midrule
+Railway account    & Hosts API + PostgreSQL + Redis \\
+AWS account        & EC2 instance for worker + MinIO \\
+Vercel account     & Hosts the React frontend \\
+GitHub account     & Source repository \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Local Development Setup}
+% ─────────────────────────────────────────────────────────────────────
+
+\subsection{Clone the Repository}
+
+\setcounter{stepnum}{0}
+
+\step{Clone from GitHub}
+\begin{lstlisting}[style=terminal]
+git clone https://github.com/RohitWakade07/v1.git eysip-platform
+cd eysip-platform
+\end{lstlisting}
+
+\subsection{Backend Setup}
+
+\step{Copy and configure the environment file}
+\begin{lstlisting}[style=terminal]
+cd backend
+cp .env.example .env
+# Open .env in your editor -- defaults work for local dev
+# No changes required for local development
+\end{lstlisting}
+
+\step{Start all backend services with Docker Compose}
+
+This spins up PostgreSQL, Redis, MinIO, the FastAPI API, and the Celery worker:
+
+\begin{lstlisting}[style=terminal]
+docker compose up -d --build
+\end{lstlisting}
+
+Expected output:
+\begin{lstlisting}[style=terminal]
+[+] Running 5/5
+ [OK] Container grading_postgres  Started
+ [OK] Container grading_redis     Started
+ [OK] Container grading_minio     Started
+ [OK] Container grading_backend   Started
+ [OK] Container grading_worker    Started
+\end{lstlisting}
+
+\step{Verify all containers are healthy}
+\begin{lstlisting}[style=terminal]
+docker compose ps
+\end{lstlisting}
+
+All containers should show \texttt{running} or \texttt{healthy}.
+
+\step{Run database migrations}
+\begin{lstlisting}[style=terminal]
+# Windows PowerShell:
+$env:PYTHONPATH = "$(pwd)"
+venv\Scripts\alembic upgrade head
+
+# Linux / macOS:
+PYTHONPATH=. alembic upgrade head
+\end{lstlisting}
+
+If you don't have alembic in a venv, run it inside the backend container:
+\begin{lstlisting}[style=terminal]
+docker compose exec backend alembic upgrade head
+\end{lstlisting}
+
+\step{Seed the initial admin account}
+\begin{lstlisting}[style=terminal]
+# Windows PowerShell:
+$env:PYTHONPATH = "$(pwd)"; venv\Scripts\python seed_admin.py
+
+# Linux / macOS:
+PYTHONPATH=. python seed_admin.py
+\end{lstlisting}
+
+Expected output:
+\begin{lstlisting}[style=terminal]
+[seed_admin] Admin account created successfully!
+  Username : eyantrastaff@gmail.com
+  Password : eyantrastaff@gmail.com   <- CHANGE THIS
+\end{lstlisting}
+
+\begin{dangerbox}[Change the Default Password]
+  The default admin password is \texttt{eyantrastaff@gmail.com}. Log in and change it immediately.
+\end{dangerbox}
+
+\subsection{Local Service Endpoints}
+
+\begin{center}
+\begin{tabularx}{\linewidth}{>{\bfseries}lll}
+\toprule
+Service & URL & Default Credentials \\
+\midrule
+FastAPI Swagger Docs & \url{http://localhost:8000/docs} & -- (DEBUG must be true) \\
+MinIO Console        & \url{http://localhost:9001}      & minioadmin / minioadmin \\
+PostgreSQL           & \texttt{localhost:5433}           & grading\_user / changeme \\
+Redis                & \texttt{localhost:6379}           & (no password) \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Frontend Setup}
+
+Open a \textbf{new terminal} (keep backend running):
+
+\step{Install dependencies}
+\begin{lstlisting}[style=terminal]
+cd frontend
+npm install
+\end{lstlisting}
+
+\step{Configure environment}
+\begin{lstlisting}[style=terminal]
+# Create frontend .env.local
+echo "VITE_API_BASE_URL=http://localhost:8000" > .env.local
+\end{lstlisting}
+
+\step{Start the development server}
+\begin{lstlisting}[style=terminal]
+npm run dev
+\end{lstlisting}
+
+Frontend runs at \textbf{\url{http://localhost:5173}}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Environment Variables Reference}
+% ─────────────────────────────────────────────────────────────────────
+
+\subsection{Backend \texttt{.env} File}
+
+\begin{lstlisting}[style=envfile]
+# ── App ──────────────────────────────────────────────────────────────
+APP_NAME="E-Yantra EEP Platform"
+DEBUG=false           # Set true only for local dev (enables /docs)
+ENVIRONMENT=production
+
+# ── Database ─────────────────────────────────────────────────────────
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_USER=grading_user
+POSTGRES_PASSWORD=changeme   # CHANGE IN PRODUCTION
+POSTGRES_DB=grading_db
+
+# ── Redis ────────────────────────────────────────────────────────────
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_DB=0
+REDIS_PASSWORD=              # Set if your Redis requires auth
+
+# ── JWT ──────────────────────────────────────────────────────────────
+# Generate: python -c "import secrets; print(secrets.token_hex(64))"
+JWT_SECRET_KEY=CHANGE_THIS_BEFORE_DEPLOYING
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=60
+
+# ── Proof Signing ─────────────────────────────────────────────────────
+PROOF_SIGNING_KEY=CHANGE_THIS_BEFORE_DEPLOYING
+
+# ── Evaluator ────────────────────────────────────────────────────────
+EVALUATOR_SHARED_KEY=        # Shared key for evaluator sessions
+
+# ── Rate Limiting ────────────────────────────────────────────────────
+LOGIN_RATE_LIMIT_PER_MINUTE=10
+
+# ── Celery / Worker ──────────────────────────────────────────────────
+CELERY_BROKER_URL=redis://localhost:6379/0
+CELERY_RESULT_BACKEND=redis://localhost:6379/1
+
+# ── MinIO / Storage ──────────────────────────────────────────────────
+MINIO_ENDPOINT=http://minio:9000
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+MINIO_BUCKET_SUBMISSIONS=submissions
+MINIO_BUCKET_ASSETS=grader-assets
+MINIO_USE_SSL=false
+MINIO_REGION=us-east-1
+
+# ── CORS ─────────────────────────────────────────────────────────────
+ALLOWED_ORIGINS=https://your-app.vercel.app
+
+# ── EEP Verifier ─────────────────────────────────────────────────────
+EEP_MAX_UPLOAD_BYTES=50000   # 50 KB max ZIP size
+
+# ── Kafka (optional, for future event streaming) ──────────────────────
+KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+\end{lstlisting}
+
+\subsection{Generating Secrets}
+
+\begin{lstlisting}[style=terminal]
+python -c "import secrets; print(secrets.token_hex(64))"
+\end{lstlisting}
+
+Generate a unique value for \textbf{both} \texttt{JWT\_SECRET\_KEY} and \texttt{PROOF\_SIGNING\_KEY}.
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Production Deployment}
+% ─────────────────────────────────────────────────────────────────────
+
+\subsection{Phase 1: Database \& API on Railway}
+
+\setcounter{stepnum}{0}
+
+\step{Create a Railway project}
+Go to \url{https://railway.app} and create a new project.
+
+\step{Add PostgreSQL plugin}
+\begin{enumerate}
+  \item Click \textbf{+ New} $\rightarrow$ \textbf{Database} $\rightarrow$ \textbf{PostgreSQL}.
+  \item After creation, copy the \texttt{DATABASE\_URL} from the plugin's \emph{Connect} tab.
+\end{enumerate}
+
+\step{Add Redis plugin}
+\begin{enumerate}
+  \item Click \textbf{+ New} $\rightarrow$ \textbf{Database} $\rightarrow$ \textbf{Redis}.
+  \item Copy the Redis URL from the plugin's \emph{Connect} tab.
+\end{enumerate}
+
+\step{Create the API service}
+\begin{enumerate}
+  \item Click \textbf{+ New} $\rightarrow$ \textbf{GitHub Repo}.
+  \item Select your repository and set \textbf{Root Directory} to \texttt{backend/}.
+  \item Railway will auto-detect the Dockerfile and use \texttt{Dockerfile.api}.
+\end{enumerate}
+
+\step{Set environment variables in Railway}
+
+In the service settings $\rightarrow$ \textbf{Variables}, add:
+
+\begin{lstlisting}[style=envfile]
+# Railway PostgreSQL auto-provides this variable
+DATABASE_URL=postgresql+asyncpg://...   # from Railway PostgreSQL plugin
+
+# Redis
+REDIS_HOST=<railway-redis-host>
+REDIS_PORT=<railway-redis-port>
+REDIS_PASSWORD=<railway-redis-password>
+CELERY_BROKER_URL=redis://:<pass>@<host>:<port>/0
+CELERY_RESULT_BACKEND=redis://:<pass>@<host>:<port>/1
+
+# MinIO on EC2 (fill after Phase 2)
+MINIO_ENDPOINT=http://<your-ec2-ip>:9000
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+MINIO_BUCKET_SUBMISSIONS=submissions
+MINIO_BUCKET_ASSETS=grader-assets
+MINIO_USE_SSL=false
+
+# Security (generate fresh values!)
+JWT_SECRET_KEY=<generated-64-byte-hex>
+PROOF_SIGNING_KEY=<generated-64-byte-hex>
+
+# CORS
+ALLOWED_ORIGINS=https://your-app.vercel.app
+
+# App
+DEBUG=false
+ENVIRONMENT=production
+\end{lstlisting}
+
+\step{Set the startup command}
+
+In Railway service settings $\rightarrow$ \textbf{Deploy} $\rightarrow$ \textbf{Start Command}:
+\begin{lstlisting}[style=terminal]
+alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000
+\end{lstlisting}
+
+\step{Deploy}
+
+Railway will build and deploy automatically. Check the \textbf{Deployments} tab for logs.
+
+\begin{successbox}[API is Live]
+  Visit \texttt{https://\{your-railway-url\}/health} -- you should see \texttt{\{"status":"ok"\}}.
+\end{successbox}
+
+%───────────────────────────────────────────────────────────────────
+\subsection{Phase 2: Celery Worker + MinIO on AWS EC2}
+%───────────────────────────────────────────────────────────────────
+
+\subsubsection{Step 2a: Launch EC2 Instance}
+
+\setcounter{stepnum}{0}
+
+\step{Go to AWS Console $\rightarrow$ EC2 $\rightarrow$ Launch Instance}
+
+\begin{center}
+\begin{tabularx}{\linewidth}{>{\bfseries}lX}
+\toprule
+Setting & Value \\
+\midrule
+AMI            & Ubuntu Server 24.04 LTS (64-bit, x86) \\
+Instance Type  & \texttt{m7i-flex.large} (8 GB RAM) — Minimum recommended \\
+               & \emph{Avoid t3.small (2 GB is insufficient for Docker containers)} \\
+Key Pair       & Create or use existing \texttt{.pem} key \\
+Security Group & Allow inbound: SSH (22), MinIO (9000), HTTP (80), HTTPS (443) \\
+Storage        & 30 GB GP3 (minimum) \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsubsection{Step 2b: Install Docker on EC2}
+
+\step{SSH into your EC2 instance}
+\begin{lstlisting}[style=terminal]
+ssh -i "your-key.pem" ubuntu@<your-ec2-public-ip>
+\end{lstlisting}
+
+\step{Install Docker Engine}
+\begin{lstlisting}[style=terminal]
+# Update package index
+sudo apt-get update
+
+# Install dependencies
+sudo apt-get install -y ca-certificates curl gnupg
+
+# Add Docker GPG key
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
+    sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+# Add Docker repository
+echo \
+  "deb [arch=$(dpkg --print-architecture) \
+  signed-by=/etc/apt/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Install Docker CE + Compose plugin
+sudo apt-get update
+sudo apt-get install -y \
+    docker-ce docker-ce-cli containerd.io \
+    docker-buildx-plugin docker-compose-plugin git
+\end{lstlisting}
+
+\step{Add ubuntu user to Docker group}
+\begin{lstlisting}[style=terminal]
+sudo usermod -aG docker ubuntu
+# IMPORTANT: Log out and log back in for this to take effect!
+exit
+ssh -i "your-key.pem" ubuntu@<ec2-ip>
+\end{lstlisting}
+
+\step{Verify Docker installation}
+\begin{lstlisting}[style=terminal]
+docker --version
+# Docker version 26.x.x
+
+docker compose version
+# Docker Compose version v2.x.x
+\end{lstlisting}
+
+\subsubsection{Step 2c: Clone and Configure}
+
+\step{Clone the repository}
+\begin{lstlisting}[style=terminal]
+git clone https://github.com/RohitWakade07/v1.git grading-platform
+cd grading-platform/backend
+\end{lstlisting}
+
+\step{Create the worker \texttt{.env} file}
+\begin{lstlisting}[style=terminal]
+cp .env.example .env
+nano .env
+\end{lstlisting}
+
+Configure the following (minimum required for EC2 worker):
+
+\begin{lstlisting}[style=envfile]
+SERVICE_TYPE=worker
+
+# ── From Railway PostgreSQL plugin ───────────────────────────────────
+DATABASE_URL_OVERRIDE=postgresql+asyncpg://postgres:...@...railway.app:5432/railway
+
+# ── From Railway Redis plugin ────────────────────────────────────────
+REDIS_HOST=<railway-redis-host>
+REDIS_PORT=<railway-redis-port>
+REDIS_PASSWORD=<railway-redis-password>
+CELERY_BROKER_URL=redis://:<pass>@<host>:<port>/0
+CELERY_RESULT_BACKEND=redis://:<pass>@<host>:<port>/1
+
+# ── MinIO (running locally on this same EC2) ─────────────────────────
+MINIO_ENDPOINT=http://localhost:9000
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+MINIO_BUCKET_SUBMISSIONS=submissions
+MINIO_BUCKET_ASSETS=grader-assets
+MINIO_USE_SSL=false
+
+# ── SAME keys as Railway API ─────────────────────────────────────────
+JWT_SECRET_KEY=<same-value-as-railway>
+PROOF_SIGNING_KEY=<same-value-as-railway>
+\end{lstlisting}
+
+\subsubsection{Step 2d: Start the Worker}
+
+\step{Build and start the worker}
+\begin{lstlisting}[style=terminal]
+cd grading-platform/backend
+docker compose -f docker-compose.worker.yml up -d --build
+\end{lstlisting}
+
+\step{Verify the worker is running}
+\begin{lstlisting}[style=terminal]
+docker compose -f docker-compose.worker.yml ps
+# grading_worker should show "running"
+
+docker logs -f grading_worker
+# Look for: celery@<id> ready.
+\end{lstlisting}
+
+\step{Update Railway with your EC2 IP for MinIO}
+
+Go back to Railway and update:
+\begin{lstlisting}[style=envfile]
+MINIO_ENDPOINT=http://<your-ec2-public-ip>:9000
+\end{lstlisting}
+
+Redeploy the Railway service for this change to take effect.
+
+%───────────────────────────────────────────────────────────────────
+\subsection{Phase 3: Frontend on Vercel}
+%───────────────────────────────────────────────────────────────────
+
+\setcounter{stepnum}{0}
+
+\step{Import repository into Vercel}
+\begin{enumerate}
+  \item Go to \url{https://vercel.com/new} and click \textbf{Import Git Repository}.
+  \item Select your GitHub repository.
+\end{enumerate}
+
+\step{Configure Vercel project settings}
+
+\begin{center}
+\begin{tabularx}{\linewidth}{>{\bfseries}lX}
+\toprule
+Setting & Value \\
+\midrule
+Root Directory    & \texttt{frontend} \\
+Framework Preset  & Vite \\
+Build Command     & \texttt{npm run build} \\
+Output Directory  & \texttt{dist} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\step{Add environment variable}
+
+Under \textbf{Environment Variables}:
+\begin{lstlisting}[style=envfile]
+VITE_API_BASE_URL=https://<your-railway-api-url>
+\end{lstlisting}
+
+\step{Deploy}
+
+Click \textbf{Deploy}. Vercel will build and deploy. Future pushes to your branch auto-deploy.
+
+\begin{successbox}[Deployment Complete!]
+  Visit your Vercel URL. The full platform is now live.
+\end{successbox}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Post-Deployment Steps}
+% ─────────────────────────────────────────────────────────────────────
+
+After a successful deployment, always perform these steps:
+
+\setcounter{stepnum}{0}
+
+\step{Seed the admin account (production)}
+\begin{lstlisting}[style=terminal]
+# Via Railway Shell (in Railway dashboard -> Service -> Shell):
+python seed_admin.py
+
+# Or via railway CLI:
+railway run python seed_admin.py
+\end{lstlisting}
+
+\step{Seed weekly assignments}
+\begin{lstlisting}[style=terminal]
+# Populate all weekly assignment definitions
+railway run python seed_assignments.py
+\end{lstlisting}
+
+\step{Verify the health endpoint}
+\begin{lstlisting}[style=terminal]
+curl https://<your-railway-url>/health
+# Expected: {"status":"ok","database":"ok","redis":"ok","version":"..."}
+\end{lstlisting}
+
+\step{Test end-to-end flow}
+\begin{enumerate}
+  \item Login as admin, create a mentor account.
+  \item Login as mentor, create a classroom, import a student CSV.
+  \item Create and publish an assignment.
+  \item Login as student, make a test submission.
+  \item Verify the submission reaches COMPLETED state.
+\end{enumerate}
+
+\step{Change the default admin password}
+Log in as admin on the platform and update the password via the Profile page.
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Updating the Platform}
+% ─────────────────────────────────────────────────────────────────────
+
+\subsection{Updating the API (Railway)}
+
+Push changes to your linked branch. Railway auto-deploys on push.
+
+If you added new database tables (new Alembic migrations), the startup command runs \texttt{alembic upgrade head} automatically before starting uvicorn.
+
+\subsection{Updating the Worker (EC2)}
+
+\begin{lstlisting}[style=terminal]
+# SSH into EC2
+ssh -i "your-key.pem" ubuntu@<ec2-ip>
+
+cd grading-platform
+
+# Pull latest code
+git pull origin main
+
+cd backend
+
+# Rebuild and restart worker (zero-downtime not guaranteed)
+docker compose -f docker-compose.worker.yml up -d --build
+
+# Or just restart without rebuilding (for code-only changes):
+docker compose -f docker-compose.worker.yml restart worker
+\end{lstlisting}
+
+\subsection{Updating the Frontend (Vercel)}
+
+Push to your linked branch. Vercel auto-deploys.
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Troubleshooting Guide}
+% ─────────────────────────────────────────────────────────────────────
+
+% ── Issue 1 ──────────────────────────────────────────────────────────
+\subsection{API Boot Loop / 405 Method Not Allowed}
+
+\begin{troublebox}[Symptoms]
+\begin{itemize}
+  \item FastAPI backend constantly restarts (Railway shows repeated deploys)
+  \item Frontend API calls return \texttt{405 Method Not Allowed} or \texttt{502 Bad Gateway}
+  \item Railway logs show \texttt{SyntaxError} or \texttt{IndentationError}
+\end{itemize}
+\end{troublebox}
+
+\textbf{Root Cause:} A Python syntax error in backend code causes Gunicorn/uvicorn to crash on startup.
+
+\textbf{Resolution:}
+
+\setcounter{stepnum}{0}
+\step{Identify the exact error in Railway logs}
+\begin{lstlisting}[style=terminal]
+# In Railway dashboard: Deployments -> View Logs
+# Look for lines like:
+IndentationError: unexpected indent in app/api/v1/routes/assignments.py, line 142
+\end{lstlisting}
+
+\step{Fix the syntax error locally and push}
+\begin{lstlisting}[style=terminal]
+# Validate before pushing
+python -m py_compile backend/app/api/v1/routes/assignments.py
+
+# Push the fix
+git add .
+git commit -m "fix: syntax error in assignments.py"
+git push
+\end{lstlisting}
+
+\step{Emergency hotfix on EC2 (if worker is also affected)}
+\begin{lstlisting}[style=terminal]
+# Copy fix script into running worker container
+docker cp hotfix.py $(docker compose ps -q worker):/app/hotfix.py
+docker compose exec worker python /app/hotfix.py
+
+# Restart the worker
+docker compose restart worker
+\end{lstlisting}
+
+\step{Prevention}
+\begin{lstlisting}[style=terminal]
+# Add this to your pre-commit or CI pipeline:
+python -m py_compile backend/app/api/v1/routes/*.py
+\end{lstlisting}
+
+% ── Issue 2 ──────────────────────────────────────────────────────────
+\subsection{Frontend TypeScript Build Failure}
+
+\begin{troublebox}[Symptoms]
+\begin{itemize}
+  \item Vercel deployment fails during build
+  \item \texttt{npm run build} fails with \texttt{TS1002: Unterminated string literal}
+  \item Error points to a component handling multi-line text
+\end{itemize}
+\end{troublebox}
+
+\textbf{Root Cause:} A multi-line string or template literal contains a raw newline instead of \texttt{\textbackslash n}.
+
+\textbf{Resolution:}
+
+\begin{lstlisting}[style=terminal]
+# Wrong:
+assignment.expected_structure.split('
+').map(...)
+
+# Correct:
+assignment.expected_structure.split('\n').map(...)
+\end{lstlisting}
+
+Test locally before pushing:
+\begin{lstlisting}[style=terminal]
+cd frontend
+npm run build
+\end{lstlisting}
+
+% ── Issue 3 ──────────────────────────────────────────────────────────
+\subsection{Worker Not Picking Up Jobs}
+
+\begin{troublebox}[Symptoms]
+\begin{itemize}
+  \item Submissions stay stuck in QUEUED or PENDING state forever
+  \item Student dashboard shows no status update after several minutes
+\end{itemize}
+\end{troublebox}
+
+\textbf{Diagnosis:}
+
+\begin{lstlisting}[style=terminal]
+# Check worker logs
+docker logs -f grading_worker
+
+# Check if Celery is connected to Redis
+docker compose exec worker celery -A workers.tasks inspect ping
+
+# Check Redis connectivity
+docker compose exec worker redis-cli -h $REDIS_HOST -p $REDIS_PORT -a $REDIS_PASSWORD ping
+# Expected: PONG
+\end{lstlisting}
+
+\textbf{Common Fixes:}
+
+\begin{lstlisting}[style=terminal]
+# 1. Restart the worker
+docker compose -f docker-compose.worker.yml restart worker
+
+# 2. If Redis URL changed, update .env and restart
+docker compose -f docker-compose.worker.yml up -d
+
+# 3. Check that CELERY_BROKER_URL in EC2 .env matches Railway Redis URL
+grep CELERY_BROKER_URL .env
+\end{lstlisting}
+
+% ── Issue 4 ──────────────────────────────────────────────────────────
+\subsection{Database Migration Failure}
+
+\begin{troublebox}[Symptoms]
+\begin{itemize}
+  \item API crashes on startup with \texttt{UndefinedTable} or \texttt{OperationalError}
+  \item \texttt{alembic upgrade head} fails with \texttt{Connection refused}
+  \item Railway logs show \texttt{could not connect to server}
+\end{itemize}
+\end{troublebox}
+
+\textbf{Diagnosis and Resolution:}
+
+\begin{lstlisting}[style=terminal]
+# 1. Verify DATABASE_URL is set correctly in Railway
+railway variables --service <your-api-service>
+
+# 2. Run migrations manually via Railway shell
+railway run alembic upgrade head
+
+# 3. Check alembic revision history
+railway run alembic history
+
+# 4. If schema is out of sync, show current revision
+railway run alembic current
+
+# 5. For local development, check postgres is running
+docker compose ps | grep postgres
+# Should show: healthy
+
+# 6. Connect directly to verify
+docker compose exec postgres psql -U grading_user -d grading_db -c "\dt"
+\end{lstlisting}
+
+% ── Issue 5 ──────────────────────────────────────────────────────────
+\subsection{MinIO Connection / Storage Errors}
+
+\begin{troublebox}[Symptoms]
+\begin{itemize}
+  \item Submissions fail with \texttt{S3Error} or \texttt{Connection refused}
+  \item Worker logs show \texttt{EndpointConnectionError}
+  \item ZIP files are not stored, submissions get stuck
+\end{itemize}
+\end{troublebox}
+
+\textbf{Diagnosis:}
+
+\begin{lstlisting}[style=terminal]
+# Check MinIO is running on EC2
+docker ps | grep minio
+# Should show: grading_minio (Up ...)
+
+# Test MinIO health from the worker container
+docker compose exec worker curl http://localhost:9000/minio/health/live
+# Expected: HTTP 200
+
+# Verify EC2 Security Group allows port 9000 inbound
+# AWS Console -> EC2 -> Security Groups -> Inbound Rules
+# Must have: Custom TCP, Port 9000, Source 0.0.0.0/0
+\end{lstlisting}
+
+\textbf{Fixes:}
+
+\begin{lstlisting}[style=terminal]
+# 1. Restart MinIO if it crashed
+docker restart grading_minio
+
+# 2. Check buckets exist (create if missing)
+docker run --rm -it --network=host minio/mc:latest \
+  mc config host add local http://localhost:9000 minioadmin minioadmin
+
+docker run --rm -it --network=host minio/mc:latest \
+  mc mb local/submissions
+docker run --rm -it --network=host minio/mc:latest \
+  mc mb local/grader-assets
+
+# 3. If MINIO_ENDPOINT in Railway .env points to wrong IP:
+#    Update Railway env variable with correct EC2 public IP and redeploy
+\end{lstlisting}
+
+% ── Issue 6 ──────────────────────────────────────────────────────────
+\subsection{Docker Sandbox Fails to Start}
+
+\begin{troublebox}[Symptoms]
+\begin{itemize}
+  \item Worker logs show \texttt{docker: permission denied while trying to connect to the Docker daemon}
+  \item Grading jobs fail immediately with a Docker error
+\end{itemize}
+\end{troublebox}
+
+\textbf{Root Cause:} The worker container cannot access the host Docker socket.
+
+\textbf{Resolution:}
+
+\begin{lstlisting}[style=terminal]
+# Verify the socket is mounted in docker-compose.worker.yml:
+# volumes:
+#   - /var/run/docker.sock:/var/run/docker.sock
+
+# Check socket permissions on the host
+ls -la /var/run/docker.sock
+# Expected: srw-rw---- ... root docker
+
+# Add ubuntu user to docker group (if not already done)
+sudo usermod -aG docker ubuntu
+# Log out and log back in, then restart the worker
+docker compose -f docker-compose.worker.yml down
+docker compose -f docker-compose.worker.yml up -d
+\end{lstlisting}
+
+% ── Issue 7 ──────────────────────────────────────────────────────────
+\subsection{CORS Errors (Frontend Cannot Reach API)}
+
+\begin{troublebox}[Symptoms]
+\begin{itemize}
+  \item Browser console shows \texttt{CORS policy: No 'Access-Control-Allow-Origin' header}
+  \item Frontend shows \texttt{Network Error} for all API calls
+\end{itemize}
+\end{troublebox}
+
+\textbf{Resolution:}
+
+\begin{lstlisting}[style=envfile]
+# In Railway API environment variables:
+ALLOWED_ORIGINS=https://your-app.vercel.app
+
+# For multiple origins, comma-separate:
+ALLOWED_ORIGINS=https://your-app.vercel.app,https://custom-domain.com
+\end{lstlisting}
+
+Redeploy the API after updating this variable.
+
+% ── Issue 8 ──────────────────────────────────────────────────────────
+\subsection{Login Fails / JWT Errors}
+
+\begin{troublebox}[Symptoms]
+\begin{itemize}
+  \item \texttt{401 Unauthorized} on all API calls after login
+  \item \texttt{Invalid or expired token} error
+\end{itemize}
+\end{troublebox}
+
+\textbf{Causes and Fixes:}
+
+\begin{lstlisting}[style=terminal]
+# 1. JWT_SECRET_KEY mismatch between Railway and EC2
+#    Verify both use IDENTICAL keys:
+grep JWT_SECRET_KEY backend/.env          # EC2
+# Compare with Railway environment variable
+
+# 2. Token expired
+#    Increase expiry in Railway:
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=120
+
+# 3. Clock skew between services (rare)
+#    Sync NTP on EC2:
+sudo timedatectl set-ntp true
+\end{lstlisting}
+
+% ── Issue 9 ──────────────────────────────────────────────────────────
+\subsection{Submission VALIDATION\_ERROR}
+
+\begin{troublebox}[Symptoms]
+\begin{itemize}
+  \item Student submission immediately fails with VALIDATION\_ERROR
+  \item No grading is attempted
+\end{itemize}
+\end{troublebox}
+
+\textbf{Common Causes:}
+
+\begin{center}
+\begin{tabularx}{\linewidth}{>{\bfseries}lX}
+\toprule
+Error Code & Cause \\
+\midrule
+ZIP\_REQUIRED       & Source type is ZIP but no file was attached \\
+INVALID\_FILE\_TYPE  & Uploaded file is not a \texttt{.zip} archive \\
+FILE\_TOO\_LARGE     & ZIP exceeds 50,000 bytes \\
+PATH\_TRAVERSAL      & ZIP contains paths with \texttt{../} (security block) \\
+MISSING\_FILES       & Required files not found in ZIP structure \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{lstlisting}[style=terminal]
+# Check the submission result logs for the exact error
+GET /api/v1/submissions/{submission_id}/result
+# stderr field will contain the rejection reason
+\end{lstlisting}
+
+% ── Issue 10 ─────────────────────────────────────────────────────────
+\subsection{Worker Code Changes Not Taking Effect}
+
+\begin{troublebox}[Symptoms]
+\begin{itemize}
+  \item You updated grading logic in \texttt{workers/tasks.py}
+  \item The old grading behaviour persists
+\end{itemize}
+\end{troublebox}
+
+\textbf{Root Cause:} Celery workers do not hot-reload code changes.
+
+\textbf{Resolution:}
+
+\begin{lstlisting}[style=terminal]
+# After pulling new code to EC2:
+cd grading-platform/backend
+
+git pull origin main
+
+# Option A: Just restart (fast, uses current image)
+docker compose -f docker-compose.worker.yml restart worker
+
+# Option B: Rebuild image (for dependency or Dockerfile changes)
+docker compose -f docker-compose.worker.yml up -d --build
+\end{lstlisting}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Maintenance Procedures}
+% ─────────────────────────────────────────────────────────────────────
+
+\subsection{Backing Up the Database}
+
+\begin{lstlisting}[style=terminal]
+# From local (via port-forward or direct connection):
+pg_dump -h localhost -p 5433 -U grading_user -d grading_db \
+    -F c -f backup_$(date +%Y%m%d).dump
+
+# Restore:
+pg_restore -h localhost -p 5433 -U grading_user -d grading_db \
+    backup_20250101.dump
+\end{lstlisting}
+
+\subsection{Viewing Live Logs}
+
+\begin{lstlisting}[style=terminal]
+# API logs (Railway dashboard or railway CLI):
+railway logs --service <api-service-name>
+
+# Worker logs (EC2):
+docker logs -f grading_worker
+
+# Celery task logs with timestamps:
+docker logs grading_worker --timestamps --since 1h
+\end{lstlisting}
+
+\subsection{Clearing the Submission Queue (Emergency)}
+
+\begin{lstlisting}[style=terminal]
+# Connect to Redis and flush the Celery queue:
+docker compose exec redis redis-cli FLUSHDB
+
+# WARNING: This drops all pending jobs. Only use in emergencies.
+\end{lstlisting}
+
+\subsection{Running Tests}
+
+\begin{lstlisting}[style=terminal]
+cd backend
+
+# Create and activate virtual environment
+python -m venv venv
+
+# Windows:
+venv\Scripts\activate
+
+# Linux/macOS:
+source venv/bin/activate
+
+pip install -r requirements.txt
+
+# Run all backend tests (ensure services are running)
+PYTHONPATH=. pytest tests/ -v
+
+# Run a specific test file
+PYTHONPATH=. pytest tests/test_submissions.py -v
+\end{lstlisting}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Quick Reference Card}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{tcolorbox}[colback=codebg, colframe=setupGreen,
+  title={\color{setupGreen}\faTerminal\enspace Essential Commands}, fonttitle=\bfseries\color{setupGreen}]
+\color{codetext}\ttfamily\small
+\begin{tabular}{ll}
+\textbf{Start all local services:}   & docker compose up -d --build \\
+\textbf{Stop all local services:}    & docker compose down \\
+\textbf{Run migrations:}             & alembic upgrade head \\
+\textbf{Seed admin:}                 & python seed\_admin.py \\
+\textbf{Seed assignments:}           & python seed\_assignments.py \\
+\textbf{View API logs:}              & docker logs -f grading\_backend \\
+\textbf{View worker logs:}           & docker logs -f grading\_worker \\
+\textbf{Restart worker (EC2):}       & docker compose restart worker \\
+\textbf{Rebuild worker (EC2):}       & docker compose up -d --build \\
+\textbf{Health check:}               & curl \{api-url\}/health \\
+\textbf{Run tests:}                  & PYTHONPATH=. pytest tests/ -v \\
+\end{tabular}
+\end{tcolorbox}
+
+\vspace{1em}
+
+\begin{tcolorbox}[colback=lightgray, colframe=setupCyan, title={\faLink\enspace Key URLs \& Endpoints}, fonttitle=\bfseries]
+\begin{tabular}{ll}
+\textbf{Health:}              & GET /health \\
+\textbf{API Docs:}            & GET /docs (DEBUG=true only) \\
+\textbf{All submissions:}     & GET /api/v1/admin/submissions \\
+\textbf{All students:}        & GET /api/v1/admin/students \\
+\textbf{All mentors:}         & GET /api/v1/admin/mentors \\
+\textbf{Create mentor:}       & POST /api/v1/admin/mentors \\
+\textbf{Import students CSV:} & POST /api/v1/mentor/students/csv \\
+\textbf{Submit assignment:}   & POST /api/v1/submissions \\
+\textbf{Stream SSE status:}   & GET /api/v1/submissions/\{id\}/status \\
+\textbf{Local MinIO Console:} & http://localhost:9001 \\
+\end{tabular}
+\end{tcolorbox}
+
+% ─────────────────────────────────────────────────────────────────────
+\end{document}

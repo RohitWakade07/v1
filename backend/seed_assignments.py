@@ -16,6 +16,7 @@ async def seed_assignments():
         await db.execute(text("DELETE FROM final_results"))
         await db.execute(text("DELETE FROM submission_results"))
         await db.execute(text("DELETE FROM grading_jobs"))
+        await db.execute(text("DELETE FROM submission_outbox"))
         await db.execute(text("DELETE FROM submissions"))
         await db.execute(text("DELETE FROM proof_submissions"))
         await db.execute(text("DELETE FROM grading_sessions"))
@@ -121,8 +122,8 @@ async def seed_assignments():
             id=uuid.uuid4(),
             slug="week7",
             title="Week 7: Wikipedia Collector",
-            description="Build a scraper that fetches Wikipedia pages from a URL list and saves each as a structured JSON file.",
-            instructions="Submit collect_wiki.py zip.",
+            description="Build a web scraper that fetches Wikipedia pages from a list of URLs and saves each article as a structured JSON file.",
+            instructions="Submit a ZIP containing `collect_wiki.py` and `requirements.txt`. Your script must generate a `corpus/` directory with at least 3 JSON files, each containing 'title', 'url', and 'text' keys with non-trivial text content (>=50 words).",
             category=AssignmentCategory.DETERMINISTIC_EXECUTION,
             max_score=5.0,
             deadline=datetime(2026, 8, 1),
@@ -137,8 +138,8 @@ async def seed_assignments():
             id=uuid.uuid4(),
             slug="week8",
             title="Week 8: Metadata Organizer",
-            description="Build a modular Python package that processes the Week 7 corpus.",
-            instructions="Submit metadata_organizer zip.",
+            description="Build a modular Python package that processes the Week 7 corpus and computes per-document and corpus-level metadata.",
+            instructions="Submit a ZIP containing `main.py` and a `metadata_organizer/` package with `loader.py`, `tokenizer.py`, and `writer.py`. Your code must output `metadata.json` containing total_documents, average_length, vocabulary_size, and per-document metrics (word_count, top_10_terms).",
             category=AssignmentCategory.DETERMINISTIC_EXECUTION,
             max_score=5.0,
             deadline=datetime(2026, 8, 8),
@@ -153,8 +154,8 @@ async def seed_assignments():
             id=uuid.uuid4(),
             slug="week9",
             title="Week 9: Inverted Index",
-            description="Build an inverted index from their corpus and a lookup tool.",
-            instructions="Submit build_index.py and lookup.py zip.",
+            description="Build an inverted index from the document corpus and a lookup tool to query terms.",
+            instructions="Submit a ZIP containing `build_index.py` and `lookup.py`. The build script must generate `index.json` (term -> doc -> frequency). The lookup script must accept a term via standard input and print the corresponding documents.",
             category=AssignmentCategory.DETERMINISTIC_EXECUTION,
             max_score=5.0,
             deadline=datetime(2026, 8, 15),
@@ -169,8 +170,8 @@ async def seed_assignments():
             id=uuid.uuid4(),
             slug="week10",
             title="Week 10: Indexing & Search Architecture",
-            description="Ranked Query Engine foundation. Integrate the inverted index into a complete query engine that returns top-5 ranked documents.",
-            instructions="Submit your repository ZIP. The engine should accept a query, look up terms, rank results by total frequency, and return documents.",
+            description="Integrate the inverted index into a complete query engine that returns top-ranked documents.",
+            instructions="Submit your repository ZIP. The engine should accept a query, process it, look up terms in the index, rank results by total frequency or TF-IDF, and return the relevant documents in order.",
             category=AssignmentCategory.DETERMINISTIC_EXECUTION,
             max_score=5.0,
             deadline=datetime(2026, 8, 22),
@@ -185,8 +186,8 @@ async def seed_assignments():
             id=uuid.uuid4(),
             slug="week11",
             title="Week 11: Final Capstone Development",
-            description="Intelligent Wikipedia Search Engine Part 1. Build a full search engine with dataset cleaning, inverted index, ranking, and a CLI.",
-            instructions="Submit your repository ZIP. Must include a corpus/ of at least 50 articles, a modular package, requirements.txt, and a main entrypoint.",
+            description="Build a full intelligent search engine with dataset cleaning, NLP techniques, inverted index, ranking, and a CLI interface.",
+            instructions="Submit your repository ZIP. Must include a corpus/ of articles, a modular package with data processing, an inverted index implementation, a robust query runner, and a main entrypoint.",
             category=AssignmentCategory.DETERMINISTIC_EXECUTION,
             max_score=5.0,
             deadline=datetime(2026, 8, 29),
@@ -201,8 +202,8 @@ async def seed_assignments():
             id=uuid.uuid4(),
             slug="week12",
             title="Week 12: Final Capstone Demonstration",
-            description="Intelligent Wikipedia Search Engine Part 2. Finalization and demonstration of the complete system.",
-            instructions="Submit your repository ZIP. Must include a corpus/ of at least 50 articles, a modular package, requirements.txt, and a main entrypoint.",
+            description="Finalization and live demonstration of the complete Intelligent Wikipedia Search Engine system.",
+            instructions="Submit your final repository ZIP. Ensure your search engine is fully functional, properly documented with a README, and handles complex multi-word queries correctly.",
             category=AssignmentCategory.DETERMINISTIC_EXECUTION,
             max_score=5.0,
             deadline=datetime(2026, 9, 5),

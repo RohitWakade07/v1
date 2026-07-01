@@ -19,33 +19,18 @@ from app.models.models import (
     SessionStatus,
     Student,
 )
-from app.schemas.schemas import ProofSubmitRequest, ProofSubmitResponse, ErrorResponse
+from app.schemas.schemas import ProofSubmitResponse, ErrorResponse
 from app.services.eep_grading_service import (
     get_week_from_filename,
     grade_eep_checks,
     map_checks_to_results,
 )
 from app.core.cache import invalidate as cache_invalidate, session_cache_key
-from app.services.proof_service import ProofService
 
 router = APIRouter(prefix="/proof", tags=["Proof"])
 
 
-@router.post(
-    "/submit",
-    response_model=ProofSubmitResponse,
-    responses={400: {"model": ErrorResponse}, 403: {"model": ErrorResponse}, 429: {"model": ErrorResponse}},
-    summary="Submit signed grader proof (student)",
-)
-async def submit_proof(
-    body: ProofSubmitRequest,
-    current_student: Student = Depends(get_approved_student_ratelimited),
-    db: AsyncSession = Depends(get_db),
-):
-    result = await ProofService.submit_proof(body, current_student, db)
-    await db.commit()
-    await cache_invalidate(session_cache_key(body.session_id, current_student.id))
-    return result
+
 
 
 @router.post(

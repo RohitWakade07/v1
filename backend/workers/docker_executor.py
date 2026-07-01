@@ -179,53 +179,56 @@ class DockerExecutor:
             elif source_type == "github":
                 if not repo_url:
                     raise ValueError("Missing repo_url for github source type")
-                logger.info(f"[PHASE1:GIT] Processing {repo_url}")
+                logger.info(f"[PHASE1:GIT] Cloning {repo_url}")
                 t0 = time.time()
                 
-                from app.services.workspace_manager import parse_github_url
-                base_url, branch, subpath = parse_github_url(repo_url)
+                import re
+                GITHUB_URL_PATTERN = re.compile(
+                    r"^https://github\.com/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(?:\.git)?(?:/tree/([^/]+)/(.*))?$"
+                )
+                match = GITHUB_URL_PATTERN.match(repo_url)
+                if not match:
+                    raise ValueError(f"Invalid GitHub URL format: {repo_url}")
                 
-                if not branch and not subpath:
-                    cmd = ["git", "clone", base_url, str(submission_dir)]
-                    proc = await asyncio.create_subprocess_exec(
-                        *cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-                    )
-                    stdout, stderr = await proc.communicate()
-                    elapsed = int((time.time() - t0) * 1000)
-                    if proc.returncode != 0:
-                        logger.error(f"[PHASE1:GIT] Clone FAILED rc={proc.returncode} stderr={stderr.decode()[:500]}")
-                        raise RuntimeError(f"Git clone failed: {stderr.decode()}")
-                    logger.info(f"[PHASE1:GIT] Clone OK in {elapsed}ms")
-                else:
-                    import tempfile
-                    with tempfile.TemporaryDirectory() as temp_dir:
-                        cmd = ["git", "clone"]
-                        if branch:
-                            cmd.extend(["-b", branch])
-                        cmd.extend([base_url, temp_dir])
-                        
-                        proc = await asyncio.create_subprocess_exec(
-                            *cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-                        )
-                        stdout, stderr = await proc.communicate()
-                        if proc.returncode != 0:
-                            logger.error(f"[PHASE1:GIT] Subdir Clone FAILED rc={proc.returncode} stderr={stderr.decode()[:500]}")
-                            raise RuntimeError(f"Git clone failed: {stderr.decode()}")
-                        
-                        source_dir = Path(temp_dir)
-                        if subpath:
-                            source_dir = source_dir / subpath
-                            if not source_dir.exists() or not source_dir.is_dir():
-                                raise RuntimeError(f"Subdirectory '{subpath}' not found in repository")
-                        
-                        shutil.copytree(source_dir, submission_dir, dirs_exist_ok=True)
-                    elapsed = int((time.time() - t0) * 1000)
-                    logger.info(f"[PHASE1:GIT] Subdirectory clone OK in {elapsed}ms")
+                base_url = f"https://github.com/{match.group(1)}/{match.group(2)}.git"
+                branch = match.group(3)
+                path = match.group(4)
+                
+                cmd = ["git", "clone", "--depth=1"]
+                if branch:
+                    cmd.extend(["--branch", branch])
+                cmd.extend([base_url, str(submission_dir)])
+                
+                proc = await asyncio.create_subprocess_exec(
+                    *cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
+                stdout, stderr = await proc.communicate()
+                elapsed = int((time.time() - t0) * 1000)
+                if proc.returncode != 0:
+                    logger.error(f"[PHASE1:GIT] Clone FAILED rc={proc.returncode} stderr={stderr.decode()[:500]}")
+                    raise RuntimeError(f"Git clone failed: {stderr.decode()}")
+                
+                if path:
+                    # Move contents of subpath to root
+                    subpath_dir = submission_dir / path
+                    if subpath_dir.exists() and subpath_dir.is_dir():
+                        import tempfile
+                        with tempfile.TemporaryDirectory() as temp_dir:
+                            temp_path = Path(temp_dir)
+                            for item in subpath_dir.iterdir():
+                                shutil.move(str(item), str(temp_path / item.name))
+                            for item in submission_dir.iterdir():
+                                if item.name != ".git":
+                                    if item.is_dir(): shutil.rmtree(item)
+                                    else: item.unlink()
+                            for item in temp_path.iterdir():
+                                shutil.move(str(item), str(submission_dir / item.name))
+                    else:
+                        logger.warning(f"[PHASE1:GIT] Path '{path}' not found in cloned repo.")
+
+                logger.info(f"[PHASE1:GIT] Clone OK in {elapsed}ms")
             else:
                 raise ValueError(f"Unknown source type: {source_type}")
-
-            if (submission_dir / ".git").exists():
-                subprocess.run(["git", "config", "core.fileMode", "false"], cwd=str(submission_dir))
 
             # ── Load config ────────────────────────────────────────────────
             config_path = Path(__file__).parent.parent / "graders" / assignment_slug / "config.yaml"

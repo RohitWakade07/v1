@@ -1,112 +1,194 @@
+#!/usr/bin/env python3
+"""
+Week 6 Test Wrapper — runs inside the Docker sandbox.
+Tests the student's analyze.py interactive CLI tool.
+Output: one JSON object on stdout (parsed by Week6Grader).
+
+Expected submission: analyze.py + (optionally) requirements.txt + README.md
+Test data: test_data/ folder (injected as an asset) with file1.txt, file2.txt
+"""
 import json
 import os
-import sys
 import subprocess
+import sys
+import time
 
-def grade():
-    # 1. Grading Variables
-    breakdown = {
-        "repo_structure": 0,
-        "stats_command": 0,
-        "top_command": 0,
-        "search_command": 0,
-        "quit_command": 0
-    }
-    feedback_messages = []
-    
-    # We are in the submission dir already, because target_file matched analyze.py
-    REPO_DIR = os.getcwd()
+SCRIPT = "analyze.py"
+TEST_DATA_DIR = "test_data"
+TIMEOUT = 10  # seconds per command session
 
-    # A. Check Repository Structure (30 pts)
-    has_readme = os.path.exists("README.md")
-    has_reqs = os.path.exists("requirements.txt")
-    
-    if has_readme and has_reqs:
-        with open("requirements.txt", "r", encoding="utf-8") as f:
-            reqs_text = f.read().lower()
-        has_requests = "requests" in reqs_text
 
-        with open("README.md", "r", encoding="utf-8") as f:
-            readme_text = f.read().lower()
-            
-        word_count = len(readme_text.split())
-        has_usage = "usage" in readme_text or "example" in readme_text
-        has_code_block = "```" in readme_text
-        
-        if word_count >= 30 and has_usage and has_code_block and has_requests:
-            breakdown["repo_structure"] = 30
-            feedback_messages.append("Repository Structure (30/30): README.md passes quality checks and requirements.txt contains 'requests'.")
-        else:
-            breakdown["repo_structure"] = 10
-            feedback_messages.append(f"Repository Structure (10/30): Quality checks failed. README Words (>=30): {word_count}. Has Usage: {has_usage}. Has Code Blocks: {has_code_block}. Reqs contains 'requests': {has_requests}.")
-    else:
-        feedback_messages.append(f"Repository Structure (0/30): Missing files. README: {has_readme}, Reqs: {has_reqs}")
-
-    # Verify analyze.py exists
-    analyze_path = "analyze.py"
-    if not os.path.exists(analyze_path):
-        feedback_messages.append("Error: analyze.py not found in the root of the repository.")
-        print(json.dumps({"breakdown": breakdown, "feedback": feedback_messages}))
-        return
-
-    # B. CLI Interactive Testing (70 pts total)
-    test_data_dir = "test_data"
-    
-    # Prepare all inputs to pipe to stdin
-    # The commands to test: stats, top, search, quit
-    inputs = "stats file1.txt\ntop 2 file2.txt\nsearch world\nquit\n"
-    
+def run_with_stdin(commands: list[str], timeout: int = TIMEOUT) -> tuple[int, str, str]:
+    """Run analyze.py with piped stdin commands and capture output."""
+    input_str = "\n".join(commands) + "\n"
     try:
-        proc = subprocess.run(
-            [sys.executable, "analyze.py", test_data_dir],
-            input=inputs,
+        r = subprocess.run(
+            [sys.executable, SCRIPT, TEST_DATA_DIR],
+            input=input_str,
             capture_output=True,
             text=True,
-            timeout=5,
-            cwd=REPO_DIR
+            timeout=timeout,
         )
-        
-        output = proc.stdout.lower() + proc.stderr.lower()
-        
-        # We can't cleanly split outputs since prompts and outputs are mixed,
-        # but we can look for specific expected substrings in the entire output buffer.
-
-        # Test stats
-        if "words: 8" in output and "lines: 3" in output and "characters: 39" in output:
-            breakdown["stats_command"] = 20
-            feedback_messages.append("stats command (20/20): Output accurate for file1.txt.")
-        else:
-            feedback_messages.append(f"stats command (0/20): Did not find expected stats in output.")
-
-        # Test top
-        if "python: 3" in output or "python : 3" in output or "python 3" in output:
-            breakdown["top_command"] = 20
-            feedback_messages.append("top command (20/20): Found expected top word 'python' with correct count.")
-        else:
-            feedback_messages.append(f"top command (0/20): Expected 'python: 3' not found in output.")
-
-        # Test search
-        if "file1.txt" in output and "file2.txt" not in output:
-            breakdown["search_command"] = 20
-            feedback_messages.append("search command (20/20): Correctly identified 'world' only in file1.txt.")
-        else:
-            feedback_messages.append(f"search command (0/20): Did not list correct files.")
-
-        # Test quit
-        # If we reached here and subprocess returned cleanly, quit worked.
-        if proc.returncode == 0:
-            breakdown["quit_command"] = 10
-            feedback_messages.append("quit command (10/10): Handled gracefully and exited.")
-        else:
-            feedback_messages.append(f"quit command (0/10): Script exited with non-zero code {proc.returncode}.")
-
+        return r.returncode, r.stdout, r.stderr
     except subprocess.TimeoutExpired:
-        feedback_messages.append("CLI Testing Error: Execution timed out. Ensure the script isn't stuck in an infinite loop.")
+        return 124, "", "TIMEOUT"
     except Exception as e:
-        feedback_messages.append(f"CLI Testing Error: Unexpected crash during execution: {e}")
+        return 1, "", str(e)
 
-    # Output final structured JSON to stdout so the BaseGrader can parse it
-    print(json.dumps({"breakdown": breakdown, "feedback": feedback_messages}))
+
+def main():
+    breakdown = {
+        "repo_structure": 0.0,
+        "stats_command":  0.0,
+        "search_command": 0.0,
+        "top_command":    0.0,
+        "quit_command":   0.0,
+        "error_handling": 0.0,
+    }
+    feedback: list[str] = []
+
+    # ── A. Repository structure (30 pts) ────────────────────────────────
+    pts_struct = 0.0
+
+    # README.md (15 pts)
+    readme_path = "README.md"
+    if os.path.isfile(readme_path):
+        readme_text = open(readme_path, encoding="utf-8", errors="ignore").read()
+        word_count  = len(readme_text.split())
+        if word_count >= 30:
+            pts_struct += 15.0
+            feedback.append(f"repo structure: README.md found with {word_count} words.")
+        else:
+            pts_struct += 7.0
+            feedback.append(f"repo structure: README.md found but only {word_count} words (need ≥30).")
+    else:
+        feedback.append("repo structure: README.md not found.")
+
+    # requirements.txt (10 pts)
+    if os.path.isfile("requirements.txt"):
+        pts_struct += 10.0
+        feedback.append("repo structure: requirements.txt found.")
+    else:
+        feedback.append("repo structure: requirements.txt not found.")
+
+    # analyze.py exists (5 pts)
+    if os.path.isfile(SCRIPT):
+        pts_struct += 5.0
+        feedback.append("repo structure: analyze.py found.")
+    else:
+        feedback.append(f"repo structure: {SCRIPT} not found — cannot run any tests.")
+        result = {
+            "breakdown": {k: 0.0 for k in breakdown},
+            "feedback":  feedback,
+            "bonus_features": [],
+        }
+        result["breakdown"]["repo_structure"] = pts_struct
+        print(json.dumps(result))
+        return
+
+    breakdown["repo_structure"] = pts_struct
+
+    # ── B. stats command (20 pts) ────────────────────────────────────────
+    rc, out, err = run_with_stdin(["stats file1.txt", "quit"])
+    out_lower = out.lower()
+    if rc == 124:
+        feedback.append("stats command: TIMEOUT — program may be stuck waiting for input.")
+    elif "lines" in out_lower and "words" in out_lower and "characters" in out_lower:
+        breakdown["stats_command"] = 20.0
+        feedback.append("stats command: correctly reports Lines, Words, and Characters.")
+    elif "lines" in out_lower or "words" in out_lower:
+        breakdown["stats_command"] = 10.0
+        feedback.append("stats command: partial — only some stats printed.")
+    else:
+        feedback.append(f"stats command: output did not contain Lines/Words/Characters. Got: {out[:200]}")
+
+    # ── C. search command (20 pts) ───────────────────────────────────────
+    rc, out, err = run_with_stdin(["search python", "quit"])
+    out_lower = out.lower()
+    if rc == 124:
+        feedback.append("search command: TIMEOUT.")
+    elif "file1.txt" in out_lower or "file2.txt" in out_lower:
+        breakdown["search_command"] = 20.0
+        feedback.append("search command: correctly finds files containing the query word.")
+    elif "not found" in out_lower or "no results" in out_lower:
+        # Search ran but returned no results — the word might not be in test data
+        breakdown["search_command"] = 10.0
+        feedback.append("search command: ran but returned 'not found' — check case-insensitive matching.")
+    else:
+        feedback.append(f"search command: unexpected output. Got: {out[:200]}")
+
+    # ── D. top command (10 pts) ──────────────────────────────────────────
+    rc, out, err = run_with_stdin(["top 3 file1.txt", "quit"])
+    out_lower = out.lower()
+    if rc == 124:
+        feedback.append("top command: TIMEOUT.")
+    elif ":" in out and any(c.isdigit() for c in out):
+        breakdown["top_command"] = 10.0
+        feedback.append("top command: correctly shows top N words with counts.")
+    elif out.strip():
+        breakdown["top_command"] = 5.0
+        feedback.append("top command: partial output — expected 'word: count' format.")
+    else:
+        feedback.append("top command: no output produced.")
+
+    # ── E. quit command (10 pts) ─────────────────────────────────────────
+    rc, out, err = run_with_stdin(["quit"])
+    if rc == 0:
+        breakdown["quit_command"] = 10.0
+        feedback.append("quit command: program exits with code 0.")
+    elif rc == 124:
+        feedback.append("quit command: TIMEOUT — program did not respond to 'quit'.")
+    else:
+        feedback.append(f"quit command: exited with non-zero code {rc}.")
+
+    # ── F. error handling (10 pts) ───────────────────────────────────────
+    pts_err = 0.0
+
+    # Unknown command
+    rc, out, err = run_with_stdin(["foobarcommand", "quit"])
+    if rc != 124 and out.strip():
+        pts_err += 5.0
+        feedback.append("error handling: handles unknown commands (prints error message).")
+    else:
+        feedback.append("error handling: does not handle unknown commands gracefully.")
+
+    # stats with missing file
+    rc, out, err = run_with_stdin(["stats nonexistent_file_xyz.txt", "quit"])
+    if rc != 124 and ("error" in out.lower() or "not found" in out.lower() or out.strip()):
+        pts_err += 5.0
+        feedback.append("error handling: handles missing file gracefully.")
+    else:
+        feedback.append("error handling: does not handle missing file gracefully.")
+
+    breakdown["error_handling"] = pts_err
+
+    # ── Bonus feature detection ──────────────────────────────────────────
+    bonus_keywords = {
+        "fuzzywuzzy": "Fuzzy search",
+        "rapidfuzz":  "Fuzzy search",
+        "difflib":    "Fuzzy/diff search",
+        "argparse":   "CLI argument parsing",
+        "readline":   "Command history",
+        "colorama":   "Colorized output",
+        "rich":       "Rich terminal output",
+        "tfidf":      "TF-IDF weighting",
+    }
+    bonus_features: list[str] = []
+    try:
+        src = open(SCRIPT, encoding="utf-8", errors="ignore").read().lower()
+        for kw, desc in bonus_keywords.items():
+            if kw in src:
+                bonus_features.append(desc)
+    except Exception:
+        pass
+
+    result = {
+        "breakdown":     breakdown,
+        "feedback":      feedback,
+        "bonus_features": bonus_features,
+    }
+    print(json.dumps(result))
+
 
 if __name__ == "__main__":
-    grade()
+    main()

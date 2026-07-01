@@ -175,28 +175,6 @@ export interface SubmissionResultDetail {
   created_at: string
 }
 
-// ─── Proof (Legacy, Keep for now if needed by other components) ─────
-export interface ProofTestResult {
-  test_id: string
-  passed: boolean
-  stdout_hash?: string | null
-  stderr_hash?: string | null
-  exit_code?: number
-  score: number
-}
-
-export interface ProofSubmitRequest {
-  session_id: string
-  assignment_id: string
-  student_id: string
-  timestamp: string
-  nonce: string
-  grader_binary_hash: string
-  results: Record<string, ProofTestResult>
-  artifact_hashes: Record<string, string>
-  hmac_signature: string
-}
-
 export interface ProofSubmitResponse {
   session_id: string
   status: string

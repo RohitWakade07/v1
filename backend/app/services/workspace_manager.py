@@ -20,51 +20,71 @@ def safe_extract_zip(contents: bytes, dest_dir: Path) -> None:
 
 
 import re
-import tempfile
 
-def parse_github_url(url: str) -> tuple[str, str | None, str | None]:
-    match = re.match(r"^(https://github\.com/[^/]+/[^/]+?)(?:\.git)?(?:/tree/([^/]+)(?:/(.*))?)?$", url)
+GITHUB_URL_PATTERN = re.compile(
+    r"^https://github\.com/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(?:\.git)?(?:/tree/([^/]+)/(.*))?$"
+)
+
+def parse_github_url(url: str):
+    match = GITHUB_URL_PATTERN.match(url)
     if not match:
-        return url, None, None
-    subpath = match.group(3)
-    if subpath == "":
-        subpath = None
-    return match.group(1), match.group(2), subpath
-
+        raise ValueError(f"Invalid GitHub URL: {url}")
+    
+    owner = match.group(1)
+    repo = match.group(2)
+    branch = match.group(3)
+    path = match.group(4)
+    
+    base_url = f"https://github.com/{owner}/{repo}.git"
+    return {
+        "base_url": base_url,
+        "branch": branch,
+        "path": path
+    }
 
 def clone_repository(repo_url: str, dest_dir: Path) -> None:
-    base_url, branch, subpath = parse_github_url(repo_url)
+    parsed = parse_github_url(repo_url)
     
-    if not branch and not subpath:
-        subprocess.run(
-            ["git", "clone", base_url, str(dest_dir)],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        return
-
-    with tempfile.TemporaryDirectory() as temp_dir:
-        clone_cmd = ["git", "clone"]
-        if branch:
-            clone_cmd.extend(["-b", branch])
-        clone_cmd.extend([base_url, temp_dir])
+    cmd = ["git", "clone", "--depth", "1"]
+    if parsed["branch"]:
+        cmd.extend(["--branch", parsed["branch"]])
+    
+    cmd.extend([parsed["base_url"], str(dest_dir)])
+    
+    subprocess.run(
+        cmd,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    
+    if parsed["path"]:
+        # Move contents of subpath to root of dest_dir
+        subpath_dir = dest_dir / parsed["path"]
+        if not subpath_dir.exists() or not subpath_dir.is_dir():
+            raise ValueError(f"Path '{parsed['path']}' not found in repository.")
         
-        subprocess.run(
-            clone_cmd,
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        
-        source_dir = Path(temp_dir)
-        if subpath:
-            source_dir = source_dir / subpath
-            if not source_dir.exists() or not source_dir.is_dir():
-                raise ValueError(f"Subdirectory '{subpath}' not found in repository")
-                
-        shutil.copytree(source_dir, dest_dir, dirs_exist_ok=True)
-
+        # Move everything out of the subpath to a temp location, then to root
+        import tempfile
+        import shutil
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            # Move from subpath to temp
+            for item in subpath_dir.iterdir():
+                shutil.move(str(item), str(temp_path / item.name))
+            
+            # Delete original clone contents
+            for item in dest_dir.iterdir():
+                if item.name == ".git":
+                    continue
+                if item.is_dir():
+                    shutil.rmtree(item)
+                else:
+                    item.unlink()
+            
+            # Move from temp to root
+            for item in temp_path.iterdir():
+                shutil.move(str(item), str(dest_dir / item.name))
 
 def list_workspace_files(base_dir: Path) -> list[str]:
     items: list[str] = []

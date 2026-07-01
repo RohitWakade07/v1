@@ -1,0 +1,416 @@
+
+\documentclass[12pt,a4paper]{article}
+
+% ── Packages ─────────────────────────────────────────────────────────────
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{tcolorbox}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{titlesec}
+\usepackage{fontawesome5}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{parskip}
+\usepackage{longtable}
+
+% ── Colour Palette ─────────────────────────────────────────────────────
+\definecolor{adminRed}{HTML}{C0392B}
+\definecolor{adminAccent}{HTML}{E74C3C}
+\definecolor{adminGold}{HTML}{F39C12}
+\definecolor{adminGreen}{HTML}{06A77D}
+\definecolor{eyantraWarn}{HTML}{F4A261}
+\definecolor{codebg}{HTML}{F4F6F9}
+\definecolor{codeborder}{HTML}{CDD4E0}
+\definecolor{lightgray}{HTML}{F8F9FA}
+\definecolor{darkgray}{HTML}{495057}
+
+% ── Hyperlinks ─────────────────────────────────────────────────────────
+\hypersetup{
+  colorlinks=true,
+  linkcolor=adminAccent,
+  urlcolor=adminAccent,
+  pdftitle={EEP Auto-Grading Platform -- Admin Guide},
+  pdfauthor={E-Yantra, IIT Bombay},
+}
+
+% ── Code Listing Style ─────────────────────────────────────────────────
+\lstdefinestyle{shellstyle}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{codeborder},
+  framesep=4pt,
+  xleftmargin=6pt,
+  xrightmargin=6pt,
+  showstringspaces=false,
+  keywordstyle=\color{adminRed}\bfseries,
+  commentstyle=\color{darkgray}\itshape,
+  stringstyle=\color{adminGreen},
+}
+\lstset{style=shellstyle}
+
+% ── Custom tcolorbox environments ──────────────────────────────────────
+\tcbuselibrary{skins,breakable}
+
+\newtcolorbox{infobox}[1][Note]{
+  colback=adminAccent!8,
+  colframe=adminAccent,
+  fonttitle=\bfseries,
+  title={\faInfoCircle\enspace #1},
+  breakable,
+}
+
+\newtcolorbox{warnbox}[1][Warning]{
+  colback=eyantraWarn!12,
+  colframe=eyantraWarn!80!black,
+  fonttitle=\bfseries,
+  title={\faExclamationTriangle\enspace #1},
+  breakable,
+}
+
+\newtcolorbox{dangerbox}[1][Critical]{
+  colback=adminRed!8,
+  colframe=adminRed,
+  fonttitle=\bfseries,
+  title={\faSkull\enspace #1},
+  breakable,
+}
+
+\newtcolorbox{tipbox}[1][Admin Tip]{
+  colback=adminGreen!10,
+  colframe=adminGreen,
+  fonttitle=\bfseries,
+  title={\faUserShield\enspace #1},
+  breakable,
+}
+
+% ── Section Title Styling ──────────────────────────────────────────────
+\titleformat{\section}
+  {\Large\bfseries\color{adminRed}}
+  {\thesection}{1em}{}[\color{adminAccent}\rule{\linewidth}{1.5pt}]
+
+\titleformat{\subsection}
+  {\large\bfseries\color{adminRed}}
+  {\thesubsection}{0.8em}{}
+
+\titleformat{\subsubsection}
+  {\normalsize\bfseries\color{darkgray}}
+  {\thesubsubsection}{0.7em}{}
+
+% ── Header / Footer ───────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{adminRed}\small\bfseries EEP Auto-Grading Platform}
+\fancyhead[R]{\color{darkgray}\small Administrator Guide}
+\fancyfoot[C]{\color{darkgray}\small\thepage}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\headrule}{\color{adminAccent}\hrule width\headwidth height\headrulewidth}
+
+% ── Step counter ──────────────────────────────────────────────────────
+\newcounter{stepnum}
+\newcommand{\step}[1]{%
+  \stepcounter{stepnum}%
+  \vspace{6pt}%
+  \noindent\colorbox{adminRed}{\color{white}\bfseries\small\ Step \thestepnum\ }%
+  \hspace{4pt}\textbf{#1}\\[4pt]%
+}
+
+% ─────────────────────────────────────────────────────────────────────
+\begin{document}
+% ─────────────────────────────────────────────────────────────────────
+
+% ── Title Page ────────────────────────────────────────────────────────
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+
+  {\color{adminRed}\rule{\linewidth}{3pt}}
+  \vspace{0.5cm}
+
+  {\Huge\bfseries\color{adminRed} EEP Auto-Grading Platform}\\[0.6em]
+  {\LARGE\color{adminAccent} Administrator Guide}\\[0.4em]
+  {\large\color{darkgray} E-Yantra Summer Internship Program (EYSIP)}
+
+  \vspace{0.5cm}
+  {\color{adminRed}\rule{\linewidth}{3pt}}
+
+  \vspace{1.5cm}
+
+  \begin{tcolorbox}[colback=lightgray, colframe=adminAccent, width=0.88\linewidth]
+    \centering
+    \large This guide covers \textbf{platform-wide administration}: \\
+    user management, assignment oversight, system health,\\
+    platform configuration, and security operations.
+  \end{tcolorbox}
+
+  \vfill
+
+  \begin{tabular}{rl}
+    \textbf{Document Version:} & 1.0 \\
+    \textbf{Platform Version:} & v2.0 \\
+    \textbf{Audience:}         & Platform Administrators (ADMIN role) \\
+    \textbf{Organisation:}     & E-Yantra, IIT Bombay \\
+  \end{tabular}
+
+  \vspace{1cm}
+  {\color{darkgray}\small Last updated: \today}
+\end{titlepage}
+
+% ── Table of Contents ─────────────────────────────────────────────────
+\tableofcontents
+\newpage
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Overview}
+% ─────────────────────────────────────────────────────────────────────
+
+The \textbf{Admin} role has full platform-wide access. Admins can:
+
+\begin{itemize}[leftmargin=*]
+  \item View and manage \textbf{all students and mentors} on the platform
+  \item Create new \textbf{mentor/admin accounts}
+  \item Override \textbf{assignment restrictions} (publish any assignment, modify deadlines)
+  \item View \textbf{all submissions} and grading sessions across the entire platform
+  \item Access \textbf{system health} metrics (database, Redis, worker status)
+  \item Manage \textbf{platform configuration} via environment variables
+  \item Perform \textbf{security operations} (reset passwords, deactivate accounts)
+\end{itemize}
+
+\begin{dangerbox}[Admin Responsibility]
+  The admin account has unrestricted access. Protect credentials carefully. The default admin password is the email address -- change it immediately after first deployment.
+\end{dangerbox}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Admin Dashboard}
+% ─────────────────────────────────────────────────────────────────────
+
+Login with the admin account. The admin dashboard shows platform-wide stats:
+
+\begin{center}
+\begin{tabularx}{\linewidth}{>{\bfseries}lX}
+\toprule
+Widget & Scope \\
+\midrule
+Total Students    & All students registered on the platform \\
+Total Mentors     & All mentor accounts \\
+Total Submissions & All submissions across all assignments \\
+Active Sessions   & Submissions currently being processed \\
+System Health     & Database and Redis connectivity status \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{User Management}
+% ─────────────────────────────────────────────────────────────────────
+
+\subsection{Viewing All Students}
+
+\begin{enumerate}
+  \item Navigate to \textbf{Users $\rightarrow$ Students} in the sidebar.
+  \item You can see all registered students with their roll number, email, active status, and registration date.
+  \item Use the search field to filter by roll number or name.
+\end{enumerate}
+
+\subsection{Viewing All Mentors}
+
+\begin{enumerate}
+  \item Navigate to \textbf{Users $\rightarrow$ Mentors}.
+  \item Displays all mentor accounts with their role (MENTOR or ADMIN).
+\end{enumerate}
+
+\subsection{Creating a Mentor Account}
+
+\setcounter{stepnum}{0}
+
+\step{Navigate to Users $\rightarrow$ Mentors}
+
+\step{Click \textbf{+ Create Mentor}}
+Fill in the following fields:
+
+\begin{center}
+\begin{tabularx}{\linewidth}{>{\bfseries}lX}
+\toprule
+Field & Description \\
+\midrule
+Username  & The mentor's login username (typically their email) \\
+Full Name & Mentor's display name \\
+Email     & Email address (must be unique) \\
+Password  & Initial password. Communicate this securely to the mentor. \\
+Role      & \texttt{mentor} for a regular mentor, \texttt{admin} for an administrator \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\step{Click \textbf{Create}} -- The account is active immediately.
+
+\begin{warnbox}
+  Communicate the initial password to the mentor via a secure channel (not plain email). Ask them to change it on first login.
+\end{warnbox}
+
+\subsection{Deactivating Accounts}
+
+To deactivate a student or mentor account (blocking login without deleting data):
+\begin{enumerate}
+  \item Locate the user in the Users list.
+  \item Toggle the \textbf{Active} switch to off.
+  \item The user will receive a 401 Unauthorized on their next login attempt.
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Assignment Management (Admin)}
+% ─────────────────────────────────────────────────────────────────────
+
+As an admin you have \emph{no ownership restrictions} on assignments.
+
+\subsection{Viewing All Assignments}
+
+Navigate to \textbf{Assignments $\rightarrow$ All Assignments} (admin view). This shows all assignments regardless of published/unpublished/archived status.
+
+\subsection{Admin Update (Full Override)}
+
+Use the admin assignment update endpoint to modify \emph{any} field on \emph{any} assignment:
+
+\begin{lstlisting}
+PATCH /api/v1/assignments/admin/{assignment_id}
+
+Body (all fields optional):
+{
+  "title": "Updated Title",
+  "description": "New description",
+  "max_score": 100,
+  "deadline": "2025-12-31T23:59:59",
+  "is_published": true,
+  "is_archived": false,
+  "late_penalty_pct": 10,
+  "resource_links": ["https://example.com/resource"]
+}
+\end{lstlisting}
+
+\begin{tipbox}
+  Unlike mentor updates, the admin update has \textbf{no deadline lock}. You can extend deadlines even after they have passed.
+\end{tipbox}
+
+\subsection{Archiving / Deleting Assignments}
+
+Assignments are never hard-deleted. Use the admin archive endpoint:
+
+\begin{lstlisting}
+DELETE /api/v1/assignments/admin/{assignment_id}
+\end{lstlisting}
+
+This sets \texttt{is\_archived = true}, hiding the assignment from all views while preserving all submissions and results.
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Submission \& Session Oversight}
+% ─────────────────────────────────────────────────────────────────────
+
+\subsection{All Submissions}
+
+Navigate to \textbf{Results $\rightarrow$ All Submissions}. Admins see submissions across all mentors' assignments.
+
+\begin{center}
+\begin{tabularx}{\linewidth}{>{\bfseries}lX}
+\toprule
+API Endpoint & Purpose \\
+\midrule
+GET /api/v1/admin/submissions & All submissions, any assignment \\
+GET /api/v1/admin/sessions    & All grading sessions \\
+GET /api/v1/admin/students    & All students \\
+GET /api/v1/admin/mentors     & All mentor accounts \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Grading Sessions}
+
+A \emph{grading session} corresponds to a single submission's lifecycle through the grading pipeline. Sessions have the same status codes as submissions (see Student Guide, Section 5).
+
+% ─────────────────────────────────────────────────────────────────────
+\section{System Health}
+% ─────────────────────────────────────────────────────────────────────
+
+The platform exposes a health endpoint:
+
+\begin{lstlisting}
+GET /health
+\end{lstlisting}
+
+Response example:
+\begin{lstlisting}
+{
+  "status": "ok",
+  "database": "ok",
+  "redis": "ok",
+  "version": "2.0.0"
+}
+\end{lstlisting}
+
+\begin{itemize}
+  \item \texttt{status: "ok"} -- All systems operational
+  \item \texttt{status: "degraded"} -- One or more services down; check database/Redis
+  \item Navigate to \textbf{Health} in the admin sidebar for a UI view of this data.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Security Operations}
+% ─────────────────────────────────────────────────────────────────────
+
+\subsection{Rotating JWT Secret}
+
+\begin{enumerate}
+  \item Generate a new secret: \texttt{python -c "import secrets; print(secrets.token\_hex(64))"}
+  \item Update \texttt{JWT\_SECRET\_KEY} in the Railway environment and EC2 \texttt{.env}.
+  \item Restart the API service. \textbf{All existing sessions will be invalidated} -- users must log in again.
+\end{enumerate}
+
+\begin{dangerbox}
+  Rotating the JWT secret logs out every user simultaneously. Schedule this during off-hours and notify users in advance.
+\end{dangerbox}
+
+\subsection{Rotating the Proof Signing Key}
+
+The \texttt{PROOF\_SIGNING\_KEY} is embedded in compiled grader binaries. Rotating it requires rebuilding and redistributing all grader binaries. Coordinate with the grading team before rotating this key.
+
+\subsection{Resetting a Student Password}
+
+Currently, password resets must be done via direct database update or by re-importing the student via CSV (which resets the password to their email). A self-service reset flow is not yet implemented.
+
+\begin{lstlisting}[language=bash]
+# Connect to PostgreSQL and update a password hash
+docker exec -it grading_postgres psql -U grading_user -d grading_db
+
+-- In psql:
+UPDATE student SET hashed_password = '<bcrypt_hash>' 
+WHERE roll_number = '2025CS001';
+\end{lstlisting}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Quick Reference}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{tcolorbox}[colback=adminRed!5, colframe=adminRed, title={\faBookmark\enspace Admin Quick Reference}]
+\begin{tabular}{ll}
+\textbf{Default admin login:}   & \texttt{eyantrastaff@gmail.com} \\
+\textbf{Default admin pass:}    & \texttt{eyantrastaff@gmail.com} (change immediately!) \\
+\textbf{Health endpoint:}        & \texttt{GET /health} \\
+\textbf{Admin submissions:}      & \texttt{GET /api/v1/admin/submissions} \\
+\textbf{Create mentor:}          & \texttt{POST /api/v1/admin/mentors} \\
+\textbf{Admin assignment edit:}  & \texttt{PATCH /api/v1/assignments/admin/\{id\}} \\
+\textbf{Archive assignment:}     & \texttt{DELETE /api/v1/assignments/admin/\{id\}} \\
+\textbf{API Docs:}               & \texttt{/docs} (DEBUG mode only) \\
+\end{tabular}
+\end{tcolorbox}
+
+% ─────────────────────────────────────────────────────────────────────
+\end{document}

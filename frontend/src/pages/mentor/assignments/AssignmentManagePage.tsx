@@ -8,7 +8,7 @@ import { useUpdateAssignment } from '@/hooks/mentor/useUpdateAssignment'
 import type { Assignment } from '@/types/api'
 import { cn } from '@/lib/utils'
 
-// ── Static metadata for all 9 weeks ──────────────────────────────────────────
+// ── Static metadata for all 12 weeks ──────────────────────────────────────────
 const WEEK_META = [
   {
     slug: 'week1',
@@ -81,7 +81,7 @@ const WEEK_META = [
     week: 7,
     title: 'Week 7: Wikipedia Collector',
     subtitle: 'Web Scraping & Dataset Collection',
-    description: 'Students build a scraper that fetches Wikipedia pages from a URL list and saves each as a structured JSON file.',
+    description: 'Build a web scraper that fetches Wikipedia pages from a list of URLs and saves each article as a structured JSON file.',
     icon: Globe,
     color: 'accent-blue',
     file: 'collect_wiki.py',
@@ -92,7 +92,7 @@ const WEEK_META = [
     week: 8,
     title: 'Week 8: Metadata Organizer',
     subtitle: 'Functions, Modularity & Data Structures',
-    description: 'Students build a modular Python package that processes the Week 7 corpus and outputs per-document and corpus-level metadata.',
+    description: 'Build a modular Python package that processes the Week 7 corpus and computes per-document and corpus-level metadata.',
     icon: BookOpen,
     color: 'accent-teal',
     file: 'metadata_organizer/ package',
@@ -103,7 +103,7 @@ const WEEK_META = [
     week: 9,
     title: 'Week 9: Inverted Index',
     subtitle: 'Linear vs Inverted Index & Frequency Counting',
-    description: 'Students build an inverted index from their corpus and a lookup tool that returns documents sorted by term frequency.',
+    description: 'Build an inverted index from the document corpus and a lookup tool to query terms.',
     icon: Search,
     color: 'accent-blue',
     file: 'build_index.py + lookup.py',
@@ -114,7 +114,7 @@ const WEEK_META = [
     week: 10,
     title: 'Week 10: Indexing & Search Architecture',
     subtitle: 'Ranked Query Engine Foundation',
-    description: 'Integrate the inverted index into a complete query engine that returns top-5 ranked documents.',
+    description: 'Integrate the inverted index into a complete query engine that returns top-ranked documents.',
     icon: Layers,
     color: 'accent-teal',
     file: 'query.py',
@@ -125,7 +125,7 @@ const WEEK_META = [
     week: 11,
     title: 'Week 11: Final Capstone Development',
     subtitle: 'Intelligent Wikipedia Search Engine Part 1',
-    description: 'Build a full search engine with dataset cleaning, inverted index, ranking, and a CLI.',
+    description: 'Build a full intelligent search engine with dataset cleaning, NLP techniques, inverted index, ranking, and a CLI interface.',
     icon: Globe,
     color: 'accent-blue',
     file: 'main.py',
@@ -136,7 +136,7 @@ const WEEK_META = [
     week: 12,
     title: 'Week 12: Final Capstone Demonstration',
     subtitle: 'Intelligent Wikipedia Search Engine Part 2',
-    description: 'Finalization and demonstration of the complete search engine system.',
+    description: 'Finalization and live demonstration of the complete Intelligent Wikipedia Search Engine system.',
     icon: Code2,
     color: 'accent-teal',
     file: 'main.py',
@@ -361,7 +361,7 @@ export const AssignmentManagePage = () => {
     <PageWrapper>
       <PageHeader
         title="Assignment Management"
-        description="Toggle assignments live or draft, and adjust deadlines for all 9 weeks."
+        description="Toggle assignments live or draft, and adjust deadlines for all 12 weeks."
       />
 
       {/* Summary bar */}

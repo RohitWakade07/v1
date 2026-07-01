@@ -1,0 +1,473 @@
+
+\documentclass[12pt,a4paper]{article}
+
+% ── Packages ─────────────────────────────────────────────────────────────
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{tcolorbox}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{titlesec}
+\usepackage{mdframed}
+\usepackage{fontawesome5}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{parskip}
+
+% ── Colour Palette ─────────────────────────────────────────────────────
+\definecolor{eyantraBlue}{HTML}{1E3A5F}
+\definecolor{eyantraAccent}{HTML}{2D7DD2}
+\definecolor{eyantaGreen}{HTML}{06A77D}
+\definecolor{eyantraWarn}{HTML}{F4A261}
+\definecolor{eyantraDanger}{HTML}{E63946}
+\definecolor{codebg}{HTML}{F4F6F9}
+\definecolor{codeborder}{HTML}{CDD4E0}
+\definecolor{lightgray}{HTML}{F8F9FA}
+\definecolor{darkgray}{HTML}{495057}
+
+% ── Hyperlinks ─────────────────────────────────────────────────────────
+\hypersetup{
+  colorlinks=true,
+  linkcolor=eyantraAccent,
+  urlcolor=eyantraAccent,
+  pdftitle={EEP Auto-Grading Platform -- Student Guide},
+  pdfauthor={E-Yantra, IIT Bombay},
+}
+
+% ── Code Listing Style ─────────────────────────────────────────────────
+\lstdefinestyle{shellstyle}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{codeborder},
+  framesep=4pt,
+  xleftmargin=6pt,
+  xrightmargin=6pt,
+  showstringspaces=false,
+  keywordstyle=\color{eyantraBlue}\bfseries,
+  commentstyle=\color{darkgray}\itshape,
+  stringstyle=\color{eyantaGreen},
+}
+\lstset{style=shellstyle}
+
+% ── Custom tcolorbox environments ──────────────────────────────────────
+\tcbuselibrary{skins,breakable,listingsutf8}
+
+\newtcolorbox{infobox}[1][Note]{
+  colback=eyantraAccent!8,
+  colframe=eyantraAccent,
+  fonttitle=\bfseries,
+  title={\faInfoCircle\enspace #1},
+  breakable,
+}
+
+\newtcolorbox{warnbox}[1][Warning]{
+  colback=eyantraWarn!12,
+  colframe=eyantraWarn!80!black,
+  fonttitle=\bfseries,
+  title={\faExclamationTriangle\enspace #1},
+  breakable,
+}
+
+\newtcolorbox{successbox}[1][Success]{
+  colback=eyantaGreen!10,
+  colframe=eyantaGreen,
+  fonttitle=\bfseries,
+  title={\faCheckCircle\enspace #1},
+  breakable,
+}
+
+\newtcolorbox{dangerbox}[1][Important]{
+  colback=eyantraDanger!8,
+  colframe=eyantraDanger,
+  fonttitle=\bfseries,
+  title={\faBan\enspace #1},
+  breakable,
+}
+
+% ── Section Title Styling ──────────────────────────────────────────────
+\titleformat{\section}
+  {\Large\bfseries\color{eyantraBlue}}
+  {\thesection}{1em}{}[\color{eyantraAccent}\rule{\linewidth}{1.5pt}]
+
+\titleformat{\subsection}
+  {\large\bfseries\color{eyantraBlue}}
+  {\thesubsection}{0.8em}{}
+
+\titleformat{\subsubsection}
+  {\normalsize\bfseries\color{darkgray}}
+  {\thesubsubsection}{0.7em}{}
+
+% ── Header / Footer ───────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{eyantraBlue}\small\bfseries EEP Auto-Grading Platform}
+\fancyhead[R]{\color{darkgray}\small Student Guide}
+\fancyfoot[C]{\color{darkgray}\small\thepage}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\headrule}{\color{eyantraAccent}\hrule width\headwidth height\headrulewidth}
+
+% ── Step counter ──────────────────────────────────────────────────────
+\newcounter{stepnum}
+\newcommand{\step}[1]{%
+  \stepcounter{stepnum}%
+  \vspace{6pt}%
+  \noindent\colorbox{eyantraBlue}{\color{white}\bfseries\small\ Step \thestepnum\ }%
+  \hspace{4pt}\textbf{#1}\\[4pt]%
+}
+
+% ─────────────────────────────────────────────────────────────────────
+\begin{document}
+% ─────────────────────────────────────────────────────────────────────
+
+% ── Title Page ────────────────────────────────────────────────────────
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+
+  {\color{eyantraBlue}\rule{\linewidth}{3pt}}
+  \vspace{0.5cm}
+
+  {\Huge\bfseries\color{eyantraBlue} EEP Auto-Grading Platform}\\[0.6em]
+  {\LARGE\color{eyantraAccent} Student Tutorial Guide}\\[0.4em]
+  {\large\color{darkgray} E-Yantra Summer Internship Program (EYSIP)}
+
+  \vspace{0.5cm}
+  {\color{eyantraBlue}\rule{\linewidth}{3pt}}
+
+  \vspace{1.5cm}
+
+  \begin{tcolorbox}[colback=lightgray, colframe=eyantraAccent, width=0.8\linewidth]
+    \centering
+    \large This guide walks you through every step of using the\\
+    \textbf{EEP Auto-Grading Platform} — from registration to\\
+    viewing your final graded results.
+  \end{tcolorbox}
+
+  \vfill
+
+  \begin{tabular}{rl}
+    \textbf{Document Version:} & 1.0 \\
+    \textbf{Platform Version:} & v2.0 \\
+    \textbf{Audience:}         & Students (EEP-2 Participants) \\
+    \textbf{Organisation:}     & E-Yantra, IIT Bombay \\
+  \end{tabular}
+
+  \vspace{1cm}
+  {\color{darkgray}\small Last updated: \today}
+\end{titlepage}
+
+% ── Table of Contents ─────────────────────────────────────────────────
+\tableofcontents
+\newpage
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Overview}
+% ─────────────────────────────────────────────────────────────────────
+
+The \textbf{EEP Auto-Grading Platform} (version 2.0) is a fully online, server-side project evaluation system built for the E-Yantra EEP Software Exploration Program. As a student you can:
+
+\begin{itemize}[leftmargin=*]
+  \item Browse and read published weekly assignments
+  \item Submit your work via a \textbf{GitHub repository URL} or a \textbf{ZIP file upload}
+  \item Watch real-time grading status via live updates
+  \item View detailed results including scores, pass/fail status, and execution logs
+  \item Attempt quizzes associated with each week's topic
+  \item Track your overall progress on the student dashboard
+\end{itemize}
+
+\begin{infobox}[How grading works]
+  Your submission is executed inside an \emph{isolated Docker sandbox} on our cloud server. The sandbox has \textbf{no internet access} and is destroyed after grading. Results are available within seconds to a few minutes depending on the task complexity.
+\end{infobox}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Getting Started}
+% ─────────────────────────────────────────────────────────────────────
+
+\subsection{Logging In}
+
+\setcounter{stepnum}{0}
+
+\step{Open the Platform}
+Navigate to the platform URL provided by your mentor or program coordinator in your web browser. The login page will be displayed.
+
+\step{Enter Your Credentials}
+\begin{itemize}
+  \item \textbf{Roll Number / Email:} Your institute roll number (e.g., \texttt{20XXXXX001}) or registered email address.
+  \item \textbf{Password:} For newly imported students, the \emph{default password is your email address}. You will be prompted to change it immediately after first login.
+\end{itemize}
+
+\step{Change Your Password (First Login)}
+\begin{itemize}
+  \item On first login, the system enforces a mandatory password change.
+  \item Choose a strong password (minimum 8 characters, mix of letters and numbers).
+  \item Click \textbf{Update Password} to save.
+\end{itemize}
+
+\begin{dangerbox}[Security]
+  Do not share your credentials. The grading system logs all submission activity linked to your account.
+\end{dangerbox}
+
+\subsection{Dashboard Overview}
+
+After login, you are taken to your \textbf{Student Dashboard}. Here you can see:
+
+\begin{center}
+\begin{tabularx}{0.95\linewidth}{>{\bfseries}lX}
+\toprule
+Widget & Description \\
+\midrule
+Assignments & Count of published assignments available to you \\
+Submissions & Your total submission count across all assignments \\
+Passed      & Number of assignments you have passed \\
+Avg.\ Score & Your running average score across completed submissions \\
+Recent Activity & Latest submissions with status badges \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{infobox}
+  If you see \textbf{"Classroom approval required"} on the dashboard, your enrollment is still pending. Contact your mentor to approve your classroom enrollment.
+\end{infobox}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Browsing Assignments}
+% ─────────────────────────────────────────────────────────────────────
+
+\setcounter{stepnum}{0}
+
+\step{Navigate to Assignments}
+Click \textbf{Assignments} in the left-hand sidebar. You will see a list of all published weekly assignments.
+
+\step{Open an Assignment}
+Click on any assignment card to open its detail page. The detail page contains:
+
+\begin{itemize}
+  \item \textbf{Title \& Description} -- What the task is about
+  \item \textbf{Category} -- e.g., \texttt{Git}, \texttt{Bash}, \texttt{Python}, \texttt{Docker}
+  \item \textbf{Max Score} -- Points available for full completion
+  \item \textbf{Deadline} -- Due date/time (UTC)
+  \item \textbf{Late Penalty} -- Score deduction percentage applied past the deadline
+  \item \textbf{Expected File Structure} -- Required layout for your ZIP submission
+  \item \textbf{Submission Instructions} -- Specific instructions to follow
+  \item \textbf{Resource Links} -- Learning materials provided by your mentor
+\end{itemize}
+
+\begin{warnbox}[Read before submitting]
+  Always read the \emph{Expected File Structure} carefully. Submissions that do not match the required layout will fail with a \texttt{VALIDATION\_ERROR}.
+\end{warnbox}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Submitting Assignments}
+% ─────────────────────────────────────────────────────────────────────
+
+The platform supports two submission methods: \textbf{GitHub URL} and \textbf{ZIP Upload}.
+
+\subsection{Method A: GitHub Repository URL}
+
+\setcounter{stepnum}{0}
+
+\step{Prepare your repository}
+Ensure your repository is \textbf{public} on GitHub. Push all your final code before submitting.
+
+\step{Copy the repository URL}
+Go to your GitHub repository and copy the HTTPS URL, e.g.:
+\begin{lstlisting}
+https://github.com/your-username/week1-assignment
+\end{lstlisting}
+
+\step{Submit on the platform}
+\begin{enumerate}
+  \item On the assignment detail page, select \textbf{GitHub URL} as the source type.
+  \item Paste the repository URL in the input field.
+  \item Click \textbf{Submit}.
+\end{enumerate}
+
+\subsection{Method B: ZIP File Upload}
+
+\setcounter{stepnum}{0}
+
+\step{Package your work as a ZIP}
+\begin{itemize}
+  \item Compress your project folder into a single \texttt{.zip} file.
+  \item Ensure the ZIP follows the \emph{Expected File Structure} shown on the assignment page.
+  \item Maximum file size: \textbf{50 KB} (50,000 bytes). Keep your ZIP lean — exclude binaries and build artifacts.
+\end{itemize}
+
+\step{Upload and submit}
+\begin{enumerate}
+  \item Select \textbf{ZIP Upload} as the source type.
+  \item Click \textbf{Choose File} and select your \texttt{.zip} archive.
+  \item Click \textbf{Submit}.
+\end{enumerate}
+
+\begin{dangerbox}[ZIP size limit]
+  The maximum allowed ZIP size is \textbf{50,000 bytes ($\approx$50 KB)}. Submissions exceeding this will be rejected immediately with a \texttt{FILE\_TOO\_LARGE} error. Do NOT include \texttt{node\_modules}, \texttt{.git}, or compiled binaries in your ZIP.
+\end{dangerbox}
+
+\subsection{Submission Rate Limiting}
+
+To prevent accidental double-submissions, the platform enforces a \textbf{5-second cooldown} between submissions for the same assignment. If you hit this limit, wait 5 seconds and try again.
+
+\subsection{Multiple Attempts}
+
+You may re-submit as many times as you wish before the deadline. Each submission is recorded with an \textbf{attempt number}. Your \emph{latest} submission is typically used for final scoring, unless your mentor specifies otherwise.
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Tracking Submission Status}
+% ─────────────────────────────────────────────────────────────────────
+
+After submitting, the platform updates you in real-time. The submission goes through the following states:
+
+\begin{center}
+\begin{tabularx}{0.9\linewidth}{>{\ttfamily\bfseries}l>{\color{darkgray}}X}
+\toprule
+Status & Meaning \\
+\midrule
+PENDING          & Submission received, waiting to be queued \\
+QUEUED           & Added to the grading job queue \\
+RUNNING          & Grader is executing your code in the sandbox \\
+COMPLETED        & Grading finished successfully \\
+FAILED           & Grader ran but your code did not pass all tests \\
+VALIDATION\_ERROR & Submission rejected before grading (wrong format, etc.) \\
+TIMEOUT          & Your code exceeded the allowed execution time \\
+CANCELLED        & You manually cancelled the submission \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{infobox}[Real-time Updates]
+  The platform uses \textbf{Server-Sent Events (SSE)} to push live status updates to your browser. You do not need to refresh the page.
+\end{infobox}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Viewing Results}
+% ─────────────────────────────────────────────────────────────────────
+
+\setcounter{stepnum}{0}
+
+\step{Go to Results}
+Click \textbf{Results} in the sidebar, or click on a completed submission card on the dashboard.
+
+\step{Read the Result Detail}
+The result page shows:
+
+\begin{itemize}
+  \item \textbf{Score} -- Points earned (e.g., \texttt{80 / 100})
+  \item \textbf{Passed} -- Green tick for pass, red cross for fail
+  \item \textbf{Attempt Number} -- Which attempt this result belongs to
+  \item \textbf{Execution Logs (stdout)} -- Output your code produced
+  \item \textbf{Error Logs (stderr)} -- Any errors or warnings from the grader
+  \item \textbf{AI Feedback} -- Intelligent suggestions to improve your submission (where available)
+\end{itemize}
+
+\begin{successbox}[Passed!]
+  If your status is \texttt{COMPLETED} and passed is \texttt{true}, your assignment is graded. Celebrate! \faSmile
+\end{successbox}
+
+\step{Interpret a Failed Submission}
+\begin{enumerate}
+  \item Read the \textbf{stderr} output carefully — it often shows which test case failed and why.
+  \item Fix the issue in your code.
+  \item Re-submit before the deadline.
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Quizzes}
+% ─────────────────────────────────────────────────────────────────────
+
+Each week may include a quiz to test your conceptual understanding.
+
+\setcounter{stepnum}{0}
+
+\step{Navigate to Quizzes}
+Click \textbf{Quizzes} or find the quiz linked from the assignment page.
+
+\step{Start the Quiz}
+\begin{itemize}
+  \item Quizzes are timed. A countdown timer is shown at the top.
+  \item Questions may be multiple-choice (single or multiple answers) or short text.
+  \item Once you start, the timer cannot be paused.
+\end{itemize}
+
+\step{Submit your Quiz}
+\begin{itemize}
+  \item Answer all questions and click \textbf{Submit Quiz}.
+  \item Results are shown immediately after submission.
+\end{itemize}
+
+\begin{warnbox}[Quiz rules]
+  \begin{itemize}
+    \item Do not refresh the page during a quiz -- your progress may be lost.
+    \item Quizzes can only be attempted once unless your mentor resets them.
+    \item Each quiz has a fixed time window; once the deadline passes, you cannot start.
+  \end{itemize}
+\end{warnbox}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Announcements}
+% ─────────────────────────────────────────────────────────────────────
+
+Mentors post important notices in the \textbf{Announcements} section. You will receive in-platform notifications when a new announcement is posted.
+
+\begin{itemize}
+  \item Click \textbf{Announcements} in the sidebar to view all notices.
+  \item Read each announcement before making submissions -- mentors sometimes clarify requirements or extend deadlines here.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Profile \& Settings}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{itemize}
+  \item Click your name in the top-right corner and select \textbf{Profile}.
+  \item You can update your \textbf{full name} and \textbf{email address}.
+  \item To change your password, use the \textbf{Change Password} form on the profile page.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Common Issues \& Solutions}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{center}
+\begin{tabularx}{\linewidth}{>{\bfseries}lX}
+\toprule
+Problem & Solution \\
+\midrule
+"Classroom approval required" & Contact your mentor to approve your enrollment. \\
+ZIP rejected (too large)       & Remove \texttt{node\_modules}, \texttt{.git}, compiled files. \\
+VALIDATION\_ERROR               & Check the expected file structure on the assignment page. \\
+TIMEOUT                        & Optimise your code. Avoid infinite loops. \\
+GitHub URL not accepted        & Ensure the repository is \textbf{public}. \\
+Submission stuck in QUEUED     & The grading worker may be busy. Wait a few minutes. \\
+Login fails                    & Use your roll number (not email) as the username. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Quick Reference}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{tcolorbox}[colback=eyantraBlue!5, colframe=eyantraBlue, title={\faBookmark\enspace Student Quick Reference}]
+\begin{tabular}{ll}
+\textbf{Login credential:}   & Roll number or email \\
+\textbf{Default password:}   & Your email address (change immediately) \\
+\textbf{Max ZIP size:}        & 50,000 bytes ($\approx$50 KB) \\
+\textbf{Rate limit:}          & 5 seconds between submissions \\
+\textbf{Sandbox network:}    & None (no internet inside grading container) \\
+\textbf{API Docs (debug):}   & \texttt{/docs} (if enabled by admin) \\
+\end{tabular}
+\end{tcolorbox}
+
+% ─────────────────────────────────────────────────────────────────────
+\end{document}

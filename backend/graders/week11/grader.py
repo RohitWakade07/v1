@@ -1,7 +1,5 @@
 """
-Week 9 Grader: Linear vs Inverted Index
-=============================================================
-Parses JSON from test_wrapper.py.
+Week 11 Grader: Capstone Project
 """
 import json
 import logging
@@ -10,20 +8,22 @@ from graders.base_grader import BaseGrader, GradingResult, CheckResult
 logger = logging.getLogger(__name__)
 
 MAX_POINTS = {
-    "build_index_execution": 20.0,
-    "index_schema": 30.0,
-    "lookup_execution": 20.0,
-    "query_results": 30.0,
+    "engineering_quality": 20.0,
+    "dataset": 10.0,
+    "persistent_inverted_index": 20.0,
+    "ranking": 15.0,
+    "query_handling": 35.0,
 }
 
 HINTS = {
-    "build_index_execution": "Ensure build_index.py runs and writes index.json.",
-    "index_schema": "index.json must be a dict mapping terms to dicts of doc -> frequency.",
-    "lookup_execution": "Ensure lookup.py handles stdin query without crashing.",
-    "query_results": "Ensure lookup.py correctly finds documents for a given term.",
+    "engineering_quality": "Include README.md, modular code, and >=5 commits.",
+    "dataset": "Must contain >=50 documents.",
+    "persistent_inverted_index": "build_index.py must run and create index.json.",
+    "ranking": "Return top N results correctly.",
+    "query_handling": "Handle multi-word queries and subsequent queries in loop.",
 }
 
-class Week9Grader(BaseGrader):
+class Week11Grader(BaseGrader):
     def grade(self) -> GradingResult:
         max_score = 100.0
         exec_res  = self.config.get("execution_result", {})

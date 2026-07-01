@@ -1,0 +1,9 @@
+assignment_slug: "week5"
+target_file: "submission.json"
+docker_image: "alpine/git:2.43.0"
+execution_command: "echo submitted"
+timeout_seconds: 90
+memory_limit_mb: 256
+cpu_limit: 0.5
+network_disabled: false
+assets: []

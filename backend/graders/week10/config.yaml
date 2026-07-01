@@ -1,0 +1,11 @@
+assignment_slug: "week10"
+target_file: "query.py"
+docker_image: "python:3.10-slim"
+execution_command: "python test_wrapper.py"
+timeout_seconds: 30
+memory_limit_mb: 256
+cpu_limit: 0.5
+network_disabled: true
+assets:
+  - source: "test_wrapper.py"
+    target: "test_wrapper.py"

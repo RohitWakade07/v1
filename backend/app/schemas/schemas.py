@@ -217,28 +217,6 @@ class SessionStatusResponse(BaseModel):
     rejection_reason: Optional[str]
 
 
-# ── Proof submission ──────────────────────────────────────────────────
-
-class TestResult(BaseModel):
-    test_id: str
-    passed: bool
-    stdout_hash: Optional[str] = None
-    stderr_hash: Optional[str] = None
-    exit_code: int = 0
-    score: float = 0.0
-
-
-class ProofSubmitRequest(BaseModel):
-    session_id: uuid.UUID
-    assignment_id: uuid.UUID
-    student_id: str           # roll_number — cross-checked against JWT
-    timestamp: str            # ISO8601
-    nonce: str                # UUID — single use, replay prevention
-    grader_binary_hash: str   # SHA-256 of the grader binary itself
-    results: dict[str, TestResult]
-    artifact_hashes: dict[str, str]  # filename -> sha256
-    hmac_signature: str       # HMAC-SHA256 over entire payload minus this field
-
 
 class ProofSubmitResponse(BaseModel):
     session_id: uuid.UUID

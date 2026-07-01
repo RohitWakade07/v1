@@ -1,3 +1,4 @@
-python is cool
-python is fun
-we love python
+Machine learning is a subset of artificial intelligence.
+Deep learning uses neural networks to learn patterns.
+Python libraries like NumPy and Pandas are essential tools.
+Statistical analysis helps interpret data correctly.

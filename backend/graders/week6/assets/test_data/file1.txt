@@ -1,3 +1,5 @@
-hello world
-hello there
-this is a test
+The quick brown fox jumps over the lazy dog.
+Python is a versatile programming language.
+Python code is readable and expressive.
+Data science uses Python extensively.
+The fox is quick and the dog is lazy.

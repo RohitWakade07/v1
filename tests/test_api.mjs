@@ -131,29 +131,7 @@ async function runTests() {
     }
   }
 
-  // 7. Submit Proof (Student)
-  if (studentToken && assignmentId) {
-    try {
-      const data = await request('POST', `/proof/submit`, {
-        assignment_id: assignmentId,
-        student_id: 'test_student',
-        session_id: '123e4567-e89b-12d3-a456-426614174000',
-        timestamp: new Date().toISOString(),
-        nonce: 'random-nonce',
-        grader_binary_hash: 'hash',
-        results: {},
-        artifact_hashes: {},
-        hmac_signature: 'signature'
-      }, studentToken);
-      if (data.id) {
-        logResult('Submit Proof', 'PASS');
-      } else {
-        logResult('Submit Proof', 'FAIL', 'No submission ID returned');
-      }
-    } catch (err) {
-      logResult('Submit Proof', 'FAIL', err.data?.detail || 'Request failed');
-    }
-  }
+
 
   console.log('\n--- JSON RESULT PAYLOAD ---');
   console.log(JSON.stringify(results));

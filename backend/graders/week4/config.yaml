@@ -1,9 +1,9 @@
 assignment_slug: "week4"
-target_file: "RECOVERY.md"
-docker_image: "alpine:latest"
-execution_command: "echo 'No dynamic execution needed, checking repo state'"
-timeout_seconds: 30
-memory_limit_mb: 512
-cpu_limit: 1.0
+target_file: "commands.sh"
+docker_image: "alpine/git:2.43.0"
+execution_command: "sh commands.sh"
+timeout_seconds: 20
+memory_limit_mb: 128
+cpu_limit: 0.5
 network_disabled: true
 assets: []

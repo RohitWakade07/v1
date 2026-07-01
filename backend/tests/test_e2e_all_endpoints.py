@@ -407,79 +407,6 @@ class TestSessions:
         log(f"  [PASS] Non-existent session -> {r.status_code}")
 
 
-# ===========================================================================
-#  7. PROOF SUBMISSION
-# ===========================================================================
-
-class TestProofSubmission:
-    def test_submit_proof(self, client):
-        if not state.session_id:
-            pytest.skip("No session available")
-
-        nonce = state.proof_nonce or str(uuid.uuid4())
-        payload = {
-            "session_id": state.session_id,
-            "assignment_id": state.assignment_id,
-            "student_id": TEST_ROLL.upper(),
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "nonce": nonce,
-            "grader_binary_hash": "a" * 64,
-            "results": {
-                "test_1": {
-                    "test_id": "test_1",
-                    "passed": True,
-                    "stdout_hash": "b" * 64,
-                    "stderr_hash": None,
-                    "exit_code": 0,
-                    "score": 50.0,
-                },
-                "test_2": {
-                    "test_id": "test_2",
-                    "passed": True,
-                    "stdout_hash": "c" * 64,
-                    "stderr_hash": None,
-                    "exit_code": 0,
-                    "score": 50.0,
-                },
-            },
-            "artifact_hashes": {"output.txt": "d" * 64},
-        }
-        payload["hmac_signature"] = make_hmac_proof(payload)
-
-        r = client.post("/proof/submit", json=payload, headers={
-            "Authorization": f"Bearer {state.student_token}"
-        })
-        if r.status_code == 200:
-            data = r.json()
-            log(f"  [PASS] Proof submitted -- status: {data['status']}, score: {data.get('final_score')}")
-        else:
-            log(f"  [WARN] Proof submission returned {r.status_code}: {r.text[:200]}")
-            if r.status_code not in [400, 404, 409]:
-                assert False, f"Unexpected error: {r.status_code}"
-
-    def test_submit_proof_replay(self, client):
-        """Replaying the same nonce should fail."""
-        if not state.proof_nonce:
-            pytest.skip("No proof nonce available")
-
-        payload = {
-            "session_id": state.session_id,
-            "assignment_id": state.assignment_id,
-            "student_id": TEST_ROLL.upper(),
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "nonce": state.proof_nonce,
-            "grader_binary_hash": "a" * 64,
-            "results": {},
-            "artifact_hashes": {},
-        }
-        payload["hmac_signature"] = make_hmac_proof(payload)
-
-        r = client.post("/proof/submit", json=payload, headers={
-            "Authorization": f"Bearer {state.student_token}"
-        })
-        assert r.status_code in [400, 409], f"Replay not blocked: {r.status_code}"
-        log(f"  [PASS] Replay blocked -- {r.status_code}")
-
 
 # ===========================================================================
 #  8. RESULTS
@@ -725,47 +652,6 @@ Overall: FAIL
 
 
 # ===========================================================================
-#  13. PROOF HMAC VERIFICATION (Unit Test)
-# ===========================================================================
-
-class TestHMACVerification:
-    def test_hmac_roundtrip(self):
-        """Verify our HMAC computation matches the backend's."""
-        import sys
-        sys.path.insert(0, ".")
-        from app.core.security import verify_proof_signature
-
-        payload = {
-            "session_id": str(uuid.uuid4()),
-            "assignment_id": str(uuid.uuid4()),
-            "student_id": "22BEC001",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "nonce": str(uuid.uuid4()),
-            "grader_binary_hash": "a" * 64,
-            "results": {},
-            "artifact_hashes": {},
-        }
-        sig = make_hmac_proof(payload)
-        payload["hmac_signature"] = sig
-        assert verify_proof_signature(payload, sig) is True
-        log("  [PASS] HMAC roundtrip verification passed")
-
-    def test_hmac_tamper_detection(self):
-        from app.core.security import verify_proof_signature
-
-        payload = {
-            "session_id": str(uuid.uuid4()),
-            "student_id": "22BEC001",
-            "results": {},
-        }
-        sig = make_hmac_proof(payload)
-        payload["student_id"] = "TAMPERED"
-        payload["hmac_signature"] = sig
-        assert verify_proof_signature(payload, sig) is False
-        log("  [PASS] HMAC tamper detection works")
-
-
-# ===========================================================================
 #  14. ENROLLMENT REJECTION (Edge Case)
 # ===========================================================================
 
@@ -812,7 +698,6 @@ class TestSummary:
             "PATCH /sessions/{id}/start",
             "GET  /sessions/{id}/challenge",
             "POST /sessions/{id}/abort",
-            "POST /proof/submit",
             "GET  /results",
             "GET  /results/{session_id}",
             "GET  /mentor/assignments",

@@ -1,82 +1,136 @@
-import os
+#!/usr/bin/env python3
+"""
+Week 9 Test Wrapper — Search Engine (Inverted Index)
+Runs inside Docker sandbox. Tests build_index.py and lookup.py.
+
+Scoring (100 pts):
+  build_index_execution : 20 pts — build_index.py runs and creates index.json
+  index_schema          : 30 pts — index.json structure is valid
+  lookup_execution      : 20 pts — lookup.py runs with provided input
+  query_results         : 30 pts — lookup.py returns correct results for a query
+"""
 import json
+import os
 import subprocess
 import sys
 
-def grade():
+BUILD_SCRIPT = "build_index.py"
+LOOKUP_SCRIPT = "lookup.py"
+CORPUS = "corpus"
+INDEX = "index.json"
+TIMEOUT = 30
+
+
+def main():
     breakdown = {
-        "build_index_execution": 0,
-        "index_schema": 0,
-        "lookup_execution": 0,
-        "query_results": 0
+        "build_index_execution": 0.0,
+        "index_schema":          0.0,
+        "lookup_execution":      0.0,
+        "query_results":         0.0,
     }
     feedback = []
 
-    # 1. Build Index Execution (20 pts)
+    # ── 1. Repo Structure ───────────────────────────────────────────────
+    if not os.path.isfile(BUILD_SCRIPT):
+        feedback.append(f"{BUILD_SCRIPT} missing.")
+    if not os.path.isfile(LOOKUP_SCRIPT):
+        feedback.append(f"{LOOKUP_SCRIPT} missing.")
+    
+    if not os.path.isfile(BUILD_SCRIPT):
+        print(json.dumps({"breakdown": breakdown, "feedback": feedback, "bonus_features": []}))
+        return
+
+    # ── 2. Build Index Execution (20 pts) ───────────────────────────────
     try:
-        proc = subprocess.run([sys.executable, "build_index.py"], capture_output=True, text=True, timeout=10)
-        if proc.returncode == 0:
-            breakdown["build_index_execution"] = 20
-            feedback.append("Build Index Execution (20/20): build_index.py executed successfully.")
+        r_build = subprocess.run(
+            [sys.executable, BUILD_SCRIPT],
+            capture_output=True, text=True, timeout=TIMEOUT,
+        )
+        if r_build.returncode == 0:
+            if os.path.isfile(INDEX):
+                breakdown["build_index_execution"] = 20.0
+                feedback.append(f"{BUILD_SCRIPT} ran and created {INDEX}.")
+            else:
+                breakdown["build_index_execution"] = 10.0
+                feedback.append(f"{BUILD_SCRIPT} ran successfully but {INDEX} was not created.")
         else:
-            feedback.append(f"Build Index Execution (0/20): build_index.py exited with {proc.returncode}. {proc.stderr[:200]}")
+            feedback.append(f"{BUILD_SCRIPT} failed with exit code {r_build.returncode}.")
+    except subprocess.TimeoutExpired:
+        feedback.append(f"{BUILD_SCRIPT} timed out.")
     except Exception as e:
-        feedback.append(f"Build Index Execution (0/20): Failed to execute build_index.py: {e}")
+        feedback.append(f"{BUILD_SCRIPT} exception: {e}")
 
-    # 2. Index Schema (30 pts)
-    if os.path.exists("index.json"):
+    # ── 3. Index Schema (30 pts) ────────────────────────────────────────
+    if os.path.isfile(INDEX):
         try:
-            with open("index.json", "r") as f:
-                idx = json.load(f)
+            with open(INDEX, encoding="utf-8") as f:
+                index_data = json.load(f)
             
-            is_valid = False
-            if isinstance(idx, dict):
-                # Loose check
-                is_valid = True
-                if is_valid or len(idx) == 0:
-                    breakdown["index_schema"] = 30
-                    feedback.append("Index Schema (30/30): index.json generated with valid dictionary schema.")
+            if isinstance(index_data, dict) and len(index_data) > 0:
+                sample_term = list(index_data.keys())[0]
+                if isinstance(index_data[sample_term], dict):
+                    breakdown["index_schema"] = 30.0
+                    feedback.append(f"{INDEX} has valid schema (term -> doc -> freq).")
                 else:
-                    feedback.append("Index Schema (0/30): index.json is malformed.")
+                    breakdown["index_schema"] = 15.0
+                    feedback.append(f"{INDEX} structure partial (term not mapping to dict of docs).")
             else:
-                feedback.append("Index Schema (0/30): index.json root is not a dictionary.")
+                feedback.append(f"{INDEX} is empty or not a dict.")
         except Exception as e:
-            feedback.append(f"Index Schema (0/30): Failed to parse index.json - {e}")
+            feedback.append(f"{INDEX} is not valid JSON: {e}")
     else:
-        feedback.append("Index Schema (0/30): index.json not found.")
+        feedback.append(f"Cannot validate schema, {INDEX} missing.")
 
-    # 3. Lookup Execution & Query Results (50 pts)
-    if os.path.exists("lookup.py"):
-        try:
-            # We simulate querying for "python" and then "quit" (or Ctrl+D by closing stdin)
-            proc2 = subprocess.run(
-                [sys.executable, "lookup.py"],
-                input="python\nquit\n",
-                capture_output=True,
-                text=True,
-                timeout=10
-            )
-            if proc2.returncode == 0:
-                breakdown["lookup_execution"] = 20
-                feedback.append("Lookup Execution (20/20): lookup.py executed successfully.")
-            else:
-                feedback.append(f"Lookup Execution (0/20): lookup.py exited with {proc2.returncode}. {proc2.stderr[:200]}")
-                
-            output = proc2.stdout.lower() + proc2.stderr.lower()
-            if "page1" in output or "python" in output or "doc_id" in output:
-                breakdown["query_results"] = 30
-                feedback.append("Query Results (30/30): lookup.py correctly returned results for query 'python'.")
-            else:
-                feedback.append("Query Results (0/30): lookup.py did not return expected output for 'python'.")
-                
-        except Exception as e:
-            feedback.append(f"Lookup Execution (0/20): Failed to execute lookup.py: {e}")
-            feedback.append("Query Results (0/30): Cannot test query results without lookup.py running.")
-    else:
-        feedback.append("Lookup Execution (0/20): lookup.py not found.")
-        feedback.append("Query Results (0/30): Cannot test query results.")
+    # ── 4. Lookup Execution & Results (50 pts total) ─────────────────────
+    if not os.path.isfile(LOOKUP_SCRIPT):
+        print(json.dumps({"breakdown": breakdown, "feedback": feedback, "bonus_features": []}))
+        return
 
-    print(json.dumps({"breakdown": breakdown, "feedback": feedback}))
+    # We provide a known word as input to lookup.py
+    # If using standard corpus, 'the' or 'python' is usually present. Let's use 'python'.
+    query = "python"
+    try:
+        r_lookup = subprocess.run(
+            [sys.executable, LOOKUP_SCRIPT],
+            input=f"{query}\n",
+            capture_output=True, text=True, timeout=TIMEOUT,
+        )
+        if r_lookup.returncode == 0:
+            breakdown["lookup_execution"] = 20.0
+            feedback.append(f"{LOOKUP_SCRIPT} ran successfully.")
+            
+            # Very basic check for query results. It should print document names.
+            out_lower = r_lookup.stdout.lower()
+            if "doc" in out_lower or ".json" in out_lower:
+                breakdown["query_results"] = 30.0
+                feedback.append(f"{LOOKUP_SCRIPT} returned plausible results for query '{query}'.")
+            elif "not found" in out_lower or "no result" in out_lower:
+                breakdown["query_results"] = 15.0
+                feedback.append(f"{LOOKUP_SCRIPT} returned 'not found' for query '{query}'.")
+            else:
+                feedback.append(f"{LOOKUP_SCRIPT} output did not contain expected document identifiers.")
+        else:
+            feedback.append(f"{LOOKUP_SCRIPT} failed with exit code {r_lookup.returncode}.")
+    except subprocess.TimeoutExpired:
+        feedback.append(f"{LOOKUP_SCRIPT} timed out.")
+    except Exception as e:
+        feedback.append(f"{LOOKUP_SCRIPT} exception: {e}")
+
+    # ── Bonus features ───────────────────────────────────────────────────
+    bonus_keywords = {"tfidf": "TF-IDF implemented", "bm25": "BM25 implemented", "pickle": "Used pickle for fast loading"}
+    bonus_features = []
+    for script in [BUILD_SCRIPT, LOOKUP_SCRIPT]:
+        if os.path.isfile(script):
+            try:
+                src = open(script, errors="ignore").read().lower()
+                for kw, desc in bonus_keywords.items():
+                    if kw in src and desc not in bonus_features:
+                        bonus_features.append(desc)
+            except Exception:
+                pass
+
+    print(json.dumps({"breakdown": breakdown, "feedback": feedback, "bonus_features": bonus_features}))
+
 
 if __name__ == "__main__":
-    grade()
+    main()

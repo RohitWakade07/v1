@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { submitProof, submitEepProof } from '@/api/student/proof'
+import { submitEepProof } from '@/api/student/proof'
 import { useNotificationStore } from '@/store/notificationStore'
+
 function parseApiDetail(error: unknown): string {
   const responseData = (error as { response?: { data?: { detail?: unknown } } })?.response?.data
   if (!responseData?.detail) {
@@ -19,11 +20,6 @@ function parseApiDetail(error: unknown): string {
   }
   return 'Submission failed. Please try again.'
 }
-
-export const useProofSubmit = () =>
-  useMutation({
-    mutationFn: submitProof,
-  })
 
 export const useEepProofSubmit = () => {
   const queryClient = useQueryClient()

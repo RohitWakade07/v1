@@ -59,25 +59,6 @@ def decode_access_token(token: str) -> dict:
     )
 
 
-# ── Proof HMAC verification ───────────────────────────────────────────
-
-def verify_proof_signature(proof_payload: dict, received_signature: str) -> bool:
-    """
-    Re-derive HMAC-SHA256 over the canonical proof payload.
-    The grader binary uses the same key + same canonical serialisation.
-
-    Canonical form: JSON with sorted keys, no extra whitespace.
-    The 'hmac_signature' field is excluded before signing.
-    """
-    payload_to_sign = {k: v for k, v in proof_payload.items() if k != "hmac_signature"}
-    canonical = json.dumps(payload_to_sign, sort_keys=True, separators=(",", ":"))
-    expected = hmac.new(
-        settings.PROOF_SIGNING_KEY.encode(),
-        canonical.encode(),
-        hashlib.sha256,
-    ).hexdigest()
-    return hmac.compare_digest(expected, received_signature)
-
 
 def compute_sha256(data: str) -> str:
     return hashlib.sha256(data.encode()).hexdigest()

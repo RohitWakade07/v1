@@ -1,7 +1,5 @@
 """
-Week 9 Grader: Linear vs Inverted Index
-=============================================================
-Parses JSON from test_wrapper.py.
+Week 10 Grader: Advanced NLP / Querying
 """
 import json
 import logging
@@ -10,20 +8,18 @@ from graders.base_grader import BaseGrader, GradingResult, CheckResult
 logger = logging.getLogger(__name__)
 
 MAX_POINTS = {
-    "build_index_execution": 20.0,
-    "index_schema": 30.0,
-    "lookup_execution": 20.0,
-    "query_results": 30.0,
+    "execution": 30.0,
+    "multi_word_query": 35.0,
+    "boolean_operators": 35.0,
 }
 
 HINTS = {
-    "build_index_execution": "Ensure build_index.py runs and writes index.json.",
-    "index_schema": "index.json must be a dict mapping terms to dicts of doc -> frequency.",
-    "lookup_execution": "Ensure lookup.py handles stdin query without crashing.",
-    "query_results": "Ensure lookup.py correctly finds documents for a given term.",
+    "execution": "Ensure query.py runs without crashing.",
+    "multi_word_query": "Support searching for multiple words (e.g. 'machine learning').",
+    "boolean_operators": "Support AND/OR operators in queries.",
 }
 
-class Week9Grader(BaseGrader):
+class Week10Grader(BaseGrader):
     def grade(self) -> GradingResult:
         max_score = 100.0
         exec_res  = self.config.get("execution_result", {})

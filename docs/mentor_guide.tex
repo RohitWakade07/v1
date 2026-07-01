@@ -1,0 +1,500 @@
+
+\documentclass[12pt,a4paper]{article}
+
+% ── Packages ─────────────────────────────────────────────────────────────
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{tcolorbox}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{titlesec}
+\usepackage{mdframed}
+\usepackage{fontawesome5}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{parskip}
+\usepackage{longtable}
+
+% ── Colour Palette ─────────────────────────────────────────────────────
+\definecolor{mentorPurple}{HTML}{5E2D91}
+\definecolor{mentorAccent}{HTML}{7B4FBC}
+\definecolor{mentorGreen}{HTML}{06A77D}
+\definecolor{eyantraWarn}{HTML}{F4A261}
+\definecolor{eyantraDanger}{HTML}{E63946}
+\definecolor{codebg}{HTML}{F4F6F9}
+\definecolor{codeborder}{HTML}{CDD4E0}
+\definecolor{lightgray}{HTML}{F8F9FA}
+\definecolor{darkgray}{HTML}{495057}
+
+% ── Hyperlinks ─────────────────────────────────────────────────────────
+\hypersetup{
+  colorlinks=true,
+  linkcolor=mentorAccent,
+  urlcolor=mentorAccent,
+  pdftitle={EEP Auto-Grading Platform -- Mentor Guide},
+  pdfauthor={E-Yantra, IIT Bombay},
+}
+
+% ── Code Listing Style ─────────────────────────────────────────────────
+\lstdefinestyle{shellstyle}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{codeborder},
+  framesep=4pt,
+  xleftmargin=6pt,
+  xrightmargin=6pt,
+  showstringspaces=false,
+  keywordstyle=\color{mentorPurple}\bfseries,
+  commentstyle=\color{darkgray}\itshape,
+}
+\lstset{style=shellstyle}
+
+% ── Custom tcolorbox environments ──────────────────────────────────────
+\tcbuselibrary{skins,breakable}
+
+\newtcolorbox{infobox}[1][Note]{
+  colback=mentorAccent!8,
+  colframe=mentorAccent,
+  fonttitle=\bfseries,
+  title={\faInfoCircle\enspace #1},
+  breakable,
+}
+
+\newtcolorbox{warnbox}[1][Warning]{
+  colback=eyantraWarn!12,
+  colframe=eyantraWarn!80!black,
+  fonttitle=\bfseries,
+  title={\faExclamationTriangle\enspace #1},
+  breakable,
+}
+
+\newtcolorbox{tipbox}[1][Tip]{
+  colback=mentorGreen!10,
+  colframe=mentorGreen,
+  fonttitle=\bfseries,
+  title={\faLightbulb\enspace #1},
+  breakable,
+}
+
+\newtcolorbox{dangerbox}[1][Important]{
+  colback=eyantraDanger!8,
+  colframe=eyantraDanger,
+  fonttitle=\bfseries,
+  title={\faBan\enspace #1},
+  breakable,
+}
+
+% ── Section Title Styling ──────────────────────────────────────────────
+\titleformat{\section}
+  {\Large\bfseries\color{mentorPurple}}
+  {\thesection}{1em}{}[\color{mentorAccent}\rule{\linewidth}{1.5pt}]
+
+\titleformat{\subsection}
+  {\large\bfseries\color{mentorPurple}}
+  {\thesubsection}{0.8em}{}
+
+\titleformat{\subsubsection}
+  {\normalsize\bfseries\color{darkgray}}
+  {\thesubsubsection}{0.7em}{}
+
+% ── Header / Footer ───────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{mentorPurple}\small\bfseries EEP Auto-Grading Platform}
+\fancyhead[R]{\color{darkgray}\small Mentor Guide}
+\fancyfoot[C]{\color{darkgray}\small\thepage}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\headrule}{\color{mentorAccent}\hrule width\headwidth height\headrulewidth}
+
+% ── Step counter ──────────────────────────────────────────────────────
+\newcounter{stepnum}
+\newcommand{\step}[1]{%
+  \stepcounter{stepnum}%
+  \vspace{6pt}%
+  \noindent\colorbox{mentorPurple}{\color{white}\bfseries\small\ Step \thestepnum\ }%
+  \hspace{4pt}\textbf{#1}\\[4pt]%
+}
+
+% ─────────────────────────────────────────────────────────────────────
+\begin{document}
+% ─────────────────────────────────────────────────────────────────────
+
+% ── Title Page ────────────────────────────────────────────────────────
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+
+  {\color{mentorPurple}\rule{\linewidth}{3pt}}
+  \vspace{0.5cm}
+
+  {\Huge\bfseries\color{mentorPurple} EEP Auto-Grading Platform}\\[0.6em]
+  {\LARGE\color{mentorAccent} Mentor Tutorial Guide}\\[0.4em]
+  {\large\color{darkgray} E-Yantra Summer Internship Program (EYSIP)}
+
+  \vspace{0.5cm}
+  {\color{mentorPurple}\rule{\linewidth}{3pt}}
+
+  \vspace{1.5cm}
+
+  \begin{tcolorbox}[colback=lightgray, colframe=mentorAccent, width=0.85\linewidth]
+    \centering
+    \large This guide covers everything a mentor needs to manage\\
+    \textbf{classrooms, assignments, students, and analytics}\\
+    on the EEP Auto-Grading Platform.
+  \end{tcolorbox}
+
+  \vfill
+
+  \begin{tabular}{rl}
+    \textbf{Document Version:} & 1.0 \\
+    \textbf{Platform Version:} & v2.0 \\
+    \textbf{Audience:}         & Mentors \& Teaching Assistants \\
+    \textbf{Organisation:}     & E-Yantra, IIT Bombay \\
+  \end{tabular}
+
+  \vspace{1cm}
+  {\color{darkgray}\small Last updated: \today}
+\end{titlepage}
+
+% ── Table of Contents ─────────────────────────────────────────────────
+\tableofcontents
+\newpage
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Overview}
+% ─────────────────────────────────────────────────────────────────────
+
+As a \textbf{Mentor} on the EEP Auto-Grading Platform you have elevated privileges to:
+
+\begin{itemize}[leftmargin=*]
+  \item Create and manage \textbf{Classrooms} and enrol students
+  \item Create, publish, and update \textbf{Assignments}
+  \item Import students in bulk via \textbf{CSV upload}
+  \item Monitor \textbf{submission queues} and grading sessions
+  \item View detailed \textbf{analytics} and score distributions for your assignments
+  \item Export \textbf{results} and download grade reports
+  \item Post \textbf{Announcements} to your students
+  \item Manage \textbf{evaluator sessions} for special evaluation scenarios
+\end{itemize}
+
+\begin{infobox}[Mentor vs Admin]
+  Mentors can only see and modify resources they \emph{own} (their classrooms and assignments). Admins have platform-wide access. See the Admin Guide for admin-exclusive features.
+\end{infobox}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Logging In}
+% ─────────────────────────────────────────────────────────────────────
+
+\setcounter{stepnum}{0}
+
+\step{Open the Platform}
+Navigate to the platform URL in your browser. Mentors use the same login page as students.
+
+\step{Enter Your Credentials}
+\begin{itemize}
+  \item \textbf{Username:} Your email address (e.g., \texttt{mentor@iitb.ac.in})
+  \item \textbf{Password:} Set by the admin when your account was created, or your initial password.
+\end{itemize}
+
+\step{Confirm Your Role}
+After login you will be redirected to the \textbf{Mentor Dashboard} automatically. If you see a student dashboard instead, your role may not have been assigned correctly — contact the admin.
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Mentor Dashboard}
+% ─────────────────────────────────────────────────────────────────────
+
+The dashboard gives you a high-level overview of your cohort:
+
+\begin{center}
+\begin{tabularx}{0.95\linewidth}{>{\bfseries}lX}
+\toprule
+Widget & Description \\
+\midrule
+Total Students    & Students who have submitted to your assignments \\
+Completion Rate   & \% of submissions that reached a terminal state \\
+Average Score     & Mean score across all completed submissions \\
+Total Submissions & Cumulative submission count for your assignments \\
+Score Distribution & Bar chart of score bands (0--20, 21--40, \ldots, 81--100) \\
+Category Breakdown & Submissions by assignment category \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Managing Classrooms}
+% ─────────────────────────────────────────────────────────────────────
+
+\subsection{Creating a Classroom}
+
+\setcounter{stepnum}{0}
+
+\step{Navigate to Classrooms}
+Click \textbf{Classrooms} in the sidebar.
+
+\step{Create New Classroom}
+\begin{enumerate}
+  \item Click \textbf{+ Create Classroom}.
+  \item Fill in:
+    \begin{itemize}
+      \item \textbf{Name} -- e.g., \texttt{Batch A -- 2025}
+      \item \textbf{Description} -- A short description of the cohort
+    \end{itemize}
+  \item Click \textbf{Create}.
+\end{enumerate}
+
+\subsection{Managing Enrollments}
+
+Students can self-enrol by joining your classroom code, or you can import them via CSV.
+
+\subsubsection{Approving Enrollment Requests}
+
+\begin{enumerate}
+  \item Open the classroom and go to the \textbf{Enrollments} tab.
+  \item Pending requests are shown with an \textbf{Approve} / \textbf{Reject} button.
+  \item Approved students gain full access to published assignments.
+\end{enumerate}
+
+\begin{warnbox}
+  Students with \emph{pending} enrollment cannot submit assignments. Approve enrollments promptly at the start of the program.
+\end{warnbox}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Importing Students via CSV}
+% ─────────────────────────────────────────────────────────────────────
+
+The most efficient way to onboard a batch of students is via CSV import.
+
+\subsection{Prepare the CSV File}
+
+The CSV must contain exactly these three columns (order does not matter, but headers are required):
+
+\begin{lstlisting}
+full_name,email,roll_number
+Jane Doe,jane@example.com,2025CS001
+John Smith,john@example.com,2025CS002
+\end{lstlisting}
+
+\begin{itemize}
+  \item \textbf{roll\_number} -- Must be unique. Converted to uppercase automatically.
+  \item \textbf{email} -- Must be unique. Used as the student's default password.
+  \item \textbf{full\_name} -- Displayed on all dashboards and reports.
+  \item The file must be \textbf{UTF-8 encoded}.
+\end{itemize}
+
+\subsection{Upload the CSV}
+
+\setcounter{stepnum}{0}
+
+\step{Go to your Classroom}
+Open the classroom you want to import students into.
+
+\step{Import Students}
+\begin{enumerate}
+  \item Click \textbf{Import Students (CSV)}.
+  \item Select your \texttt{.csv} file.
+  \item The system processes each row:
+    \begin{itemize}
+      \item \textbf{created} -- New account created, enrolled in classroom (APPROVED automatically).
+      \item \textbf{already\_exists} -- Student already on the platform; enrollment is still added.
+    \end{itemize}
+  \item A summary table is shown after import.
+\end{enumerate}
+
+\begin{tipbox}[Default Password]
+  Imported students' default password is their \textbf{email address}. They are forced to change it on first login. Communicate this to your students.
+\end{tipbox}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Managing Assignments}
+% ─────────────────────────────────────────────────────────────────────
+
+\subsection{Creating an Assignment}
+
+\setcounter{stepnum}{0}
+
+\step{Navigate to Assignments}
+Click \textbf{Assignments} in the sidebar and then \textbf{+ Create Assignment}.
+
+\step{Fill in Assignment Details}
+
+\begin{center}
+\begin{tabularx}{\linewidth}{>{\bfseries}lX}
+\toprule
+Field & Description \\
+\midrule
+Title                   & Short, descriptive name (e.g., \textit{Week 1: Git \& GitHub}) \\
+Slug                    & URL-safe identifier (e.g., \texttt{week1-git}). Must be globally unique. \\
+Description             & Full task description shown to students. Supports plain text. \\
+Category                & One of: Git, Bash, Python, Docker, Web, ML, Other \\
+Max Score               & Maximum points for full completion \\
+Deadline                & Submission deadline (UTC). Cannot be changed after it passes without admin. \\
+Late Penalty (\%)       & Deducted from score for submissions past the deadline (e.g., 20 = 20\% off) \\
+Submission Filename     & Expected filename inside ZIP (e.g., \texttt{solution.sh}) \\
+Submission Instructions & Step-by-step instructions for students \\
+Expected Structure      & File tree the ZIP must follow (one path per line) \\
+Expected Media URL      & Optional image/diagram URL showing expected output \\
+Resource Links          & URLs to learning resources (YouTube, docs, etc.) \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\step{Save as Draft}
+Click \textbf{Create Assignment}. The assignment is saved as \emph{unpublished} (draft). Students cannot see it yet.
+
+\subsection{Publishing an Assignment}
+
+Only the assignment's \emph{creator} (or an admin) can publish it.
+
+\setcounter{stepnum}{0}
+
+\step{Open the assignment} from your assignments list.
+
+\step{Click Publish} -- the assignment becomes visible to all enrolled students immediately.
+
+\begin{dangerbox}[Before Publishing]
+  Double-check the deadline, max score, and expected file structure before publishing. The deadline is \textbf{locked} after it has passed and requires admin intervention to extend.
+\end{dangerbox}
+
+\subsection{Updating an Assignment}
+
+\begin{itemize}
+  \item Click \textbf{Edit} on the assignment detail page.
+  \item You can update title, description, max score, and deadline (before the deadline passes).
+  \item After deadline has passed, only an admin can extend the deadline.
+\end{itemize}
+
+\subsection{Unpublishing an Assignment}
+
+If you need to pull an assignment (e.g., an error was found), click \textbf{Unpublish}. The assignment returns to draft state and students can no longer see it. \textbf{Existing submissions are preserved.}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Monitoring Submissions}
+% ─────────────────────────────────────────────────────────────────────
+
+\subsection{Submission Queue View}
+
+Click \textbf{Submissions} in the sidebar. You will see all submissions across your assignments:
+
+\begin{center}
+\begin{tabularx}{\linewidth}{>{\bfseries}lX}
+\toprule
+Column & Meaning \\
+\midrule
+Student         & Roll number and full name \\
+Assignment      & Assignment slug and title \\
+Status          & Current grading status (PENDING, RUNNING, COMPLETED, etc.) \\
+Source Type     & GitHub URL or ZIP upload \\
+Attempt \#      & Which attempt number this is \\
+Score           & Final score (once grading completes) \\
+Submitted At    & Timestamp of submission \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Results View}
+
+Click \textbf{Results} to see only completed submissions (COMPLETED, FAILED, VALIDATION\_ERROR). This is your primary grading report view.
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Analytics}
+% ─────────────────────────────────────────────────────────────────────
+
+The \textbf{Analytics} page provides insight into your cohort's performance.
+
+\begin{itemize}
+  \item \textbf{Score Distribution} -- How many students fall into each score band
+  \item \textbf{Assignments Participation} -- Submission counts per assignment slug
+  \item \textbf{Category Breakdown} -- Which categories (Bash, Python, etc.) are most submitted
+  \item \textbf{Top Performers} -- Students with highest average scores
+\end{itemize}
+
+\begin{tipbox}[Export Results]
+  Use the \textbf{Export CSV} button on the Results page to download a spreadsheet of all scores for offline analysis or uploading to your institute's grade system.
+\end{tipbox}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Posting Announcements}
+% ─────────────────────────────────────────────────────────────────────
+
+\setcounter{stepnum}{0}
+
+\step{Navigate to Announcements} Click \textbf{Announcements} in the sidebar.
+
+\step{Create New Announcement}
+\begin{enumerate}
+  \item Click \textbf{+ New Announcement}.
+  \item Set:
+    \begin{itemize}
+      \item \textbf{Title} -- Short headline
+      \item \textbf{Body} -- Full announcement text
+      \item \textbf{Priority} -- Normal or Urgent
+    \end{itemize}
+  \item Click \textbf{Post}.
+\end{enumerate}
+
+Students will see the announcement in their Announcements feed and receive an in-platform notification.
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Managing Students}
+% ─────────────────────────────────────────────────────────────────────
+
+Click \textbf{Students} in the sidebar to view all students who have submitted to your assignments.
+
+\begin{center}
+\begin{tabularx}{\linewidth}{>{\bfseries}lX}
+\toprule
+Column & Meaning \\
+\midrule
+Roll Number           & Student's unique identifier \\
+Full Name             & Registered name \\
+Email                 & Registered email \\
+Assignments Participated & Number of distinct assignments with submissions \\
+Sessions Count        & Total submission count \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Evaluator Sessions}
+% ─────────────────────────────────────────────────────────────────────
+
+For assignments that use external evaluator tools (e.g., EEP binary evaluators), you can start evaluator sessions from the \textbf{Evaluators} page.
+
+\begin{itemize}
+  \item Go to \textbf{Evaluators} in the sidebar.
+  \item Paste the evaluator shared key (provided by the admin).
+  \item Start the evaluator session for a specific student and assignment.
+\end{itemize}
+
+\begin{infobox}
+  This feature is only needed for assignments that use the \texttt{.eep1} / \texttt{.eep2} proof-based evaluation scheme. Regular code submissions do not require this.
+\end{infobox}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Quick Reference}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{tcolorbox}[colback=mentorPurple!5, colframe=mentorPurple, title={\faBookmark\enspace Mentor Quick Reference}]
+\begin{tabular}{ll}
+\textbf{Login credential:}    & Email address \\
+\textbf{CSV columns:}          & \texttt{full\_name, email, roll\_number} \\
+\textbf{Default student pass:} & Student's email address \\
+\textbf{Publish restriction:} & Only assignment creator can publish \\
+\textbf{Deadline lock:}        & Cannot extend after passing (admin required) \\
+\textbf{Slug uniqueness:}      & Assignment slugs are globally unique \\
+\textbf{API Docs:}             & \texttt{/docs} (if enabled) \\
+\end{tabular}
+\end{tcolorbox}
+
+% ─────────────────────────────────────────────────────────────────────
+\end{document}
