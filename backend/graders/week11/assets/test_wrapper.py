@@ -8,11 +8,11 @@ TIMEOUT = 60
 
 def main():
     breakdown = {
-        "engineering_quality": 20.0,
-        "dataset": 10.0,
-        "persistent_inverted_index": 20.0,
-        "ranking": 15.0,
-        "query_handling": 35.0,
+        "engineering_quality": 0.0,
+        "dataset": 0.0,
+        "persistent_inverted_index": 0.0,
+        "ranking": 0.0,
+        "query_handling": 0.0,
     }
     feedback = []
 
@@ -34,6 +34,7 @@ def main():
             breakdown["dataset"] = 5.0
             feedback.append("Dataset too small.")
     else:
+        breakdown["dataset"] = 0.0
         feedback.append("corpus/ directory missing.")
 
     # Index execution
@@ -43,8 +44,10 @@ def main():
             breakdown["persistent_inverted_index"] = 20.0
             feedback.append("index.json created.")
         else:
+            breakdown["persistent_inverted_index"] = 0.0
             feedback.append("index.json not created.")
     else:
+        breakdown["persistent_inverted_index"] = 0.0
         feedback.append("build_index.py missing.")
 
     # Query Handling
@@ -56,10 +59,16 @@ def main():
                 breakdown["ranking"] = 15.0
                 feedback.append("query.py handled queries correctly.")
             else:
+                breakdown["query_handling"] = 0.0
+                breakdown["ranking"] = 0.0
                 feedback.append(f"query.py failed: {r.returncode}")
         except Exception as e:
+            breakdown["query_handling"] = 0.0
+            breakdown["ranking"] = 0.0
             feedback.append(f"query.py exception: {e}")
     else:
+        breakdown["query_handling"] = 0.0
+        breakdown["ranking"] = 0.0
         feedback.append("query.py missing.")
 
     print(json.dumps({"breakdown": breakdown, "feedback": feedback, "bonus_features": []}))
