@@ -52,12 +52,15 @@ The Celery grading worker must **mount `/var/run/docker.sock`** to spin up isola
 
 ```
 v1/
-├── app/                        # React frontend (Vite)
+├── frontend/                   # React frontend (Vite + TypeScript)
 │   ├── src/
 │   │   ├── api/                # API client functions
-│   │   ├── components/         # Reusable UI components
+│   │   ├── components/         # Reusable UI components (student, mentor, shared)
 │   │   ├── hooks/              # React Query hooks
+│   │   ├── layouts/            # Layout wrappers (AuthLayout, DashboardLayout)
+│   │   ├── lib/                # Utility functions
 │   │   ├── pages/              # Page-level components
+│   │   ├── router/             # React Router configuration
 │   │   ├── store/              # Zustand global state
 │   │   └── types/              # TypeScript type definitions
 │   ├── package.json
@@ -70,16 +73,25 @@ v1/
 │   │   ├── db/                 # Database session setup
 │   │   ├── models/             # SQLModel ORM models
 │   │   ├── schemas/            # Pydantic request/response schemas
-│   │   └── services/           # Business logic (submission, storage)
+│   │   └── services/           # Business logic (submission, storage, workspace)
 │   ├── alembic/                # Database migration scripts
-│   ├── graders/                # Per-assignment grader scripts + test assets
+│   ├── graders/                # Per-week grader scripts + test wrapper assets
+│   │   ├── week1/              # Filesystem validation grader
+│   │   ├── week2/ … week11/    # Execution-based graders
+│   │   └── base_grader.py      # Abstract base grader class
 │   ├── workers/                # Celery task definitions + Docker executor
+│   ├── seed_assignments.py     # Database seeder for all 12 assignments
+│   ├── seed_admin.py           # Seeds initial admin/mentor user
 │   ├── Dockerfile.api          # Dockerfile for the FastAPI API server
 │   ├── Dockerfile.worker       # Dockerfile for the Celery grading worker
-│   ├── docker-compose.yml      # Full local development stack
-│   ├── docker-compose.worker.yml  # Production EC2 worker deployment
+│   ├── docker-compose.yml      # Full local/EC2 development stack
 │   ├── requirements.txt
 │   └── .env.example            # Template for all required env variables
+│
+├── scripts/
+│   └── test_data/              # ZIP generators for mock submissions (week 1–12)
+│
+├── docs/                       # LaTeX & Markdown documentation
 │
 └── README.md
 ```
@@ -88,13 +100,13 @@ v1/
 
 ## 🔄 Submission Lifecycle
 
-1. **Student submits** a GitHub URL or ZIP file via the React Frontend.
+1. **Student submits** a GitHub repository URL (pointing to a specific branch/subfolder) or a ZIP file via the React Frontend.
 2. **API validates** the submission (file size, format, assignment exists), creates a `Submission` row in PostgreSQL, and enqueues a `GradingJob` via Celery.
-3. **Celery Worker** on EC2 picks up the job, downloads the ZIP from MinIO storage, and extracts it into a shared Docker volume (`/tmp/autograder_jobs/<job-id>/`).
-4. **Docker sandbox** is spawned: a network-disabled container with CPU/memory limits runs the student's code. The container has access to the shared jobs volume.
-5. **Grader scripts** evaluate the container's output against the assignment rubric.
-6. **Results** (score, pass/fail, stdout/stderr logs) are written back to PostgreSQL via a `SubmissionResult` row.
-7. **Frontend** polls the submission status via SSE (Server-Sent Events) and updates in real-time.
+3. **Celery Worker** on EC2 picks up the job, downloads/clones the submission from MinIO or GitHub, and extracts it into a shared Docker volume (`/autograder_jobs/<job-id>/submission/`).
+4. **Docker sandbox** is spawned: a network-disabled sibling container with CPU/memory limits runs the assignment's `test_wrapper.py` against the student's code.
+5. **Grader scripts** parse the wrapper's JSON output and evaluate it against the per-assignment rubric (defined in `graders/weekN/grader.py`).
+6. **Results** (score breakdown, pass/fail per rubric check, stdout/stderr logs, hints) are written back to PostgreSQL via a `SubmissionResult` row.
+7. **Frontend** polls the submission status via SSE (Server-Sent Events) and updates the student dashboard in real-time.
 
 ---
 
@@ -154,11 +166,18 @@ $env:PYTHONPATH="$(pwd)"; venv\Scripts\python seed_admin.py
 PYTHONPATH=. python seed_admin.py
 ```
 
-### Step 4: Frontend
+### Step 4: Seed Assignments
+
+```bash
+# Populate all 12 weekly assignments into the database
+docker compose exec -T backend python seed_assignments.py
+```
+
+### Step 5: Frontend
 
 In a separate terminal:
 ```bash
-cd app
+cd frontend
 npm install
 npm run dev
 ```
@@ -303,7 +322,7 @@ docker logs -f grading_worker
 ### Phase 3: Frontend (Vercel)
 
 1. Import this repository into [Vercel](https://vercel.com).
-2. Set the **Root Directory** to `app`.
+2. Set the **Root Directory** to `frontend`.
 3. Set **Build Command** to `npm run build` and **Output Directory** to `dist`.
 4. Add environment variable:
    ```
@@ -328,13 +347,20 @@ docker logs -f grading_worker
 
 ## 📜 Assignments Supported
 
-| Assignment | Topic |
-|---|---|
-| Week 1 | Git & GitHub Validation |
-| Week 2 | Bash Log Parsing |
-| Week 3 | Bash File Organizer |
-| Week 4 | Python Scripting |
-| Week 5–9 | *(In progress)* |
+| Week | Title | Category | Key Files |
+|---|---|---|---|
+| 1 | Workspace Setup | Filesystem Validation | `commands.txt` |
+| 2 | Command-Line Log Analyzer | Deterministic Execution | `analyze.sh` |
+| 3 | Automated File Organizer | Filesystem Validation | `organize.sh` |
+| 4 | Local Repository Recovery | Git Validation | `.gitignore`, `RECOVERY.md` |
+| 5 | GitHub Collaboration | Git Validation | `TEAMWORK.md` |
+| 6 | Text Corpus Analyzer | Deterministic Execution | `analyze.py`, `requirements.txt` |
+| 7 | Wikipedia Collector | Deterministic Execution | `collect_wiki.py`, `requirements.txt` |
+| 8 | Metadata Organizer | Deterministic Execution | `main.py`, `metadata_organizer/` |
+| 9 | Inverted Index | Deterministic Execution | `build_index.py`, `lookup.py` |
+| 10 | Indexing & Search Architecture | Deterministic Execution | `query.py`, `build_index.py` |
+| 11 | Final Capstone Development | Deterministic Execution | `query.py`, `corpus/`, `engine/` |
+| 12 | Final Capstone Demonstration | Manual Review | Full project repo |
 
 ---
 
@@ -353,6 +379,17 @@ pip install -r requirements.txt
 # Run the backend tests (ensure services are running first)
 PYTHONPATH=. pytest tests/
 ```
+
+## 🧰 Populating the `git-test` Branch
+
+A helper script populates the `git-test` branch with mock perfect-score submissions for all weeks (useful for end-to-end grading tests):
+
+```bash
+# From the repo root, on v1-backend branch:
+python populate_all.py
+```
+
+This generates ZIP archives, switches to `git-test`, extracts them into `week1/` through `week12/`, commits, and pushes.
 
 ---
 
