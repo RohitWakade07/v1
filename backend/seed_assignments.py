@@ -16,6 +16,7 @@ async def seed_assignments():
         await db.execute(text("DELETE FROM final_results"))
         await db.execute(text("DELETE FROM submission_results"))
         await db.execute(text("DELETE FROM grading_jobs"))
+        await db.execute(text("DELETE FROM execution_metrics"))
         await db.execute(text("DELETE FROM execution_logs"))
         await db.execute(text("DELETE FROM submission_outbox"))
         await db.execute(text("DELETE FROM submissions"))
