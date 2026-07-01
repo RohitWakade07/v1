@@ -29,7 +29,20 @@ async def seed_assignments():
         await db.execute(text("DELETE FROM submissions"))
         await db.execute(text("DELETE FROM proof_submissions"))
         await db.execute(text("DELETE FROM grading_sessions"))
-        await db.execute(text(f"DELETE FROM assignments WHERE created_by_id = '{mentor_id}'"))
+        
+        # New tables that reference assignments
+        await db.execute(text("DELETE FROM quiz_answer_options"))
+        await db.execute(text("DELETE FROM quiz_answers"))
+        await db.execute(text("DELETE FROM quiz_attempts"))
+        await db.execute(text("DELETE FROM quiz_options"))
+        await db.execute(text("DELETE FROM quiz_questions"))
+        await db.execute(text("DELETE FROM quizzes"))
+        await db.execute(text("DELETE FROM submission_rate_limits"))
+        await db.execute(text("DELETE FROM evaluator_builds"))
+        await db.execute(text("DELETE FROM assignment_grader_mappings"))
+        await db.execute(text("DELETE FROM assignment_configs"))
+        
+        await db.execute(text("DELETE FROM assignments"))
         
         # Week 1
         w1 = Assignment(
