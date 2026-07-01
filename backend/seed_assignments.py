@@ -46,6 +46,7 @@ async def seed_assignments():
         
         # Week 1
         w1 = Assignment(
+            expected_structure="commands.txt",
             id=uuid.uuid4(),
             slug="week1",
             title="Week 1: Workspace Setup",
@@ -62,6 +63,7 @@ async def seed_assignments():
         
         # Week 2
         w2 = Assignment(
+            expected_structure="analyze.sh",
             id=uuid.uuid4(),
             slug="week2",
             title="Week 2: Command-Line Log Analyzer",
@@ -78,6 +80,7 @@ async def seed_assignments():
         
         # Week 3
         w3 = Assignment(
+            expected_structure="organize.sh",
             id=uuid.uuid4(),
             slug="week3",
             title="Week 3: Automated File Organizer",
@@ -93,6 +96,7 @@ async def seed_assignments():
         )
         # Week 4
         w4 = Assignment(
+            expected_structure=".gitignore\nRECOVERY.md\nmain.py",
             id=uuid.uuid4(),
             slug="week4",
             title="Week 4: Local Repository Recovery Challenge",
@@ -109,6 +113,7 @@ async def seed_assignments():
         
         # Week 5
         w5 = Assignment(
+            expected_structure="TEAMWORK.md",
             id=uuid.uuid4(),
             slug="week5",
             title="Week 5: GitHub Collaboration",
@@ -125,6 +130,7 @@ async def seed_assignments():
         
         # Week 6
         w6 = Assignment(
+            expected_structure="analyze.py\nrequirements.txt\nREADME.md",
             id=uuid.uuid4(),
             slug="week6",
             title="Week 6: Text Corpus Analyzer",
@@ -141,6 +147,7 @@ async def seed_assignments():
         
         # Week 7
         w7 = Assignment(
+            expected_structure="collect_wiki.py\nrequirements.txt",
             id=uuid.uuid4(),
             slug="week7",
             title="Week 7: Wikipedia Collector",
@@ -157,6 +164,7 @@ async def seed_assignments():
 
         # Week 8
         w8 = Assignment(
+            expected_structure="main.py\nmetadata_organizer/__init__.py\nmetadata_organizer/loader.py\nmetadata_organizer/tokenizer.py\nmetadata_organizer/writer.py",
             id=uuid.uuid4(),
             slug="week8",
             title="Week 8: Metadata Organizer",
@@ -173,6 +181,7 @@ async def seed_assignments():
 
         # Week 9
         w9 = Assignment(
+            expected_structure="build_index.py\nlookup.py",
             id=uuid.uuid4(),
             slug="week9",
             title="Week 9: Inverted Index",
@@ -189,6 +198,7 @@ async def seed_assignments():
 
         # Week 10
         w10 = Assignment(
+            expected_structure="build_index.py\nmain.py\nquery.py\nREADME.md",
             id=uuid.uuid4(),
             slug="week10",
             title="Week 10: Indexing & Search Architecture",
@@ -205,6 +215,7 @@ async def seed_assignments():
 
         # Week 11
         w11 = Assignment(
+            expected_structure="build_index.py\nmain.py\nquery.py\nREADME.md\nrequirements.txt\ncorpus/doc0.json\ncorpus/doc1.json\ncorpus/doc2.json\nengine/__init__.py",
             id=uuid.uuid4(),
             slug="week11",
             title="Week 11: Final Capstone Development",
@@ -221,6 +232,7 @@ async def seed_assignments():
 
         # Week 12
         w12 = Assignment(
+            expected_structure="build_index.py\nmain.py\nquery.py\nREADME.md\nrequirements.txt\ncorpus/doc0.json\ncorpus/doc1.json\ncorpus/doc2.json\nengine/__init__.py",
             id=uuid.uuid4(),
             slug="week12",
             title="Week 12: Final Capstone Demonstration",
