@@ -1,8 +1,8 @@
 <div align="center">
 
-# Engineering Exploration Program 2
+# Engineering Exploration Program 1
 
-An automated, cloud-native grading platform built for the **Engineering Exploration Program (EEP-2)**. Students submit weekly assignments via GitHub URL or ZIP upload, and the platform automatically evaluates them inside isolated Docker sandboxes — providing instant rubric-based feedback and scores.
+An automated, cloud-native grading platform built for the **Engineering Exploration Program (EEP-1)**. Students submit weekly assignments via GitHub URL or ZIP upload, and the platform automatically evaluates them inside isolated Docker sandboxes — providing instant rubric-based feedback and scores.
 
 [![Category](https://img.shields.io/badge/Category-Software%20%2F%20Web-blue)](#)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
