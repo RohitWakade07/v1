@@ -65,7 +65,7 @@ def run_fresh_container(language: str, image_name: str) -> Any:
         cap_drop=["ALL"],
         security_opt=["no-new-privileges"],
         volumes={
-            volume_name: {"bind": "/tmp/autograder_jobs", "mode": "rw"},
+            volume_name: {"bind": "/autograder_jobs", "mode": "rw"},
         },
         detach=True,
     )
@@ -109,7 +109,7 @@ class DockerExecutor:
         )
 
         container      = None
-        job_dir        = Path("/tmp/autograder_jobs") / submission_id
+        job_dir        = Path("/autograder_jobs") / submission_id
         submission_dir = job_dir / "submission"
         assets_dir     = job_dir / "assets"
         results_dir    = job_dir / "results"
@@ -305,8 +305,8 @@ class DockerExecutor:
             if str(rel_path) != ".":
                 submission_vol_path = f"{job_rel}/submission/{rel_path}".replace("\\", "/")
 
-            container_submission = f"/tmp/autograder_jobs/{submission_vol_path}"
-            container_assets     = f"/tmp/autograder_jobs/{job_rel}/assets"
+            container_submission = f"/autograder_jobs/{submission_vol_path}"
+            container_assets     = f"/autograder_jobs/{job_rel}/assets"
             container_workdir    = container_submission
             if config.get("working_dir"):
                 container_workdir = f"{container_submission}/{config['working_dir']}"
