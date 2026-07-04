@@ -208,6 +208,13 @@ class DockerExecutor:
                     logger.error(f"[PHASE1:GIT] Clone FAILED rc={proc.returncode} stderr={stderr.decode()[:500]}")
                     raise RuntimeError(f"Git clone failed: {stderr.decode()}")
                 
+                # Proactively delete massive unnecessary directories if students accidentally pushed them
+                for huge_dir in ["node_modules", ".next", "dist", "build", "venv", ".venv"]:
+                    huge_path = submission_dir / huge_dir
+                    if huge_path.exists() and huge_path.is_dir():
+                        logger.info(f"[PHASE1:GIT] Removing massive directory to save space: {huge_dir}")
+                        shutil.rmtree(huge_path, ignore_errors=True)
+
                 if path:
                     # Move contents of subpath to root
                     subpath_dir = submission_dir / path
