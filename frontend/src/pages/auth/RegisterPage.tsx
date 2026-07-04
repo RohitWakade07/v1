@@ -14,7 +14,7 @@ interface RegisterFormValues {
   email: string
   rollNumber: string
   password: string
-  classCode: string
+  classCode?: string
 }
 
 const RegisterPage = () => {
@@ -203,7 +203,7 @@ const RegisterPage = () => {
                   id="reg-password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
-                  placeholder="Min. 6 characters"
+                  placeholder="Min. 8 characters + a number"
                   className="input-dark auth-input pr-10"
                   {...register('password')}
                 />

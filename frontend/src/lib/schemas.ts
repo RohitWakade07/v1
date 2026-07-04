@@ -9,8 +9,13 @@ export const registerSchema = z.object({
   fullName: z.string().min(2, 'Full name is required'),
   email: z.string().email('Enter a valid email'),
   rollNumber: z.string().min(3, 'Roll number is required'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  classCode: z.string().min(1, 'Class code is required'),
+  // Must be ≥8 chars and include at least one letter + one number — matches backend regex
+  password: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/(?=.*[A-Za-z])/, 'Password must contain at least one letter')
+    .regex(/(?=.*\d)/, 'Password must contain at least one number'),
+  // Optional — backend accepts students who join a class later
+  classCode: z.string().optional().or(z.literal('')),
 })
 
 export const passwordChangeSchema = z

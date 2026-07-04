@@ -130,21 +130,44 @@ async def get_mentor_assignment(
 @router.get(
     "/students",
     response_model=List[MentorStudentPublic],
-    summary="List students participating in this mentor's assignments",
+    summary="List all enrolled students in this mentor's classrooms",
 )
 async def list_mentor_students(
     current_mentor: Mentor = Depends(get_current_mentor),
     db: AsyncSession = Depends(get_db),
 ):
-    # Get students who have sessions for this mentor's assignments
+    # BUG FIX: The previous query used INNER JOIN on submissions, which meant
+    # only students who had already submitted something were visible. Students
+    # who are enrolled but haven't submitted yet were completely hidden.
+    #
+    # Correct approach: base the query on classroom_enrollments (who actually
+    # belongs to this mentor's classrooms), then LEFT JOIN submissions to get
+    # participation counts without excluding non-submitters.
     result = await db.execute(
-        select(Student, func.count(func.distinct(Submission.assignment_id)), func.count(Submission.id))
-        .join(Submission, Submission.student_id == Student.id)
-        .join(Assignment, Submission.assignment_id == Assignment.id)
-        .where(Assignment.created_by_id == current_mentor.id)
+        select(
+            Student,
+            func.count(func.distinct(Submission.assignment_id)).label("assignments_count"),
+            func.count(Submission.id).label("sessions_count"),
+        )
+        .join(ClassroomEnrollment, ClassroomEnrollment.student_id == Student.id)
+        .join(Classroom, Classroom.id == ClassroomEnrollment.classroom_id)
+        .outerjoin(
+            Submission,
+            (Submission.student_id == Student.id)
+            & (
+                Submission.assignment_id.in_(
+                    select(Assignment.id).where(Assignment.created_by_id == current_mentor.id)
+                )
+            ),
+        )
+        .where(
+            Classroom.mentor_id == current_mentor.id,
+            ClassroomEnrollment.status == "APPROVED",
+        )
         .group_by(Student.id)
+        .order_by(Student.full_name)
     )
-    
+
     rows = result.all()
     return [
         MentorStudentPublic(
