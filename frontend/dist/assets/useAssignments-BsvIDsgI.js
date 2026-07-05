@@ -1,0 +1,1 @@
+import{t as e}from"./authStore-TP2wEd_n.js";import{V as t}from"./index-T8YBDzP1.js";import{n,r}from"./assignments-EDBAANex.js";function i(){return t({queryKey:[`assignments`],queryFn:r,enabled:e(e=>e.isAuthenticated)})}function a(r){let i=e(e=>e.isAuthenticated);return t({queryKey:[`assignments`,r],queryFn:()=>n(r),enabled:i&&!!r})}export{i as n,a as t};

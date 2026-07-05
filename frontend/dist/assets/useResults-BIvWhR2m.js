@@ -1,0 +1,1 @@
+import{t as e}from"./client-BncPQHUd.js";import{V as t}from"./index-T8YBDzP1.js";var n=async()=>{let{data:t}=await e.get(`/results/`);return t},r=async t=>{let{data:n}=await e.get(`/results/${t}`);return n},i=()=>t({queryKey:[`results`],queryFn:n}),a=e=>t({queryKey:[`results`,e],queryFn:()=>r(e??``),enabled:!!e});export{i as n,a as t};

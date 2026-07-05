@@ -1,0 +1,1 @@
+import{n as e}from"./authStore-TP2wEd_n.js";import{n as t}from"./createLucideIcon-SPbejZi2.js";var n=t(),r=({children:t,className:r})=>(0,n.jsx)(`div`,{className:e(`mx-auto max-w-7xl animate-fade-in-up p-6`,r),children:t});export{r as t};
