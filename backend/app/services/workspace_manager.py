@@ -45,18 +45,23 @@ def parse_github_url(url: str):
 def clone_repository(repo_url: str, dest_dir: Path) -> None:
     parsed = parse_github_url(repo_url)
     
-    cmd = ["git", "clone", "--depth", "1"]
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["git", "init"], cwd=str(dest_dir), check=True, capture_output=True)
+    subprocess.run(["git", "remote", "add", "origin", parsed["base_url"]], cwd=str(dest_dir), check=True, capture_output=True)
+    
+    # Configure sparse checkout to explicitly exclude heavy/unnecessary directories
+    subprocess.run(["git", "config", "core.sparseCheckout", "true"], cwd=str(dest_dir), check=True, capture_output=True)
+    sparse_config = dest_dir / ".git" / "info" / "sparse-checkout"
+    sparse_config.write_text("/*\\n!**/node_modules/\\n!**/.venv/\\n!**/venv/\\n!**/.env\\n")
+    
+    fetch_cmd = ["git", "fetch", "--depth", "1", "origin"]
     if parsed["branch"]:
-        cmd.extend(["--branch", parsed["branch"]])
-    
-    cmd.extend([parsed["base_url"], str(dest_dir)])
-    
-    subprocess.run(
-        cmd,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+        fetch_cmd.append(parsed["branch"])
+    else:
+        fetch_cmd.append("HEAD")
+        
+    subprocess.run(fetch_cmd, cwd=str(dest_dir), check=True, capture_output=True)
+    subprocess.run(["git", "checkout", "FETCH_HEAD"], cwd=str(dest_dir), check=True, capture_output=True)
     
     if parsed["path"]:
         # Move contents of subpath to root of dest_dir
