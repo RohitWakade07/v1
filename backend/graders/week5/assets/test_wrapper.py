@@ -1,4 +1,4 @@
-import os, json, subprocess, re, shutil
+﻿import os, json, subprocess, re, shutil
 from pathlib import Path
 
 def _git(args, cwd, timeout=15):
@@ -9,6 +9,7 @@ def _git(args, cwd, timeout=15):
         return 1, "", str(e)
 
 def main():
+    # Install git and pytest since we need to run tests
     subprocess.run(["apt-get", "update"], capture_output=True)
     subprocess.run(["apt-get", "install", "-y", "git"], capture_output=True)
     
@@ -50,7 +51,8 @@ def main():
     
     result = {"clone_ok": False, "clone_error": ""}
     try:
-        c = subprocess.run(["git", "clone", "--depth=50", repo_url, repo_dir],
+        # Added --no-single-branch to fetch all branches for the assignment
+        c = subprocess.run(["git", "clone", "--depth=50", "--no-single-branch", repo_url, repo_dir],
                            capture_output=True, text=True, timeout=60, env=clone_env)
         result["clone_ok"] = (c.returncode == 0)
         if c.returncode != 0:
@@ -100,10 +102,31 @@ def main():
 
         rc_auth, auth_log, _ = _git(["shortlog", "-sn", "--all"], repo_dir)
         result["contributors"] = [l for l in auth_log.splitlines() if l.strip()] if rc_auth == 0 else []
+        
+        # New Feature: Read config.py and sensors.py
+        config_path = Path(repo_dir) / "src" / "config.py"
+        if config_path.exists():
+            result["config_py"] = config_path.read_text(errors="ignore")
+        else:
+            result["config_py"] = ""
+            
+        sensors_path = Path(repo_dir) / "src" / "sensors.py"
+        if sensors_path.exists():
+            result["sensors_py"] = sensors_path.read_text(errors="ignore")
+        else:
+            result["sensors_py"] = ""
+            
+        # New Feature: Run Pytest
+        subprocess.run(["pip", "install", "-r", "requirements.txt"], cwd=repo_dir, capture_output=True)
+        # also fallback to pip install pytest if requirements missing
+        subprocess.run(["pip", "install", "pytest"], cwd=repo_dir, capture_output=True)
+        
+        test_run = subprocess.run(["pytest"], cwd=repo_dir, capture_output=True, text=True)
+        result["tests_passed"] = (test_run.returncode == 0)
+        result["test_output"] = test_run.stdout
 
     with open("result.json", "w") as f:
         json.dump(result, f)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
-

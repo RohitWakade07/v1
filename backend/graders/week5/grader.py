@@ -1,31 +1,7 @@
-"""
-Week 5 Grader: GitHub Collaboration & Pull Requests
-=====================================================
-Students submit a JSON payload (submitted as their "file") containing:
-  {
-    "repo_owner": "their-github-username",
-    "repo_name":  "their-repo-name",
-    "pr_number":  123,
-    "github_token": "ghp_xxx"   # optional but needed for private repos
-  }
-
-The grader:
-  1. Clones the student's GitHub repo (via test_wrapper.py inside Docker)
-  2. Checks for merge conflict markers (absence = good)
-  3. Verifies main branch is clean and up-to-date
-  4. Checks PR review activity via filesystem evidence
-  5. Validates teamwork documentation (TEAMWORK.md or similar)
-  6. Checks for collaboration evidence (multiple contributors)
-"""
-import json
+﻿import json
 from graders.base_grader import BaseGrader, CheckResult, GradingResult
 
-
 class Week5Grader(BaseGrader):
-    """
-    Week 5: GitHub Collaboration.
-    """
-
     def grade(self) -> GradingResult:
         checks: list[CheckResult] = []
 
@@ -107,6 +83,20 @@ class Week5Grader(BaseGrader):
         if not clone_ok:
             return GradingResult(score=1.0 if payload_ok and clone_ok else 0.5, max_score=5.0, passed=False, checks=checks, feedback="Could not clone repository.")
 
+        # Specific check: integration-fix branch exists or merged
+        branches = result.get("branches", [])
+        merged_log = result.get("merged_log", "")
+        has_integration_fix = any("integration-fix" in b for b in branches) or "integration-fix" in merged_log
+        checks.append(CheckResult(
+            name="Integration Fix Branch",
+            passed=has_integration_fix,
+            marks=0.5 if has_integration_fix else 0.0,
+            max_marks=0.5,
+            reason="Found 'integration-fix' branch or merge commit." if has_integration_fix else "No 'integration-fix' branch found.",
+            hint="Create a branch named 'integration-fix' for resolving conflicts.",
+        ))
+
+        # Check: No merge conflict markers
         conflict_files = result.get("conflict_files", [])
         no_conflicts = len(conflict_files) == 0
         checks.append(CheckResult(
@@ -117,57 +107,53 @@ class Week5Grader(BaseGrader):
             reason="No unresolved merge conflict markers found." if no_conflicts else f"Conflict markers in: {', '.join(conflict_files[:5])}",
             hint="Resolve merge conflicts completely and commit the resolution.",
         ))
-
-        commits = result.get("commits", [])
-        commit_count = len(commits)
-        main_commits_ok = commit_count >= 3
-        checks.append(CheckResult(
-            name=f"Commit History (found {commit_count}, need ≥ 3)",
-            passed=main_commits_ok,
-            marks=0.5 if main_commits_ok else round(commit_count / 6.0, 2),
-            max_marks=0.5,
-            reason=f"{commit_count} commit(s) found in main branch.",
-            hint="Ensure the main branch has at least 3 commits showing incremental work.",
-        ))
-
-        branches = result.get("branches", [])
-        has_feature_branch = any(
-            b.lower() not in {"main", "master", "head"} and "head" not in b.lower()
-            for b in branches
-        )
-        merged_log = result.get("merged_log", "")
-        has_merge_commit = bool(merged_log)
-        pr_evidence = has_feature_branch or has_merge_commit
         
-        feature_branch_name = [b for b in branches if b.lower() not in ('main','master','head') and "head" not in b.lower()]
-        feature_branch_name = feature_branch_name[0] if feature_branch_name else ""
-
+        # Check: Pytest passed
+        tests_passed = result.get("tests_passed", False)
         checks.append(CheckResult(
-            name="PR / Feature Branch Evidence",
-            passed=pr_evidence,
-            marks=1.0 if pr_evidence else 0.0,
+            name="Unit Tests Passing",
+            passed=tests_passed,
+            marks=1.0 if tests_passed else 0.0,
             max_marks=1.0,
-            reason=(
-                f"Feature branch found: {feature_branch_name}"
-                if has_feature_branch else
-                "Merge commit found in history." if has_merge_commit else
-                "No feature branch or merge commits found."
-            ),
-            hint=(
-                "Create a feature branch and raise a PR. "
-                "Evidence should be visible in the repository's branch list or merge history."
-            ),
+            reason="pytest executed successfully and all tests passed." if tests_passed else "Unit tests failed. See GitHub Actions or run pytest locally.",
+            hint="Fix the broken test in tests/test_controller.py and any edge case bugs.",
+        ))
+        
+        # Check: Dynamic Configuration (os.environ in config.py)
+        config_py = result.get("config_py", "")
+        has_env = "os.environ" in config_py or "getenv" in config_py
+        checks.append(CheckResult(
+            name="Dynamic Configuration (MAX_SPEED)",
+            passed=has_env,
+            marks=0.5 if has_env else 0.0,
+            max_marks=0.5,
+            reason="Found os.environ or getenv in config.py." if has_env else "Did not find os.environ or getenv in config.py.",
+            hint="Address the code review comment by making MAX_SPEED configurable via os.environ.",
+        ))
+        
+        # Check: Sensors Docstring
+        sensors_py = result.get("sensors_py", "")
+        # very basic check to see if there's a docstring in calibrate
+        has_docstring = '\"\"\"' in sensors_py or '\'\'\'' in sensors_py
+        checks.append(CheckResult(
+            name="Sensor Calibration Docstring",
+            passed=has_docstring,
+            marks=0.5 if has_docstring else 0.0,
+            max_marks=0.5,
+            reason="Found docstring in sensors.py." if has_docstring else "Missing docstring in sensors.py.",
+            hint="Add a docstring to the calibrate function in sensors.py as requested in review comments.",
         ))
 
+        # Teamwork Check
         teamwork_path = result.get("teamwork_path")
         teamwork_words = result.get("teamwork_words", 0)
         has_teamwork_doc = teamwork_path is not None
         teamwork_content_ok = teamwork_words >= 30
         checks.append(CheckResult(
-            name="Teamwork Documentation (TEAMWORK.md)",
+            name="Teamwork Documentation",
             passed=teamwork_content_ok,
-            marks=1.0 if teamwork_content_ok else (0.5 if has_teamwork_doc else 0.0),
-            max_marks=1.0,
+            marks=0.5 if teamwork_content_ok else (0.2 if has_teamwork_doc else 0.0),
+            max_marks=0.5,
             reason=(
                 f"{teamwork_path} found with {teamwork_words} words."
                 if has_teamwork_doc
@@ -176,15 +162,16 @@ class Week5Grader(BaseGrader):
             hint="Create TEAMWORK.md describing how your team collaborated, divided work, and resolved issues.",
         ))
 
+        # Contributors Check
         contributors = result.get("contributors", [])
         multiple_contributors = len(contributors) >= 2
         checks.append(CheckResult(
-            name=f"Multiple Contributors ({len(contributors)} found)",
+            name="Multiple Contributors",
             passed=multiple_contributors,
-            marks=1.0 if multiple_contributors else 0.0,
-            max_marks=1.0,
-            reason=f"Found {len(contributors)} unique contributor(s): {', '.join(contributors[:3])}",
-            hint="Ensure all team members commit directly to the shared repository, not just one person pushing everyone's code.",
+            marks=0.5 if multiple_contributors else 0.0,
+            max_marks=0.5,
+            reason=f"Found {len(contributors)} unique contributor(s).",
+            hint="Ensure all team members commit directly to the shared repository.",
         ))
 
         total_score = sum(c.marks for c in checks)
