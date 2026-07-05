@@ -176,7 +176,7 @@ async def delete_announcement(
 
 @router.get("/student/announcements", response_model=List[AnnouncementPublic], summary="List announcements for students")
 async def list_announcements_student(
-    current_student: Student = Depends(get_approved_student),
+    current_student: Student = Depends(get_current_student),
     db: AsyncSession = Depends(get_db),
 ):
     now = datetime.utcnow()
@@ -202,7 +202,7 @@ async def list_announcements_student(
 @router.post("/student/announcements/{ann_id}/read", status_code=200, summary="Mark announcement as read (student)")
 async def mark_announcement_read_student(
     ann_id: str,
-    current_student: Student = Depends(get_approved_student),
+    current_student: Student = Depends(get_current_student),
     db: AsyncSession = Depends(get_db),
 ):
     aid = uuid.UUID(ann_id)
@@ -267,7 +267,7 @@ async def mark_announcement_read_mentor(
 
 @router.get("/student/notifications", response_model=List[NotificationPublic], summary="Get top 5 notifications for student")
 async def get_student_notifications(
-    current_student: Student = Depends(get_approved_student),
+    current_student: Student = Depends(get_current_student),
     db: AsyncSession = Depends(get_db),
 ):
     notifs = (await db.execute(
@@ -282,7 +282,7 @@ async def get_student_notifications(
 @router.post("/student/notifications/{notif_id}/read", status_code=200, summary="Mark notification as read (student)")
 async def mark_notification_read_student(
     notif_id: str,
-    current_student: Student = Depends(get_approved_student),
+    current_student: Student = Depends(get_current_student),
     db: AsyncSession = Depends(get_db),
 ):
     nid = uuid.UUID(notif_id)
@@ -299,7 +299,7 @@ async def mark_notification_read_student(
 
 @router.post("/student/notifications/read-all", status_code=200, summary="Mark all notifications as read (student)")
 async def mark_all_notifications_read_student(
-    current_student: Student = Depends(get_approved_student),
+    current_student: Student = Depends(get_current_student),
     db: AsyncSession = Depends(get_db),
 ):
     notifs = (await db.execute(

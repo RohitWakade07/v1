@@ -146,7 +146,7 @@ def main():
 
     # Unknown command
     rc, out, err = run_with_stdin(["foobarcommand", "quit"])
-    if rc != 124 and out.strip():
+    if rc != 124 and any(w in out.lower() for w in ["error", "invalid", "unknown", "not recognized"]):
         pts_err += 5.0
         feedback.append("error handling: handles unknown commands (prints error message).")
     else:
@@ -154,7 +154,7 @@ def main():
 
     # stats with missing file
     rc, out, err = run_with_stdin(["stats nonexistent_file_xyz.txt", "quit"])
-    if rc != 124 and ("error" in out.lower() or "not found" in out.lower() or out.strip()):
+    if rc != 124 and any(w in out.lower() for w in ["error", "not found", "no such file"]):
         pts_err += 5.0
         feedback.append("error handling: handles missing file gracefully.")
     else:

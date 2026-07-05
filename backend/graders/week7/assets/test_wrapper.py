@@ -18,7 +18,7 @@ import time
 
 SCRIPT = "collect_wiki.py"
 CORPUS_DIR = "corpus"
-TIMEOUT = 60  # web scraping may be slow
+TIMEOUT = 25  # web scraping may be slow
 
 REQUIRED_KEYS = {"title", "url", "text"}
 MIN_WORDS_PER_DOC = 50

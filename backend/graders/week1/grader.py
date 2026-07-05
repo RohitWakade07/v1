@@ -44,7 +44,8 @@ class Week1Grader(BaseGrader):
             )
         )
 
-        eep_dir = self.workspace / "eep-software"
+        eep_dirs = [d for d in self.workspace.rglob("eep-software") if d.is_dir()]
+        eep_dir = eep_dirs[0] if eep_dirs else self.workspace / "eep-software"
 
         # Check 2: 12 week directories exist (0.1 marks each, max 1.2 marks)
         week_dirs_passed = 0
@@ -150,17 +151,15 @@ class Week1Grader(BaseGrader):
         if bashrc_path.exists() and bashrc_path.is_file():
             try:
                 content = bashrc_path.read_text(errors="ignore")
-                alias_lines = [
-                    line for line in content.splitlines()
-                    if line.strip().startswith("alias ")
-                ]
-                if len(alias_lines) >= 2:
+                alias_count = content.count("alias ")
+                
+                if alias_count >= 2:
                     bashrc_passed = True
-                    bashrc_reason = f"Found {len(alias_lines)} alias definition(s) in .bashrc."
+                    bashrc_reason = f"Found {alias_count} alias definition(s) in .bashrc."
                     bashrc_hint = ""
                     bashrc_marks = 0.5
                 else:
-                    bashrc_reason = f"Found only {len(alias_lines)} alias definition(s) in .bashrc (need at least 2)."
+                    bashrc_reason = f"Found only {alias_count} alias definition(s) in .bashrc (need at least 2)."
                     bashrc_hint = "Add at least two aliases (e.g. alias ll='ls -al') to .bashrc."
             except Exception as e:
                 bashrc_reason = f"Failed to read .bashrc: {e}"

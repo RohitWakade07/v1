@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr
@@ -219,6 +219,47 @@ async def list_all_sessions(
     )
 
 
+
+from app.schemas.schemas import AssignmentPublic
+
+@router.get(
+    "/assignments/all",
+    response_model=List[AssignmentPublic],
+    summary="List all assignments across all mentors (admin only)",
+)
+async def list_all_assignments(
+    _: Mentor = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Assignment)
+        .order_by(Assignment.created_at.desc())
+    )
+    assignments = result.scalars().all()
+    
+    return [
+        AssignmentPublic(
+            id=a.id,
+            slug=a.slug,
+            title=a.title,
+            description=a.description,
+            category=a.category,
+            max_score=a.max_score,
+            deadline=a.deadline,
+            is_published=a.is_published,
+            is_archived=a.is_archived,
+            late_penalty_pct=a.late_penalty_pct or 0.0,
+            resource_links=a.resource_links,
+            submission_filename=a.submission_filename,
+            submission_instructions=a.submission_instructions,
+            expected_structure=a.expected_structure,
+            expected_media_url=a.expected_media_url,
+            created_by_id=a.created_by_id,
+            created_at=a.created_at,
+            updated_at=getattr(a, "updated_at", None),
+        )
+        for a in assignments
+    ]
 # ── Submissions (raw queue/processing records) ────────────────────────
 
 @router.get(
@@ -276,43 +317,6 @@ async def list_all_submissions_admin(
     )
 
 
-# ── Assignments (all, including unpublished) ──────────────────────────
-
-@router.get(
-    "/assignments/all",
-    response_model=list[AssignmentPublic],
-    summary="List all assignments regardless of status (admin only)",
-)
-async def list_all_assignments_admin(
-    _: Mentor = Depends(get_current_admin),
-    db: AsyncSession = Depends(get_db),
-):
-    result = await db.execute(
-        select(Assignment).where(Assignment.is_archived == False).order_by(Assignment.created_at.desc())
-    )
-    assignments = result.scalars().all()
-    return [
-        AssignmentPublic(
-            id=a.id,
-            slug=a.slug,
-            title=a.title,
-            description=a.description,
-            category=a.category,
-            max_score=a.max_score,
-            deadline=a.deadline,
-            is_published=a.is_published,
-            is_archived=a.is_archived,
-            late_penalty_pct=a.late_penalty_pct or 0.0,
-            submission_filename=a.submission_filename,
-            submission_instructions=a.submission_instructions,
-              expected_structure=a.expected_structure,
-              expected_media_url=a.expected_media_url,
-            created_by_id=a.created_by_id,
-            created_at=a.created_at,
-            updated_at=a.updated_at,
-        )
-        for a in assignments
-    ]
 
 
 # ── Create Mentor (admin only) ────────────────────────────────────────
@@ -375,6 +379,85 @@ async def create_mentor(
     )
 
 
+
+from typing import Optional
+
+class UpdateMentorRequest(BaseModel):
+    username: Optional[str] = None
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    password: Optional[str] = None
+    role: Optional[str] = None
+    is_active: Optional[bool] = None
+
+@router.patch(
+    "/mentors/{mentor_id}",
+    response_model=AdminMentorPublic,
+    summary="Update mentor details (admin only)",
+)
+async def update_mentor(
+    mentor_id: uuid.UUID,
+    body: UpdateMentorRequest,
+    _: Mentor = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Mentor).where(Mentor.id == mentor_id))
+    mentor = result.scalar_one_or_none()
+    if not mentor:
+        raise HTTPException(status_code=404, detail="Mentor not found")
+
+    if body.username is not None and body.username != mentor.username:
+        existing = await db.execute(select(Mentor).where(Mentor.username == body.username))
+        if existing.scalar_one_or_none():
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Username '{body.username}' is already taken.")
+        mentor.username = body.username
+    
+    if body.email is not None and body.email != mentor.email:
+        existing = await db.execute(select(Mentor).where(Mentor.email == body.email))
+        if existing.scalar_one_or_none():
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Email '{body.email}' is already registered.")
+        mentor.email = body.email
+
+    if body.full_name is not None:
+        mentor.full_name = body.full_name
+    if body.password is not None and body.password:
+        mentor.hashed_password = hash_password(body.password)
+    if body.role is not None:
+        mentor.role = UserRole.ADMIN if body.role == "admin" else UserRole.MENTOR
+    if body.is_active is not None:
+        mentor.is_active = body.is_active
+
+    await db.commit()
+    await db.refresh(mentor)
+
+    return AdminMentorPublic(
+        id=str(mentor.id),
+        username=mentor.username,
+        full_name=mentor.full_name,
+        email=mentor.email,
+        role=mentor.role.value if hasattr(mentor.role, "value") else str(mentor.role),
+        is_active=mentor.is_active,
+        created_at=mentor.created_at,
+    )
+
+@router.delete(
+    "/mentors/{mentor_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a mentor account (admin only)",
+)
+async def delete_mentor(
+    mentor_id: uuid.UUID,
+    _: Mentor = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Mentor).where(Mentor.id == mentor_id))
+    mentor = result.scalar_one_or_none()
+    if not mentor:
+        raise HTTPException(status_code=404, detail="Mentor not found")
+    
+    await db.delete(mentor)
+    await db.commit()
+    return None
 # ── Admin Drill-Down Routes ──────────────────────────────────────────
 
 from app.models.models import Classroom, ClassroomEnrollment
@@ -427,7 +510,7 @@ async def list_mentor_classrooms(
         AdminClassroomPublic(
             id=str(c.id),
             name=c.name,
-            join_code=c.join_code,
+            join_code=c.class_code,
             created_at=c.created_at,
         ) for c in classrooms
     ]
@@ -449,7 +532,7 @@ async def get_classroom_details(
     return AdminClassroomPublic(
         id=str(classroom.id),
         name=classroom.name,
-        join_code=classroom.join_code,
+        join_code=classroom.class_code,
         created_at=classroom.created_at,
     )
 

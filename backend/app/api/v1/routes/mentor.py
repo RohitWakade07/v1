@@ -30,7 +30,7 @@ from app.schemas.schemas import (
     MentorAnalyticsSummary,
     PaginatedResponse,
 )
-from sqlalchemy import func
+from sqlalchemy import func, or_
 import math
 
 router = APIRouter(prefix="/mentor", tags=["Mentor Portal Phase 2"])
@@ -237,10 +237,7 @@ async def list_mentor_sessions(
         .join(Student, Submission.student_id == Student.id)
         .join(Assignment, Submission.assignment_id == Assignment.id)
         .where(
-            or_(
-                Assignment.is_published == True,
-                Assignment.created_by_id == current_mentor.id
-            ),
+            Assignment.created_by_id == current_mentor.id,
             Assignment.is_archived == False
         )
     )
@@ -327,20 +324,31 @@ async def get_mentor_analytics(
     rows = result.all()
     
     total_submissions = len(rows)
-    completed_sessions = [r for r in rows if r[0].status in [SubmissionStatus.COMPLETED, SubmissionStatus.FAILED, SubmissionStatus.VALIDATION_ERROR]]
+    completed_sessions_list = [r for r in rows if r[0].status in [SubmissionStatus.COMPLETED, SubmissionStatus.FAILED, SubmissionStatus.VALIDATION_ERROR]]
     
-    completion_rate = (len(completed_sessions) / total_submissions * 100) if total_submissions > 0 else 0.0
+    completion_rate = (len(completed_sessions_list) / total_submissions * 100) if total_submissions > 0 else 0.0
     
-    total_score = sum(r[0].score or 0.0 for r in completed_sessions)
-    avg_score = (total_score / len(completed_sessions)) if completed_sessions else 0.0
+    total_score = sum(r[0].score or 0.0 for r in completed_sessions_list)
+    avg_score = (total_score / len(completed_sessions_list)) if completed_sessions_list else 0.0
     
     # Calculate unique students
     student_ids = set(r[0].student_id for r in rows)
     total_students = len(student_ids)
+
+    # Enrollment counts (approved / pending) from mentor's classrooms
+    enroll_result = await db.execute(
+        select(ClassroomEnrollment.status, func.count(ClassroomEnrollment.id))
+        .join(Classroom, ClassroomEnrollment.classroom_id == Classroom.id)
+        .where(Classroom.mentor_id == current_mentor.id)
+        .group_by(ClassroomEnrollment.status)
+    )
+    enrollment_counts = {row[0]: row[1] for row in enroll_result.all()}
+    approved_students = enrollment_counts.get("APPROVED", 0)
+    pending_students = enrollment_counts.get("PENDING", 0)
     
     # Distributions
     score_distribution = {"0-20": 0, "21-40": 0, "41-60": 0, "61-80": 0, "81-100": 0}
-    for session, assignment in completed_sessions:
+    for session, assignment in completed_sessions_list:
         score_pct = ((session.score or 0.0) / assignment.max_score * 100) if assignment.max_score > 0 else 0
         if score_pct <= 20: score_distribution["0-20"] += 1
         elif score_pct <= 40: score_distribution["21-40"] += 1
@@ -364,6 +372,10 @@ async def get_mentor_analytics(
         completion_rate=completion_rate,
         avg_score=avg_score,
         total_submissions=total_submissions,
+        total_sessions=total_submissions,
+        completed_sessions=len(completed_sessions_list),
+        approved_students=approved_students,
+        pending_students=pending_students,
         score_distribution=score_distribution,
         assignments_participation=assignments_participation,
         category_breakdown=category_breakdown,

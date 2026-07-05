@@ -27,8 +27,6 @@ const MentorDashboard    = lazy(() => import('@/pages/mentor/DashboardPage'))
 const MentorProfile      = lazy(() => import('@/pages/mentor/ProfilePage'))
 const MentorClassrooms   = lazy(() => import('@/pages/mentor/classrooms/ClassroomsPage'))
 const MentorAssignments  = lazy(() => import('@/pages/mentor/assignments/AssignmentsPage'))
-const MentorManageAssignments = lazy(() => import('@/pages/mentor/assignments/AssignmentManagePage'))
-const MentorCreateAssignment = lazy(() => import('@/pages/mentor/assignments/CreateAssignmentPage'))
 const MentorAssignmentDetail = lazy(() => import('@/pages/mentor/assignments/AssignmentDetailPage'))
 const MentorStudents     = lazy(() => import('@/pages/mentor/students/StudentsPage'))
 const MentorSubmissions  = lazy(() => import('@/pages/mentor/submissions/SubmissionsPage'))
@@ -98,8 +96,6 @@ export const AppRouter = () => (
           <Route path="profile"              element={<MentorProfile />} />
           <Route path="classrooms"           element={<MentorClassrooms />} />
           <Route path="assignments"          element={<MentorAssignments />} />
-          <Route path="assignments/manage"   element={<MentorManageAssignments />} />
-          <Route path="assignments/create"   element={<MentorCreateAssignment />} />
           <Route path="assignments/:id"      element={<MentorAssignmentDetail />} />
           <Route path="students"             element={<MentorStudents />} />
           <Route path="submissions"          element={<MentorSubmissions />} />

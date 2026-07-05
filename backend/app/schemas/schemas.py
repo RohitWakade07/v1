@@ -273,6 +273,10 @@ class MentorAnalyticsSummary(BaseModel):
     completion_rate: float
     avg_score: float
     total_submissions: int
+    total_sessions: int = 0
+    completed_sessions: int = 0
+    approved_students: int = 0
+    pending_students: int = 0
     score_distribution: dict[str, int]
     assignments_participation: dict[str, int]
     category_breakdown: dict[str, int]
@@ -313,7 +317,8 @@ class EvaluatorBuildPublic(BaseModel):
 
 class NotificationPublic(BaseModel):
     id: uuid.UUID
-    mentor_id: uuid.UUID
+    recipient_id: uuid.UUID
+    recipient_type: str
     title: str
     message: str
     is_read: bool
@@ -421,6 +426,7 @@ class ClassroomStudentEnrollmentResponse(BaseModel):
     student_name: str
     student_roll: str
     student_email: str
+    classroom_id: Optional[uuid.UUID] = None
     status: str
     joined_at: datetime
 

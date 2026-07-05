@@ -9,11 +9,11 @@ import { useAuthStore } from '@/store/authStore'
 import { formatDate } from '@/lib/utils'
 
 export const DashboardPage = () => {
-  const { data: assignments, isLoading: assignmentsLoading } = useAssignments()
+  const { data: assignmentsData, isLoading: assignmentsLoading } = useAssignments()
   const { data: analytics, isLoading: analyticsLoading } = useMentorAnalytics()
   const { username, role } = useAuthStore()
 
-  const allAssignments = Array.isArray(assignments) ? assignments : []
+  const allAssignments = assignmentsData?.data || []
   const publishedCount = allAssignments.filter((a) => a.is_published).length
   const draftCount = allAssignments.length - publishedCount
   const recentAssignments = [...allAssignments]
@@ -120,9 +120,6 @@ export const DashboardPage = () => {
           <div className="card-dark h-full p-5">
             <h3 className="mb-4 font-display text-base font-semibold text-text-primary">Quick Actions</h3>
             <div className="space-y-3">
-              <Link to="/mentor/assignments/create" className="btn-primary w-full justify-center">
-                <PlusCircle size={16} /> Create New Assignment
-              </Link>
               <Link to="/mentor/assignments" className="btn-secondary w-full justify-center">
                 <BookOpen size={16} /> View All Assignments
               </Link>

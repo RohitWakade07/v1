@@ -30,6 +30,21 @@ const App = () => {
     }
   }, [token, role, profile, setProfile])
 
+  // Poll for profile updates if student has any PENDING classroom enrollments
+  useEffect(() => {
+    if (token && role === 'student' && profile) {
+      const isPending = profile.classrooms?.some(c => c.status === 'PENDING')
+      if (isPending) {
+        const interval = setInterval(() => {
+          getStudentProfile()
+            .then((data) => setProfile(data))
+            .catch((err) => console.error('Failed to poll student profile:', err))
+        }, 10000)
+        return () => clearInterval(interval)
+      }
+    }
+  }, [token, role, profile, setProfile])
+
   return (
     <>
       <AppRouter />

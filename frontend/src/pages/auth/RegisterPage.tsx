@@ -26,47 +26,63 @@ const RegisterPage = () => {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormValues>({ resolver: zodResolver(registerSchema) })
 
   const onSubmit = handleSubmit(async (values) => {
-    // 1. Register the student
-    await registerStudent({
-      full_name: values.fullName,
-      email: values.email,
-      roll_number: values.rollNumber,
-      password: values.password,
-      class_code: values.classCode,
-    })
-
-    // 2. Automatically log in to obtain the access token
-    const loginResponse = await loginStudent(values.rollNumber, values.password)
-
-    // Save token to auth store temporarily to authorize getStudentProfile
-    useAuthStore.setState({ token: loginResponse.access_token })
-
-    // 3. Fetch the complete profile details
-    let profileData = {
-      roll_number: loginResponse.roll_number,
-      student_uuid: loginResponse.student_uuid,
-      role: 'student' as const,
-    }
-
     try {
-      const fetchedProfile = await getStudentProfile()
-      profileData = { ...profileData, ...fetchedProfile }
-    } catch (error) {
-      console.error('Failed to fetch student profile after registration:', error)
+      // 1. Register the student
+      await registerStudent({
+        full_name: values.fullName,
+        email: values.email,
+        roll_number: values.rollNumber,
+        password: values.password,
+        class_code: values.classCode,
+      })
+
+      // 2. Automatically log in to obtain the access token
+      const loginResponse = await loginStudent(values.rollNumber, values.password)
+
+      // Save token to auth store temporarily to authorize getStudentProfile
+      useAuthStore.setState({ token: loginResponse.access_token })
+
+      // 3. Fetch the complete profile details
+      let profileData = {
+        roll_number: loginResponse.roll_number,
+        student_uuid: loginResponse.student_uuid,
+        role: 'student' as const,
+      }
+
+      try {
+        const fetchedProfile = await getStudentProfile()
+        profileData = { ...profileData, ...fetchedProfile }
+      } catch (error) {
+        console.error('Failed to fetch student profile after registration:', error)
+      }
+
+      loginStudentStore(loginResponse.access_token, profileData)
+
+      addNotification({
+        type: 'success',
+        title: 'Account created!',
+        message: 'Welcome to the E-Yantra EEP Platform.',
+      })
+      navigate('/')
+    } catch (error: any) {
+      console.error('Registration failed:', error)
+      const errorDetail = error?.response?.data?.detail
+      if (typeof errorDetail === 'string') {
+        const lowerDetail = errorDetail.toLowerCase()
+        if (lowerDetail.includes('email')) {
+          setError('email', { type: 'manual', message: errorDetail })
+        } else if (lowerDetail.includes('roll')) {
+          setError('rollNumber', { type: 'manual', message: errorDetail })
+        } else if (lowerDetail.includes('class')) {
+          setError('classCode', { type: 'manual', message: errorDetail })
+        }
+      }
     }
-
-    loginStudentStore(loginResponse.access_token, profileData)
-
-    addNotification({
-      type: 'success',
-      title: 'Account created!',
-      message: 'Welcome to the E-Yantra EEP Platform.',
-    })
-    navigate('/')
   })
 
   return (

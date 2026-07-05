@@ -398,10 +398,10 @@ async def get_all_quiz_results_student(
             quiz_id=quiz.id,
             assignment_id=quiz.assignment_id,
             quiz_title=quiz.title,
-            total_score=attempt.total_score,
-            max_score=attempt.max_score,
-            attempt_number=attempt.attempt_number,
-            max_attempts=quiz.max_attempts,
+            total_score=attempt.total_score or 0,
+            max_score=attempt.max_score or 0,
+            attempt_number=attempt.attempt_number or 1,
+            max_attempts=quiz.max_attempts or 1,
             submitted_at=attempt.submitted_at,
         ))
     return results
@@ -580,9 +580,9 @@ async def get_quiz_result_student(
     return QuizAttemptResult(
         attempt_id=attempt.id,
         quiz_id=qid,
-        total_score=attempt.total_score,
-        max_score=attempt.max_score,
-        attempt_number=attempt.attempt_number,
+        total_score=attempt.total_score or 0,
+        max_score=attempt.max_score or 0,
+        attempt_number=attempt.attempt_number or 1,
         max_attempts=quiz.max_attempts,
         submitted_at=attempt.submitted_at,
         question_results=question_results,

@@ -132,32 +132,38 @@ class Week3Grader(BaseGrader):
         no_args_passed, nonexistent_passed = False, False
         no_args_reason, nonexistent_reason = "Script not found.", "Script not found."
 
-        if organize_sh.exists():
-            try:
-                r = subprocess.run(
-                    ["bash", "organize.sh"],
-                    cwd=str(week_dir), capture_output=True, text=True, timeout=5,
-                )
-                if r.returncode != 0:
-                    no_args_passed = True
-                    no_args_reason = f"Correctly rejected empty call (exit {r.returncode})."
-                else:
-                    no_args_reason = "Script exited 0 when called with no arguments (should fail)."
-            except Exception as e:
-                no_args_reason = f"Error: {e}"
+        import json
+        result_json = week_dir / "result.json"
+        
+        no_args_exit = None
+        nonexistent_exit = None
+        main_exit = exit_code
 
+        if result_json.exists():
             try:
-                r2 = subprocess.run(
-                    ["bash", "organize.sh", "/totally_nonexistent_dir_xyz"],
-                    cwd=str(week_dir), capture_output=True, text=True, timeout=5,
-                )
-                if r2.returncode != 0:
-                    nonexistent_passed = True
-                    nonexistent_reason = f"Correctly rejected non-existent dir (exit {r2.returncode})."
-                else:
-                    nonexistent_reason = "Script exited 0 for non-existent directory (should fail)."
+                with open(result_json, "r") as f:
+                    res = json.load(f)
+                    no_args_exit = res.get("no_args_exit")
+                    nonexistent_exit = res.get("nonexistent_exit")
+                    main_exit = res.get("main_exit")
             except Exception as e:
-                nonexistent_reason = f"Error: {e}"
+                pass
+        
+        if main_exit is not None and main_exit != 0:
+            exit_reason = f"Script exited with non-zero code: {main_exit}."
+            exit_passed = False
+        
+        if no_args_exit is not None and no_args_exit != 0:
+            no_args_passed = True
+            no_args_reason = f"Correctly rejected empty call (exit {no_args_exit})."
+        elif no_args_exit == 0:
+            no_args_reason = "Script exited 0 when called with no arguments (should fail)."
+        
+        if nonexistent_exit is not None and nonexistent_exit != 0:
+            nonexistent_passed = True
+            nonexistent_reason = f"Correctly rejected non-existent dir (exit {nonexistent_exit})."
+        elif nonexistent_exit == 0:
+            nonexistent_reason = "Script exited 0 for non-existent directory (should fail)."
 
         checks.append(CheckResult(
             name="Error Handling: No Arguments",

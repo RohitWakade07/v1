@@ -1,7 +1,7 @@
 assignment_slug: "week3"
 target_file: "organize.sh"
 docker_image: "bash:5"
-execution_command: "bash organize.sh test_mixed"
+execution_command: "bash test_wrapper.sh"
 timeout_seconds: 30
 memory_limit_mb: 512
 cpu_limit: 1.0
@@ -9,3 +9,5 @@ network_disabled: true
 assets:
   - source: "test_mixed"
     target: "test_mixed"
+  - source: "test_wrapper.sh"
+    target: "test_wrapper.sh"

@@ -95,3 +95,6 @@ secrets.json
 # Jupyter
 # =========================
 .ipynb_checkpoints/
+
+# Test Harness Workspaces
+test_workspace_*/

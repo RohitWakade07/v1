@@ -17,7 +17,7 @@ import sys
 SCRIPT  = "main.py"
 CORPUS  = "corpus"  # injected by grader assets
 OUTPUT  = "metadata.json"
-TIMEOUT = 30
+TIMEOUT = 12
 
 
 def main():

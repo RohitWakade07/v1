@@ -24,6 +24,24 @@ export const createMentor = async (payload: CreateMentorPayload): Promise<AdminM
   return data
 }
 
+export interface UpdateMentorPayload {
+  username?: string
+  full_name?: string
+  email?: string
+  password?: string
+  role?: 'mentor' | 'admin'
+  is_active?: boolean
+}
+
+export const updateMentor = async (id: string, payload: UpdateMentorPayload): Promise<AdminMentor> => {
+  const { data } = await apiClient.patch<AdminMentor>(`/admin/mentors/${id}`, payload)
+  return data
+}
+
+export const deleteMentor = async (id: string): Promise<void> => {
+  await apiClient.delete(`/admin/mentors/${id}`)
+}
+
 export const listAllAssignments = async (): Promise<Assignment[]> => {
   const { data } = await apiClient.get<Assignment[]>('/admin/assignments/all')
   return data

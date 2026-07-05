@@ -128,7 +128,7 @@ class Week2Grader(BaseGrader):
             ))
 
             # ── Check 6: Status code 200 count is correct ─────────────────
-            status_200_ok = str(self.EXPECTED_STATUS_200) in report_content
+            status_200_ok = bool(re.search(rf"\b{self.EXPECTED_STATUS_200}\b", report_content))
             checks.append(CheckResult(
                 name=f"HTTP 200 Count (expected {self.EXPECTED_STATUS_200})",
                 passed=status_200_ok,
@@ -140,8 +140,8 @@ class Week2Grader(BaseGrader):
             ))
 
             # ── Check 7: Both 4xx and 5xx codes appear ────────────────────
-            has_404 = "404" in report_content
-            has_500 = "500" in report_content
+            has_404 = bool(re.search(r"\b404\b", report_content))
+            has_500 = bool(re.search(r"\b500\b", report_content))
             error_codes_ok = has_404 and has_500
             checks.append(CheckResult(
                 name="Error HTTP Status Codes Present (404 and 500)",

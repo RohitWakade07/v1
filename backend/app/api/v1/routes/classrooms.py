@@ -138,6 +138,7 @@ async def list_classroom_enrollments(
             student_name=student.full_name,
             student_roll=student.roll_number,
             student_email=student.email,
+            classroom_id=enrollment.classroom_id,
             status=enrollment.status,
             joined_at=enrollment.joined_at,
         )
@@ -260,7 +261,15 @@ async def join_classroom(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"You are already approved in classroom '{classroom.name}' and cannot join a new one.",
             )
-        # Clear out any stale pending/rejected enrollment requests
+        if e.status == "PENDING" and e.classroom_id == classroom.id:
+            # Already pending for THIS classroom. Do nothing.
+            return {
+                "message": f"You already have a pending request for classroom '{classroom.name}'.",
+                "classroom_name": classroom.name,
+            }
+        
+        # Clear out any stale pending/rejected enrollment requests for OTHER classrooms
+        # or rejected requests for THIS classroom
         await db.delete(e)
 
     # Flush deletes first to avoid IntegrityError with the UniqueConstraint

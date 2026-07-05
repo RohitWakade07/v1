@@ -40,6 +40,18 @@ def main():
         print(json.dumps({"breakdown": breakdown, "feedback": feedback, "bonus_features": []}))
         return
 
+    # Anti-spoof check
+    if os.path.isfile(LOOKUP_SCRIPT):
+        try:
+            r_spoof = subprocess.run([sys.executable, LOOKUP_SCRIPT], input="asdfasdfasdf\\n", capture_output=True, text=True, timeout=TIMEOUT)
+            out_lower_spoof = r_spoof.stdout.lower()
+            if "page1" in out_lower_spoof or "page2" in out_lower_spoof:
+                feedback.append("Execution failed: script unconditionally returned documents for invalid query.")
+                print(json.dumps({"breakdown": breakdown, "feedback": feedback, "bonus_features": []}))
+                return
+        except Exception:
+            pass
+
     # ── 2. Build Index Execution (20 pts) ───────────────────────────────
     try:
         r_build = subprocess.run(
@@ -101,10 +113,13 @@ def main():
             
             # Very basic check for query results. It should print document names.
             out_lower = r_lookup.stdout.lower()
-            if "doc" in out_lower or ".json" in out_lower:
+            corpus_files = [f.lower() for f in os.listdir("corpus")] if os.path.isdir("corpus") else []
+            valid_doc_found = "page1" in out_lower
+            
+            if valid_doc_found:
                 breakdown["query_results"] = 30.0
                 feedback.append(f"{LOOKUP_SCRIPT} returned plausible results for query '{query}'.")
-            elif "not found" in out_lower or "no result" in out_lower:
+            elif "not found" in out_lower or "no result" in out_lower or "0 document" in out_lower:
                 breakdown["query_results"] = 15.0
                 feedback.append(f"{LOOKUP_SCRIPT} returned 'not found' for query '{query}'.")
             else:

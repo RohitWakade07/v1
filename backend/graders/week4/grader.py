@@ -75,7 +75,13 @@ class Week4Grader(BaseGrader):
         if gitignore_exists:
             content = gitignore.read_text(errors="ignore").lower()
             required = ["*.pyc", "__pycache__", "*.log", ".env"]
-            covered = [p for p in required if p.split(".")[0] in content or p in content]
+            
+            covered = []
+            for p in required:
+                clean_p = p.replace("*", "")
+                if p in content or (clean_p and clean_p in content):
+                    covered.append(p)
+            
             gitignore_patterns_ok = len(covered) >= 2
         checks.append(CheckResult(
             name=".gitignore Patterns Coverage",
@@ -163,20 +169,24 @@ class Week4Grader(BaseGrader):
         branches: list[str] = []
         feature_branch = False
         if rc_br == 0:
-            branches = [b.strip().lstrip("* ") for b in branches_out.splitlines() if b.strip()]
+            branches = [b.strip().lstrip("* ").replace("remotes/origin/", "") for b in branches_out.splitlines() if b.strip()]
             feature_branch = any(
                 ("feature" in b.lower() or "dev" in b.lower() or "week" in b.lower()
                  or "lab" in b.lower() or b.lower() not in {"main", "master"})
                 for b in branches
-                if b and "HEAD" not in b
+                if b and "head" not in b.lower()
             )
+        
+        feature_branch_name = [b for b in branches if b.lower() not in ('main','master') and "head" not in b.lower()]
+        feature_branch_name = feature_branch_name[0] if feature_branch_name else ""
+
         checks.append(CheckResult(
             name="Feature/Dev Branch Exists",
             passed=feature_branch,
             marks=1.0 if feature_branch else 0.0,
             max_marks=1.0,
             reason=(
-                f"Found feature/dev branch: {[b for b in branches if b not in ('main','master','HEAD')][0]}"
+                f"Found feature/dev branch: {feature_branch_name}"
                 if feature_branch else "Only main/master branch found."
             ),
             hint="Create a feature branch: git checkout -b feature/week4-gitignore",

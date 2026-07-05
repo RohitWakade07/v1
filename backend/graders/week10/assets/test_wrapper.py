@@ -20,6 +20,17 @@ def main():
         print(json.dumps({"breakdown": breakdown, "feedback": feedback, "bonus_features": []}))
         return
 
+    # Anti-spoof check
+    try:
+        r_spoof = subprocess.run([sys.executable, SCRIPT], input="asdfasdfasdf\\nquit\\n", capture_output=True, text=True, timeout=TIMEOUT)
+        out_lower_spoof = r_spoof.stdout.lower()
+        if "page1" in out_lower_spoof or "page2" in out_lower_spoof:
+            feedback.append("Execution failed: script unconditionally returned documents for invalid query.")
+            print(json.dumps({"breakdown": breakdown, "feedback": feedback, "bonus_features": []}))
+            return
+    except Exception:
+        pass
+
     # Basic execution
     try:
         r = subprocess.run([sys.executable, SCRIPT], input="python\nquit\n", capture_output=True, text=True, timeout=TIMEOUT)
@@ -33,8 +44,12 @@ def main():
 
     # Multi-word
     try:
-        r = subprocess.run([sys.executable, SCRIPT], input="machine learning\nquit\n", capture_output=True, text=True, timeout=TIMEOUT)
-        if r.returncode == 0 and "doc" in r.stdout.lower():
+        r = subprocess.run([sys.executable, SCRIPT], input="programming language\nquit\n", capture_output=True, text=True, timeout=TIMEOUT)
+        corpus_files = [f.lower() for f in os.listdir("corpus")] if os.path.isdir("corpus") else []
+        out_lower = r.stdout.lower()
+        valid_doc_found = "page1" in out_lower
+        
+        if r.returncode == 0 and valid_doc_found:
             breakdown["multi_word_query"] = 35.0
             feedback.append("Multi-word query successful.")
         else:
@@ -44,8 +59,11 @@ def main():
 
     # Boolean
     try:
-        r = subprocess.run([sys.executable, SCRIPT], input="python AND data\nquit\n", capture_output=True, text=True, timeout=TIMEOUT)
-        if r.returncode == 0 and ("doc" in r.stdout.lower() or "not found" in r.stdout.lower()):
+        r = subprocess.run([sys.executable, SCRIPT], input="python AND linux\nquit\n", capture_output=True, text=True, timeout=TIMEOUT)
+        out_lower = r.stdout.lower()
+        valid_doc_found = "page1" in out_lower
+        
+        if r.returncode == 0 and (valid_doc_found or "not found" in out_lower or "0 document" in out_lower):
             breakdown["boolean_operators"] = 35.0
             feedback.append("Boolean operators handled.")
         else:
