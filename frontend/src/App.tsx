@@ -33,7 +33,7 @@ const App = () => {
   // Poll for profile updates if student has any PENDING classroom enrollments
   useEffect(() => {
     if (token && role === 'student' && profile) {
-      const isPending = profile.classrooms?.some(c => c.status === 'PENDING')
+      const isPending = profile.classroom_status === 'PENDING'
       if (isPending) {
         const interval = setInterval(() => {
           getStudentProfile()

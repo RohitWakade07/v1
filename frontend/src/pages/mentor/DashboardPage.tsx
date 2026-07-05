@@ -1,4 +1,4 @@
-import { BookOpen, Globe, Lock, Activity, PlusCircle, ArrowRight, Users } from 'lucide-react'
+import { BookOpen, Globe, Lock, Activity, ArrowRight, Users } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { PageWrapper } from '@/components/shared/PageWrapper'
 import { StatCard } from '@/components/shared/StatCard'
