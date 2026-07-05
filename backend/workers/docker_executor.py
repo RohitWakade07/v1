@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 import logging
 import os
 import shutil
@@ -19,9 +19,9 @@ from graders.base_grader import GradingResult
 
 logger = logging.getLogger(__name__)
 
-# ── Docker client — lazy loaded at first use, not at import time ──────────────
+# â”€â”€ Docker client â€” lazy loaded at first use, not at import time â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # This prevents the API service from crashing on import when Docker socket
-# is not available (API doesn't need Docker — only the worker does).
+# is not available (API doesn't need Docker â€” only the worker does).
 _docker_client = None
 
 def get_docker_client():
@@ -30,11 +30,11 @@ def get_docker_client():
         logger.info("[DOCKER:INIT] Connecting to Docker daemon via environment config (or default unix socket)")
         _docker_client = docker.from_env()
         version = _docker_client.version()
-        logger.info(f"[DOCKER:INIT] Connected — Docker version={version.get('Version')} API={version.get('ApiVersion')}")
+        logger.info(f"[DOCKER:INIT] Connected â€” Docker version={version.get('Version')} API={version.get('ApiVersion')}")
     return _docker_client
 
 
-# Image name → language slug mapping
+# Image name â†’ language slug mapping
 _IMAGE_TO_LANGUAGE = {
     "python:3.10-slim": "python",
     "openjdk:17-slim":  "java",
@@ -75,7 +75,7 @@ def run_fresh_container(language: str, image_name: str) -> Any:
 
 def cleanup_container(container: Any) -> None:
     if not container:
-        logger.debug("[CONTAINER:CLEANUP] No container to clean up — skipping")
+        logger.debug("[CONTAINER:CLEANUP] No container to clean up â€” skipping")
         return
     cid = container.id[:12] if container.id else "unknown"
     try:
@@ -123,7 +123,7 @@ class DockerExecutor:
         }
 
         try:
-            # ── PHASE 1: PREPARATION ──────────────────────────────────────────
+            # â”€â”€ PHASE 1: PREPARATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             logger.info(f"[PHASE1:PREP] submission_id={submission_id} job_dir={job_dir}")
             shutil.rmtree(job_dir, ignore_errors=True)
             submission_dir.mkdir(parents=True, exist_ok=True)
@@ -256,7 +256,7 @@ class DockerExecutor:
             else:
                 raise ValueError(f"Unknown source type: {source_type}")
 
-            # ── Load config ────────────────────────────────────────────────
+            # â”€â”€ Load config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             config_path = Path(__file__).parent.parent / "graders" / assignment_slug / "config.yaml"
             logger.info(f"[PHASE1:CONFIG] Loading {config_path}")
             if not config_path.exists():
@@ -277,20 +277,20 @@ class DockerExecutor:
                 found_paths = list(submission_dir.rglob(target_file))
                 if found_paths:
                     submission_dir = found_paths[0].parent
-                    logger.info(f"[PHASE1:TARGET] Found {target_file} — workspace → {submission_dir}")
+                    logger.info(f"[PHASE1:TARGET] Found {target_file} â€” workspace â†’ {submission_dir}")
                 else:
                     logger.warning(f"[PHASE1:TARGET] {target_file} NOT FOUND under {submission_dir}")
 
             exec_metadata["execution_command"] = config.get("execution_command", "")
 
-            # ── Inject assets ──────────────────────────────────────────────
+            # â”€â”€ Inject assets â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             assets_list = config.get("assets", [])
             logger.info(f"[PHASE1:ASSETS] Injecting {len(assets_list)} asset(s)")
             for asset in assets_list:
                 src_name = asset["source"]
                 tgt_rel  = asset["target"]
                 local_asset_path = Path(__file__).parent.parent / "graders" / assignment_slug / "assets" / src_name
-                logger.debug(f"[PHASE1:ASSETS] {src_name} → {tgt_rel} exists={local_asset_path.exists()}")
+                logger.debug(f"[PHASE1:ASSETS] {src_name} â†’ {tgt_rel} exists={local_asset_path.exists()}")
                 if local_asset_path.exists():
                     temp_asset_dest = assets_dir / src_name
                     if local_asset_path.is_dir():
@@ -304,7 +304,7 @@ class DockerExecutor:
                 else:
                     shutil.copy2(local_asset_path, target_dest)
 
-            # ── Permissions ────────────────────────────────────────────────
+            # â”€â”€ Permissions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             logger.info(f"[PHASE1:PERMS] Setting 0o777 on workspace")
             os.chmod(submission_dir, 0o777)
             for root_dir, dirs, files in os.walk(submission_dir):
@@ -314,7 +314,7 @@ class DockerExecutor:
                     os.chmod(os.path.join(root_dir, f), 0o777)
             logger.info(f"[PHASE1:PERMS] Done")
 
-            # ── PHASE 2: SPIN UP CONTAINER ────────────────────────────────────
+            # â”€â”€ PHASE 2: SPIN UP CONTAINER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             image_name = config.get("docker_image", "python:3.10-slim")
             language   = _IMAGE_TO_LANGUAGE.get(image_name, "generic")
             logger.info(f"[PHASE2:CONTAINER] Requesting container image={image_name} language={language}")
@@ -323,7 +323,7 @@ class DockerExecutor:
             exec_metadata["container_id"] = container.id
             logger.info(f"[PHASE2:CONTAINER] Ready in {int((time.time()-t0)*1000)}ms id={container.id[:12]}")
 
-            # ── PHASE 3: EXECUTION ────────────────────────────────────────────
+            # â”€â”€ PHASE 3: EXECUTION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             job_rel             = str(Path(submission_id))
             base_submission     = job_dir / "submission"
             rel_path            = submission_dir.relative_to(base_submission)
@@ -384,7 +384,7 @@ class DockerExecutor:
             exec_metadata["execution_time_ms"] = int((time.time() - start_time) * 1000)
             exec_metadata["stderr"] = ""
 
-            # ── PHASE 4: GRADING ──────────────────────────────────────────────
+            # â”€â”€ PHASE 4: GRADING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             logger.info(f"[PHASE4:GRADE] Running grader slug={assignment_slug}")
             GraderClass    = get_grader(assignment_slug)
             logger.info(f"[PHASE4:GRADE] Grader={GraderClass.__name__}")
