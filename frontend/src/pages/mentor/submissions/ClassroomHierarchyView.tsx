@@ -11,8 +11,10 @@ import { formatDateTime } from '@/lib/utils'
 
 export const ClassroomHierarchyView = () => {
   const { data: classrooms, isLoading: loadingClassrooms } = useClassrooms()
-  const { data: assignments, isLoading: loadingAssignments } = useAssignments()
+  const { data: assignmentsResponse, isLoading: loadingAssignments } = useAssignments(1, 1000)
   const { data: allSubmissions, isLoading: loadingSubmissions } = useMentorSubmissions()
+
+  const assignments = assignmentsResponse?.data || []
 
   const [selectedClassroomId, setSelectedClassroomId] = useState<string | null>(null)
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null)

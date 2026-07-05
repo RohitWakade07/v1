@@ -28,7 +28,10 @@ from app.schemas.schemas import (
     MentorSessionPublic,
     MentorResultPublic,
     MentorAnalyticsSummary,
+    PaginatedResponse,
 )
+from sqlalchemy import func
+import math
 
 router = APIRouter(prefix="/mentor", tags=["Mentor Portal Phase 2"])
 
@@ -55,20 +58,41 @@ class MentorSubmissionPublic(BaseModel):
 
 @router.get(
     "/assignments",
-    response_model=List[AssignmentPublic],
-    summary="List all assignments for the current mentor",
+    response_model=PaginatedResponse[AssignmentPublic],
+    summary="List all assignments for the current mentor with pagination",
 )
 async def list_mentor_assignments(
+    page: int = 1,
+    limit: int = 20,
     current_mentor: Mentor = Depends(get_current_mentor),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
+    from sqlalchemy import or_
+
+    offset = (page - 1) * limit
+    
+    query = (
         select(Assignment)
-        .where(Assignment.created_by_id == current_mentor.id)
-        .order_by(Assignment.created_at.desc())
+        .where(
+            or_(
+                Assignment.is_published == True,
+                Assignment.created_by_id == current_mentor.id
+            ),
+            Assignment.is_archived == False
+        )
+    )
+    
+    total = await db.execute(select(func.count()).select_from(query.subquery()))
+    total_count = total.scalar()
+    
+    result = await db.execute(
+        query.order_by(Assignment.created_at.desc())
+        .offset(offset)
+        .limit(limit)
     )
     assignments = result.scalars().all()
-    return [
+    
+    data = [
         AssignmentPublic(
             id=a.id,
             slug=a.slug,
@@ -85,6 +109,12 @@ async def list_mentor_assignments(
         )
         for a in assignments
     ]
+    return PaginatedResponse(
+        data=data,
+        total=total_count,
+        page=page,
+        pages=math.ceil(total_count / limit) if total_count else 1
+    )
 
 
 @router.get(
@@ -129,21 +159,18 @@ async def get_mentor_assignment(
 
 @router.get(
     "/students",
-    response_model=List[MentorStudentPublic],
-    summary="List all enrolled students in this mentor's classrooms",
+    response_model=PaginatedResponse[MentorStudentPublic],
+    summary="List all enrolled students in this mentor's classrooms with pagination",
 )
 async def list_mentor_students(
+    page: int = 1,
+    limit: int = 20,
     current_mentor: Mentor = Depends(get_current_mentor),
     db: AsyncSession = Depends(get_db),
 ):
-    # BUG FIX: The previous query used INNER JOIN on submissions, which meant
-    # only students who had already submitted something were visible. Students
-    # who are enrolled but haven't submitted yet were completely hidden.
-    #
-    # Correct approach: base the query on classroom_enrollments (who actually
-    # belongs to this mentor's classrooms), then LEFT JOIN submissions to get
-    # participation counts without excluding non-submitters.
-    result = await db.execute(
+    offset = (page - 1) * limit
+    
+    query = (
         select(
             Student,
             func.count(func.distinct(Submission.assignment_id)).label("assignments_count"),
@@ -165,11 +192,15 @@ async def list_mentor_students(
             ClassroomEnrollment.status == "APPROVED",
         )
         .group_by(Student.id)
-        .order_by(Student.full_name)
     )
-
+    
+    total = await db.execute(select(func.count()).select_from(query.subquery()))
+    total_count = total.scalar()
+    
+    result = await db.execute(query.order_by(Student.full_name).offset(offset).limit(limit))
     rows = result.all()
-    return [
+    
+    data = [
         MentorStudentPublic(
             id=student.id,
             roll_number=student.roll_number,
@@ -180,27 +211,47 @@ async def list_mentor_students(
         )
         for student, assignments_count, sessions_count in rows
     ]
+    return PaginatedResponse(
+        data=data,
+        total=total_count,
+        page=page,
+        pages=math.ceil(total_count / limit) if total_count else 1
+    )
 
 
 @router.get(
     "/sessions",
-    response_model=List[MentorSessionPublic],
-    summary="List grading sessions for this mentor's assignments",
+    response_model=PaginatedResponse[MentorSessionPublic],
+    summary="List grading sessions for this mentor's assignments with pagination",
 )
 async def list_mentor_sessions(
+    page: int = 1,
+    limit: int = 20,
     current_mentor: Mentor = Depends(get_current_mentor),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
+    offset = (page - 1) * limit
+    
+    query = (
         select(Submission, Student, Assignment)
         .join(Student, Submission.student_id == Student.id)
         .join(Assignment, Submission.assignment_id == Assignment.id)
-        .where(Assignment.created_by_id == current_mentor.id)
-        .order_by(Submission.started_at.desc())
+        .where(
+            or_(
+                Assignment.is_published == True,
+                Assignment.created_by_id == current_mentor.id
+            ),
+            Assignment.is_archived == False
+        )
     )
     
+    total = await db.execute(select(func.count()).select_from(query.subquery()))
+    total_count = total.scalar()
+    
+    result = await db.execute(query.order_by(Submission.started_at.desc()).offset(offset).limit(limit))
     rows = result.all()
-    return [
+    
+    data = [
         MentorSessionPublic(
             id=str(session.id),
             student_roll=student.roll_number,
@@ -214,6 +265,12 @@ async def list_mentor_sessions(
         )
         for session, student, assignment in rows
     ]
+    return PaginatedResponse(
+        data=data,
+        total=total_count,
+        page=page,
+        pages=math.ceil(total_count / limit) if total_count else 1
+    )
 
 
 @router.get(

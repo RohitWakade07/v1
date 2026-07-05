@@ -9,6 +9,8 @@ import { SkeletonRow } from '@/components/shared/SkeletonCard'
 import { listMentors, createMentor } from '@/api/admin/admin'
 import type { CreateMentorPayload } from '@/api/admin/admin'
 import { formatDate, shortId } from '@/lib/utils'
+import { Pagination } from '@/components/shared/Pagination'
+import { useNavigate } from 'react-router-dom'
 
 const EMPTY_FORM: CreateMentorPayload = {
   username: '',
@@ -19,18 +21,23 @@ const EMPTY_FORM: CreateMentorPayload = {
 }
 
 export const MentorsPage = () => {
+  const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [form, setForm] = useState<CreateMentorPayload>(EMPTY_FORM)
   const [formError, setFormError] = useState('')
 
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
 
-  const { data: mentors = [], isLoading, error } = useQuery({
-    queryKey: ['admin-mentors'],
-    queryFn: listMentors,
+  const { data: response, isLoading, error } = useQuery({
+    queryKey: ['admin-mentors', page],
+    queryFn: () => listMentors(page, 20),
     retry: false,
   })
+  
+  const mentors = response?.data || []
+  const totalPages = response?.pages || 1
 
   const mutation = useMutation({
     mutationFn: createMentor,
@@ -120,7 +127,11 @@ export const MentorsPage = () => {
                 </tr>
               ) : (
                 filtered.map((mentor) => (
-                  <tr key={mentor.id} className="border-b border-navy-800/50 hover:bg-navy-900/40 transition-colors">
+                  <tr 
+                    key={mentor.id} 
+                    className="border-b border-navy-800/50 hover:bg-navy-900/40 transition-colors cursor-pointer"
+                    onClick={() => navigate(`/admin/mentors/${mentor.id}`)}
+                  >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-teal/15 text-accent-teal font-bold text-xs uppercase">
@@ -150,8 +161,12 @@ export const MentorsPage = () => {
           </table>
         </div>
         {!isLoading && !error && (
-          <div className="border-t border-navy-800 px-4 py-2 text-xs text-text-secondary">
-            Showing {filtered.length} of {mentors.length} mentors
+          <div className="border-t border-navy-800 px-4 py-4">
+            <Pagination 
+              page={page} 
+              totalPages={totalPages} 
+              onPageChange={setPage} 
+            />
           </div>
         )}
       </div>

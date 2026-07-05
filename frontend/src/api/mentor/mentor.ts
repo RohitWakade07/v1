@@ -1,14 +1,14 @@
 import { apiGet, apiPost } from '@/api/client'
 import type {
   MentorStudent, MentorSession, MentorResult, MentorSubmission, MentorAnalytics,
-  Classroom, ClassroomStudentEnrollment,
+  Classroom, ClassroomStudentEnrollment, PaginatedResponse
 } from '@/types/api'
 
-export const fetchMentorStudents = (): Promise<MentorStudent[]> =>
-  apiGet<MentorStudent[]>('/mentor/students')
+export const fetchMentorStudents = (page = 1, limit = 20): Promise<PaginatedResponse<MentorStudent>> =>
+  apiGet<PaginatedResponse<MentorStudent>>(`/mentor/students?page=${page}&limit=${limit}`)
 
-export const fetchMentorSessions = (): Promise<MentorSession[]> =>
-  apiGet<MentorSession[]>('/mentor/sessions')
+export const fetchMentorSessions = (page = 1, limit = 20): Promise<PaginatedResponse<MentorSession>> =>
+  apiGet<PaginatedResponse<MentorSession>>(`/mentor/sessions?page=${page}&limit=${limit}`)
 
 export const fetchMentorResults = (): Promise<MentorResult[]> =>
   apiGet<MentorResult[]>('/mentor/results')

@@ -12,6 +12,9 @@ from app.models.models import Student, Mentor, Submission, Assignment, UserRole
 from app.api.v1.dependencies import get_current_admin
 from app.schemas.schemas import AssignmentPublic
 from app.core.security import hash_password
+from app.schemas.schemas import AssignmentPublic, PaginatedResponse
+from sqlalchemy import func
+import math
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -78,16 +81,28 @@ class AdminSubmissionPublic(BaseModel):
 
 @router.get(
     "/students",
-    response_model=list[AdminStudentPublic],
-    summary="List all students (admin only)",
+    response_model=PaginatedResponse[AdminStudentPublic],
+    summary="List all students with pagination (admin only)",
 )
 async def list_all_students(
+    page: int = 1,
+    limit: int = 20,
     _: Mentor = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(Student).order_by(Student.created_at.desc()))
+    offset = (page - 1) * limit
+    total = await db.execute(select(func.count(Student.id)))
+    total_count = total.scalar()
+    
+    result = await db.execute(
+        select(Student)
+        .order_by(Student.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+    )
     students = result.scalars().all()
-    return [
+    
+    data = [
         AdminStudentPublic(
             id=str(s.id),
             roll_number=s.roll_number,
@@ -98,22 +113,40 @@ async def list_all_students(
         )
         for s in students
     ]
+    return PaginatedResponse(
+        data=data,
+        total=total_count,
+        page=page,
+        pages=math.ceil(total_count / limit) if total_count else 1
+    )
 
 
 # ── Mentors ───────────────────────────────────────────────────────────
 
 @router.get(
     "/mentors",
-    response_model=list[AdminMentorPublic],
-    summary="List all mentors (admin only)",
+    response_model=PaginatedResponse[AdminMentorPublic],
+    summary="List all mentors with pagination (admin only)",
 )
 async def list_all_mentors(
+    page: int = 1,
+    limit: int = 20,
     _: Mentor = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(Mentor).order_by(Mentor.created_at.desc()))
+    offset = (page - 1) * limit
+    total = await db.execute(select(func.count(Mentor.id)))
+    total_count = total.scalar()
+    
+    result = await db.execute(
+        select(Mentor)
+        .order_by(Mentor.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+    )
     mentors = result.scalars().all()
-    return [
+    
+    data = [
         AdminMentorPublic(
             id=str(m.id),
             username=m.username,
@@ -125,27 +158,42 @@ async def list_all_mentors(
         )
         for m in mentors
     ]
+    return PaginatedResponse(
+        data=data,
+        total=total_count,
+        page=page,
+        pages=math.ceil(total_count / limit) if total_count else 1
+    )
 
 
 # ── Sessions ──────────────────────────────────────────────────────────
 
 @router.get(
     "/sessions",
-    response_model=list[AdminSessionPublic],
-    summary="List all grading sessions (admin only)",
+    response_model=PaginatedResponse[AdminSessionPublic],
+    summary="List all grading sessions with pagination (admin only)",
 )
 async def list_all_sessions(
+    page: int = 1,
+    limit: int = 20,
     _: Mentor = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
 ):
+    offset = (page - 1) * limit
+    total = await db.execute(select(func.count(Submission.id)))
+    total_count = total.scalar()
+    
     result = await db.execute(
         select(Submission, Student, Assignment)
         .join(Student, Submission.student_id == Student.id)
         .join(Assignment, Submission.assignment_id == Assignment.id)
         .order_by(Submission.started_at.desc())
+        .offset(offset)
+        .limit(limit)
     )
     rows = result.all()
-    return [
+    
+    data = [
         AdminSessionPublic(
             id=str(s.id),
             student_id=str(s.student_id),
@@ -163,28 +211,43 @@ async def list_all_sessions(
         )
         for s, student, assignment in rows
     ]
+    return PaginatedResponse(
+        data=data,
+        total=total_count,
+        page=page,
+        pages=math.ceil(total_count / limit) if total_count else 1
+    )
 
 
 # ── Submissions (raw queue/processing records) ────────────────────────
 
 @router.get(
     "/submissions",
-    response_model=list[AdminSubmissionPublic],
-    summary="List all submissions across all students (admin only)",
+    response_model=PaginatedResponse[AdminSubmissionPublic],
+    summary="List all submissions with pagination (admin only)",
 )
 async def list_all_submissions_admin(
+    page: int = 1,
+    limit: int = 20,
     _: Mentor = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
 ):
     from app.models.models import Submission
+    offset = (page - 1) * limit
+    total = await db.execute(select(func.count(Submission.id)))
+    total_count = total.scalar()
+    
     result = await db.execute(
         select(Submission, Student, Assignment)
         .join(Student, Submission.student_id == Student.id)
         .join(Assignment, Submission.assignment_id == Assignment.id)
         .order_by(Submission.submitted_at.desc())
+        .offset(offset)
+        .limit(limit)
     )
     rows = result.all()
-    return [
+    
+    data = [
         AdminSubmissionPublic(
             id=str(sub.id),
             student_id=str(sub.student_id),
@@ -205,6 +268,12 @@ async def list_all_submissions_admin(
         )
         for sub, student, assignment in rows
     ]
+    return PaginatedResponse(
+        data=data,
+        total=total_count,
+        page=page,
+        pages=math.ceil(total_count / limit) if total_count else 1
+    )
 
 
 # ── Assignments (all, including unpublished) ──────────────────────────
@@ -303,4 +372,181 @@ async def create_mentor(
         role=mentor.role.value if hasattr(mentor.role, "value") else str(mentor.role),
         is_active=mentor.is_active,
         created_at=mentor.created_at,
+    )
+
+
+# ── Admin Drill-Down Routes ──────────────────────────────────────────
+
+from app.models.models import Classroom, ClassroomEnrollment
+
+@router.get(
+    "/mentors/{mentor_id}",
+    response_model=AdminMentorPublic,
+    summary="Get detailed info for a specific mentor",
+)
+async def get_mentor_details(
+    mentor_id: uuid.UUID,
+    _: Mentor = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Mentor).where(Mentor.id == mentor_id))
+    mentor = result.scalar_one_or_none()
+    if not mentor:
+        raise HTTPException(status_code=404, detail="Mentor not found")
+    return AdminMentorPublic(
+        id=str(mentor.id),
+        username=mentor.username,
+        full_name=mentor.full_name,
+        email=mentor.email,
+        role=mentor.role.value if hasattr(mentor.role, "value") else str(mentor.role),
+        is_active=mentor.is_active,
+        created_at=mentor.created_at,
+    )
+
+class AdminClassroomPublic(BaseModel):
+    id: str
+    name: str
+    join_code: str
+    created_at: datetime
+
+@router.get(
+    "/mentors/{mentor_id}/classrooms",
+    response_model=list[AdminClassroomPublic],
+    summary="List all classrooms created by a specific mentor",
+)
+async def list_mentor_classrooms(
+    mentor_id: uuid.UUID,
+    _: Mentor = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Classroom).where(Classroom.mentor_id == mentor_id).order_by(Classroom.created_at.desc())
+    )
+    classrooms = result.scalars().all()
+    return [
+        AdminClassroomPublic(
+            id=str(c.id),
+            name=c.name,
+            join_code=c.join_code,
+            created_at=c.created_at,
+        ) for c in classrooms
+    ]
+
+@router.get(
+    "/classrooms/{classroom_id}",
+    response_model=AdminClassroomPublic,
+    summary="Get detailed info for a specific classroom",
+)
+async def get_classroom_details(
+    classroom_id: uuid.UUID,
+    _: Mentor = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Classroom).where(Classroom.id == classroom_id))
+    classroom = result.scalar_one_or_none()
+    if not classroom:
+        raise HTTPException(status_code=404, detail="Classroom not found")
+    return AdminClassroomPublic(
+        id=str(classroom.id),
+        name=classroom.name,
+        join_code=classroom.join_code,
+        created_at=classroom.created_at,
+    )
+
+@router.get(
+    "/classrooms/{classroom_id}/students",
+    response_model=PaginatedResponse[AdminStudentPublic],
+    summary="List students enrolled in a specific classroom",
+)
+async def list_classroom_students(
+    classroom_id: uuid.UUID,
+    page: int = 1,
+    limit: int = 20,
+    _: Mentor = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    offset = (page - 1) * limit
+    
+    query = (
+        select(Student)
+        .join(ClassroomEnrollment, ClassroomEnrollment.student_id == Student.id)
+        .where(ClassroomEnrollment.classroom_id == classroom_id)
+        .where(ClassroomEnrollment.status == "APPROVED")
+    )
+    
+    total = await db.execute(select(func.count()).select_from(query.subquery()))
+    total_count = total.scalar()
+    
+    result = await db.execute(query.order_by(Student.created_at.desc()).offset(offset).limit(limit))
+    students = result.scalars().all()
+    
+    data = [
+        AdminStudentPublic(
+            id=str(s.id),
+            roll_number=s.roll_number,
+            full_name=s.full_name,
+            email=s.email,
+            is_active=s.is_active,
+            created_at=s.created_at,
+        ) for s in students
+    ]
+    return PaginatedResponse(
+        data=data,
+        total=total_count,
+        page=page,
+        pages=math.ceil(total_count / limit) if total_count else 1
+    )
+
+@router.get(
+    "/classrooms/{classroom_id}/sessions",
+    response_model=PaginatedResponse[AdminSessionPublic],
+    summary="List sessions for students in a specific classroom",
+)
+async def list_classroom_sessions(
+    classroom_id: uuid.UUID,
+    page: int = 1,
+    limit: int = 20,
+    _: Mentor = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    offset = (page - 1) * limit
+    
+    base_query = (
+        select(Submission, Student, Assignment)
+        .join(Student, Submission.student_id == Student.id)
+        .join(Assignment, Submission.assignment_id == Assignment.id)
+        .join(ClassroomEnrollment, ClassroomEnrollment.student_id == Student.id)
+        .where(ClassroomEnrollment.classroom_id == classroom_id)
+        .where(ClassroomEnrollment.status == "APPROVED")
+    )
+    
+    total_query = select(func.count(Submission.id)).join(ClassroomEnrollment, ClassroomEnrollment.student_id == Submission.student_id).where(ClassroomEnrollment.classroom_id == classroom_id).where(ClassroomEnrollment.status == "APPROVED")
+    total = await db.execute(total_query)
+    total_count = total.scalar()
+    
+    result = await db.execute(base_query.order_by(Submission.started_at.desc()).offset(offset).limit(limit))
+    rows = result.all()
+    
+    data = [
+        AdminSessionPublic(
+            id=str(s.id),
+            student_id=str(s.student_id),
+            student_name=student.full_name,
+            student_roll=student.roll_number,
+            assignment_id=str(s.assignment_id),
+            assignment_title=assignment.title,
+            assignment_slug=assignment.slug,
+            status=s.status.value if hasattr(s.status, "value") else str(s.status),
+            started_at=s.started_at or s.submitted_at,
+            submitted_at=s.submitted_at,
+            completed_at=s.completed_at,
+            final_score=s.score,
+            rejection_reason=s.validation_error,
+        ) for s, student, assignment in rows
+    ]
+    return PaginatedResponse(
+        data=data,
+        total=total_count,
+        page=page,
+        pages=math.ceil(total_count / limit) if total_count else 1
     )

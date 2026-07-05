@@ -2,6 +2,13 @@
 
 export type UserRole = 'student' | 'mentor' | 'admin'
 
+export interface PaginatedResponse<T> {
+  data: T[]
+  total: number
+  page: number
+  pages: number
+}
+
 // ─── Auth ──────────────────────────────────────────────────────────
 export interface StudentAuthResponse {
   access_token: string
@@ -302,6 +309,13 @@ export interface AdminMentor {
   email: string
   role: string
   is_active: boolean
+  created_at: string
+}
+
+export interface AdminClassroom {
+  id: string
+  name: string
+  join_code: string
   created_at: string
 }
 

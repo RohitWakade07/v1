@@ -12,22 +12,22 @@ import {
   rejectEnrollment,
 } from '@/api/mentor/mentor'
 import { useAuthStore } from '@/store/authStore'
-import type { MentorStudent, MentorSession, MentorResult, MentorSubmission, MentorAnalytics, Classroom, ClassroomStudentEnrollment } from '@/types/api'
+import type { MentorStudent, MentorSession, MentorResult, MentorSubmission, MentorAnalytics, Classroom, ClassroomStudentEnrollment, PaginatedResponse } from '@/types/api'
 
-export function useMentorStudents() {
+export function useMentorStudents(page = 1, limit = 20) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
-  return useQuery<MentorStudent[], Error>({
-    queryKey: ['mentor-students'],
-    queryFn: fetchMentorStudents,
+  return useQuery<PaginatedResponse<MentorStudent>, Error>({
+    queryKey: ['mentor-students', page, limit],
+    queryFn: () => fetchMentorStudents(page, limit),
     enabled: isAuthenticated,
   })
 }
 
-export function useMentorSessions() {
+export function useMentorSessions(page = 1, limit = 20) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
-  return useQuery<MentorSession[], Error>({
-    queryKey: ['mentor-sessions'],
-    queryFn: fetchMentorSessions,
+  return useQuery<PaginatedResponse<MentorSession>, Error>({
+    queryKey: ['mentor-sessions', page, limit],
+    queryFn: () => fetchMentorSessions(page, limit),
     enabled: isAuthenticated,
   })
 }

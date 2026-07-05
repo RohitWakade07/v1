@@ -349,13 +349,14 @@ function AssignmentCard({
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export const AssignmentManagePage = () => {
-  const { data: assignments, isLoading } = useAssignments()
+  const { data: response, isLoading } = useAssignments(1, 1000)
+  const assignments = response?.data || []
 
   // Match DB assignments to static metadata by slug
   const getAssignment = (slug: string): Assignment | undefined =>
-    assignments?.find((a) => a.slug === slug)
+    assignments.find((a) => a.slug === slug)
 
-  const publishedCount = assignments?.filter((a) => a.is_published).length ?? 0
+  const publishedCount = assignments.filter((a) => a.is_published).length
 
   return (
     <PageWrapper>

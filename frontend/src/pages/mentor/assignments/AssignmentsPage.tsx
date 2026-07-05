@@ -20,7 +20,8 @@ const getDeadlineColor = (deadline: string | null) => {
 }
 
 export const AssignmentsPage = () => {
-  const { data: assignments, isLoading } = useAssignments()
+  const { data: response, isLoading } = useAssignments(1, 1000)
+  const assignments = response?.data || []
   
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft'>('all')

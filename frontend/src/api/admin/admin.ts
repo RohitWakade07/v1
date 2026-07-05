@@ -1,13 +1,13 @@
 import { apiClient } from '@/api/client'
-import type { AdminStudent, AdminMentor, GradingSession, AdminSubmission, Assignment, HealthResponse } from '@/types/api'
+import type { AdminStudent, AdminMentor, GradingSession, AdminSubmission, Assignment, HealthResponse, PaginatedResponse, AdminClassroom } from '@/types/api'
 
-export const listStudents = async (): Promise<AdminStudent[]> => {
-  const { data } = await apiClient.get<AdminStudent[]>('/admin/students')
+export const listStudents = async (page = 1, limit = 20): Promise<PaginatedResponse<AdminStudent>> => {
+  const { data } = await apiClient.get<PaginatedResponse<AdminStudent>>(`/admin/students?page=${page}&limit=${limit}`)
   return data
 }
 
-export const listMentors = async (): Promise<AdminMentor[]> => {
-  const { data } = await apiClient.get<AdminMentor[]>('/admin/mentors')
+export const listMentors = async (page = 1, limit = 20): Promise<PaginatedResponse<AdminMentor>> => {
+  const { data } = await apiClient.get<PaginatedResponse<AdminMentor>>(`/admin/mentors?page=${page}&limit=${limit}`)
   return data
 }
 
@@ -59,13 +59,13 @@ export const adminUpdateAssignment = async (id: string, payload: AdminAssignment
   return data
 }
 
-export const listAllSessions = async (): Promise<GradingSession[]> => {
-  const { data } = await apiClient.get<GradingSession[]>('/admin/sessions')
+export const listAllSessions = async (page = 1, limit = 20): Promise<PaginatedResponse<GradingSession>> => {
+  const { data } = await apiClient.get<PaginatedResponse<GradingSession>>(`/admin/sessions?page=${page}&limit=${limit}`)
   return data
 }
 
-export const listAllSubmissions = async (): Promise<AdminSubmission[]> => {
-  const { data } = await apiClient.get<AdminSubmission[]>('/admin/submissions')
+export const listAllSubmissions = async (page = 1, limit = 20): Promise<PaginatedResponse<AdminSubmission>> => {
+  const { data } = await apiClient.get<PaginatedResponse<AdminSubmission>>(`/admin/submissions?page=${page}&limit=${limit}`)
   return data
 }
 
@@ -77,3 +77,28 @@ export const getHealth = async (): Promise<HealthResponse> => {
 export const deleteAssignment = async (assignmentId: string): Promise<void> => {
   await apiClient.delete(`/assignments/admin/${assignmentId}`);
 };
+
+export const getMentorDetails = async (mentorId: string): Promise<AdminMentor> => {
+  const { data } = await apiClient.get<AdminMentor>(`/admin/mentors/${mentorId}`)
+  return data
+}
+
+export const listMentorClassrooms = async (mentorId: string): Promise<AdminClassroom[]> => {
+  const { data } = await apiClient.get<AdminClassroom[]>(`/admin/mentors/${mentorId}/classrooms`)
+  return data
+}
+
+export const getClassroomDetails = async (classroomId: string): Promise<AdminClassroom> => {
+  const { data } = await apiClient.get<AdminClassroom>(`/admin/classrooms/${classroomId}`)
+  return data
+}
+
+export const listClassroomStudents = async (classroomId: string, page = 1, limit = 20): Promise<PaginatedResponse<AdminStudent>> => {
+  const { data } = await apiClient.get<PaginatedResponse<AdminStudent>>(`/admin/classrooms/${classroomId}/students?page=${page}&limit=${limit}`)
+  return data
+}
+
+export const listClassroomSessions = async (classroomId: string, page = 1, limit = 20): Promise<PaginatedResponse<GradingSession>> => {
+  const { data } = await apiClient.get<PaginatedResponse<GradingSession>>(`/admin/classrooms/${classroomId}/sessions?page=${page}&limit=${limit}`)
+  return data
+}

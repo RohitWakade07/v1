@@ -7,14 +7,19 @@ import { StatusBadge } from '@/components/shared/StatusBadge'
 import { SkeletonRow } from '@/components/shared/SkeletonCard'
 import { listStudents } from '@/api/admin/admin'
 import { formatDate, shortId } from '@/lib/utils'
+import { Pagination } from '@/components/shared/Pagination'
 
 export const StudentsPage = () => {
+  const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
-  const { data: students = [], isLoading, error } = useQuery({
-    queryKey: ['admin-students'],
-    queryFn: listStudents,
+  const { data: response, isLoading, error } = useQuery({
+    queryKey: ['admin-students', page],
+    queryFn: () => listStudents(page, 20),
     retry: false,
   })
+
+  const students = response?.data || []
+  const totalPages = response?.pages || 1
 
   const filtered = students.filter(
     (s) =>
@@ -103,8 +108,12 @@ export const StudentsPage = () => {
           </table>
         </div>
         {!isLoading && !error && (
-          <div className="border-t border-navy-800 px-4 py-2 text-xs text-text-secondary">
-            Showing {filtered.length} of {students.length} students
+          <div className="border-t border-navy-800 px-4 py-4">
+            <Pagination 
+              page={page} 
+              totalPages={totalPages} 
+              onPageChange={setPage} 
+            />
           </div>
         )}
       </div>

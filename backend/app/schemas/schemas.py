@@ -5,6 +5,15 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 
 from app.models.models import SessionStatus, UserRole, AssignmentCategory
+from typing import TypeVar, Generic, List
+
+T = TypeVar('T')
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    data: List[T]
+    total: int
+    page: int
+    pages: int
 
 
 # ── Auth ──────────────────────────────────────────────────────────────

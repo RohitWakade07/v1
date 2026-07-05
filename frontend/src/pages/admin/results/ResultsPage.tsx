@@ -5,22 +5,39 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { SkeletonRow } from '@/components/shared/SkeletonCard'
 import { formatDateTime } from '@/lib/utils'
+import { useState } from 'react'
 
 export const ResultsPage = () => {
-  const { data: sessions = [], isLoading, error } = useQuery({
+  const [search, setSearch] = useState('')
+  const { data: sessionsResponse, isLoading, error } = useQuery({
     queryKey: ['admin-sessions'],
-    queryFn: listAllSessions,
+    queryFn: () => listAllSessions(1, 1000),
     retry: false,
   })
 
+  const sessions = sessionsResponse?.data || []
   const completed = sessions.filter((s) => s.status === 'COMPLETED')
+  const filtered = completed.filter(
+    (s) =>
+      (s.student_name?.toLowerCase() || '').includes(search.toLowerCase()) ||
+      (s.student_roll?.toLowerCase() || '').includes(search.toLowerCase())
+  )
 
   return (
     <PageWrapper>
       <PageHeader
         title="Results"
-        description={`${completed.length} completed & scored sessions`}
+        description={`${filtered.length} completed & scored sessions`}
       />
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Search by name or roll..."
+          className="w-full bg-navy-900 border border-navy-800 rounded px-4 py-2 text-sm text-text-primary"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
       <div className="card-dark overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -42,14 +59,14 @@ export const ResultsPage = () => {
                     Could not load results — admin API endpoint not yet available.
                   </td>
                 </tr>
-              ) : completed.length === 0 ? (
+              ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-12 text-center text-text-secondary text-sm">
                     No completed sessions yet.
                   </td>
                 </tr>
               ) : (
-                completed.map((s) => (
+                filtered.map((s) => (
                   <tr key={s.id} className="border-b border-navy-800/50 hover:bg-navy-900/40 transition-colors">
                     <td className="px-4 py-3">
                       <p className="font-medium text-text-primary">{s.student_name}</p>
@@ -65,7 +82,7 @@ export const ResultsPage = () => {
                     <td className="px-4 py-3">
                       <StatusBadge status="completed" />
                     </td>
-                    <td className="px-4 py-3 text-text-secondary text-xs">{formatDateTime(s.completed_at)}</td>
+                    <td className="px-4 py-3 text-text-secondary text-xs">{formatDateTime(s.completed_at || '')}</td>
                   </tr>
                 ))
               )}
@@ -74,7 +91,7 @@ export const ResultsPage = () => {
         </div>
         {!isLoading && !error && (
           <div className="border-t border-navy-800 px-4 py-2 text-xs text-text-secondary">
-            {completed.length} results total
+            {filtered.length} results total
           </div>
         )}
       </div>

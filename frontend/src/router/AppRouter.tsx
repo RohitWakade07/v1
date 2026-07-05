@@ -47,6 +47,8 @@ const AdminResults       = lazy(() => import('@/pages/admin/results/ResultsPage'
 const AdminHealth        = lazy(() => import('@/pages/admin/health/HealthPage'))
 const AdminAnnouncements = lazy(() => import('@/pages/admin/announcements/AnnouncementsPage'))
 const AdminQuiz          = lazy(() => import('@/pages/admin/quiz/AdminQuizPage'))
+const AdminMentorDetail  = lazy(() => import('@/pages/admin/users/MentorDetailPage'))
+const AdminClassroomDetail = lazy(() => import('@/pages/admin/users/ClassroomDetailPage'))
 
 const Fallback = () => (
   <div className="flex h-screen items-center justify-center">
@@ -115,6 +117,8 @@ export const AppRouter = () => (
           <Route index element={<AdminDashboard />} />
           <Route path="students"    element={<AdminStudents />} />
           <Route path="mentors"     element={<AdminMentors />} />
+          <Route path="mentors/:mentorId" element={<AdminMentorDetail />} />
+          <Route path="classrooms/:classroomId" element={<AdminClassroomDetail />} />
           <Route path="assignments"           element={<AdminAssignments />} />
           <Route path="assignments/:assignmentId/quiz" element={<AdminQuiz />} />
           <Route path="results"               element={<AdminResults />} />

@@ -1,5 +1,5 @@
 import { apiGet, apiPost, apiPatch } from '@/api/client'
-import type { Assignment } from '@/types/api'
+import type { Assignment, PaginatedResponse } from '@/types/api'
 
 export interface AssignmentCreate {
   slug: string
@@ -17,8 +17,8 @@ export interface AssignmentUpdate {
   deadline?: string
 }
 
-export const fetchAssignments = (): Promise<Assignment[]> =>
-  apiGet<Assignment[]>('/mentor/assignments')
+export const fetchAssignments = (page = 1, limit = 20): Promise<PaginatedResponse<Assignment>> =>
+  apiGet<PaginatedResponse<Assignment>>(`/mentor/assignments?page=${page}&limit=${limit}`)
 
 export const fetchMentorAssignments = fetchAssignments
 

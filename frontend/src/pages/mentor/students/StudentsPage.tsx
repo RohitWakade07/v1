@@ -5,10 +5,15 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { DataTable } from '@/components/shared/DataTable'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { useMentorStudents } from '@/hooks/mentor/useMentor'
+import { Pagination } from '@/components/shared/Pagination'
 
 export const StudentsPage = () => {
-  const { data: students, isLoading } = useMentorStudents()
+  const [page, setPage] = useState(1)
+  const { data: response, isLoading } = useMentorStudents(page, 20)
   const [searchTerm, setSearchTerm] = useState('')
+
+  const students = response?.data || []
+  const totalPages = response?.pages || 1
 
   const filteredData = useMemo(() => {
     if (!students) return []
@@ -66,7 +71,15 @@ export const StudentsPage = () => {
             message={searchTerm ? "Try adjusting your search query." : "No students have participated in your assignments yet."}
           />
         ) : (
-          <DataTable headers={headers} rows={rows} />
+          <>
+            <DataTable headers={headers} rows={rows} />
+            <Pagination 
+              page={page} 
+              totalPages={totalPages} 
+              onPageChange={setPage} 
+              className="mt-6"
+            />
+          </>
         )}
       </div>
     </PageWrapper>

@@ -16,33 +16,20 @@ import { greeting, formatDate, shortId } from '@/lib/utils'
 export const DashboardPage = () => {
   const { username } = useAuthStore()
 
-  const { data: rawAssignments, isLoading: aLoad } = useQuery({
-    queryKey: ['admin-assignments'],
-    queryFn: listAllAssignments,
-    retry: false,
-  })
-  const assignments = Array.isArray(rawAssignments) ? rawAssignments : []
+  const { data: assignmentsResponse, isLoading: aLoad } = useQuery({ queryKey: ['admin-assignments'], queryFn: listAllAssignments })
+  const assignments = assignmentsResponse || []
 
   const { data: rawStudents, isLoading: sLoad } = useQuery({
     queryKey: ['admin-students'],
-    queryFn: listStudents,
+    queryFn: () => listStudents(1, 1000),
     retry: false,
   })
-  const students = Array.isArray(rawStudents) ? rawStudents : []
+  const { data: mentorsResponse, isLoading: mLoad } = useQuery({ queryKey: ['admin-mentors'], queryFn: () => listMentors(1, 1000) })
+  const { data: sessionsResponse, isLoading: sessLoad } = useQuery({ queryKey: ['admin-sessions'], queryFn: () => listAllSessions(1, 1000) })
 
-  const { data: rawMentors, isLoading: mLoad } = useQuery({
-    queryKey: ['admin-mentors'],
-    queryFn: listMentors,
-    retry: false,
-  })
-  const mentors = Array.isArray(rawMentors) ? rawMentors : []
-
-  const { data: rawSessions, isLoading: sessLoad } = useQuery({
-    queryKey: ['admin-sessions'],
-    queryFn: listAllSessions,
-    retry: false,
-  })
-  const sessions = Array.isArray(rawSessions) ? rawSessions : []
+  const students = rawStudents?.data || []
+  const mentors = mentorsResponse?.data || []
+  const sessions = sessionsResponse?.data || []
 
   const { data: health } = useQuery({
     queryKey: ['health'],
