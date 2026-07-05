@@ -9,59 +9,67 @@ def _git(args, cwd, timeout=15):
         return 1, "", str(e)
 
 def main():
-    # Install git and pytest since we need to run tests
     subprocess.run(["apt-get", "update"], capture_output=True)
     subprocess.run(["apt-get", "install", "-y", "git"], capture_output=True)
     
     workspace = Path(".")
-    sub_json = workspace / "submission.json"
-    if not sub_json.exists():
-        sub_json = workspace / "main.py"
-    if not sub_json.exists():
-        with open("result.json", "w") as f:
-            json.dump({"error": "No submission.json"}, f)
-        return
-
-    try:
-        payload = json.loads(sub_json.read_text(errors="ignore"))
-    except Exception as e:
-        with open("result.json", "w") as f:
-            json.dump({"error": "Invalid JSON"}, f)
-        return
-
-    repo_owner = payload.get("repo_owner", "").strip()
-    repo_name = payload.get("repo_name", "").strip()
-    token = payload.get("github_token", "").strip()
-
-    if not repo_owner or not repo_name:
-        with open("result.json", "w") as f:
-            json.dump({"error": "Missing fields"}, f)
-        return
-
-    repo_url = f"https://github.com/{repo_owner}/{repo_name}.git"
-    if token:
-        repo_url = f"https://{token}@github.com/{repo_owner}/{repo_name}.git"
-
-    repo_dir = str(workspace / "_cloned_repo")
-    if os.path.exists(repo_dir):
-        shutil.rmtree(repo_dir)
-
-    clone_env = os.environ.copy()
-    clone_env["GIT_TERMINAL_PROMPT"] = "0"
+    is_github_submission = (workspace / ".git").exists()
     
-    result = {"clone_ok": False, "clone_error": ""}
-    try:
-        # Added --no-single-branch to fetch all branches for the assignment
-        c = subprocess.run(["git", "clone", "--depth=50", "--no-single-branch", repo_url, repo_dir],
-                           capture_output=True, text=True, timeout=60, env=clone_env)
-        result["clone_ok"] = (c.returncode == 0)
-        if c.returncode != 0:
-            err = c.stderr[:200]
-            if token:
-                err = err.replace(token, "***")
-            result["clone_error"] = err
-    except Exception as e:
-        result["clone_error"] = str(e)
+    if not is_github_submission:
+        sub_json = workspace / "submission.json"
+        if not sub_json.exists():
+            sub_json = workspace / "main.py"
+        if not sub_json.exists():
+            with open("result.json", "w") as f:
+                json.dump({"error": "No submission.json"}, f)
+            return
+
+        try:
+            payload = json.loads(sub_json.read_text(errors="ignore"))
+        except Exception as e:
+            with open("result.json", "w") as f:
+                json.dump({"error": "Invalid JSON"}, f)
+            return
+
+        repo_owner = payload.get("repo_owner", "").strip()
+        repo_name = payload.get("repo_name", "").strip()
+        token = payload.get("github_token", "").strip()
+
+        if not repo_owner or not repo_name:
+            with open("result.json", "w") as f:
+                json.dump({"error": "Missing fields"}, f)
+            return
+
+        repo_url = f"https://github.com/{repo_owner}/{repo_name}.git"
+        if token:
+            repo_url = f"https://{token}@github.com/{repo_owner}/{repo_name}.git"
+
+        repo_dir = str(workspace / "_cloned_repo")
+        if os.path.exists(repo_dir):
+            shutil.rmtree(repo_dir)
+
+        clone_env = os.environ.copy()
+        clone_env["GIT_TERMINAL_PROMPT"] = "0"
+        
+        result = {"clone_ok": False, "clone_error": ""}
+        try:
+            c = subprocess.run(["git", "clone", "--depth=50", "--no-single-branch", repo_url, repo_dir],
+                               capture_output=True, text=True, timeout=60, env=clone_env)
+            result["clone_ok"] = (c.returncode == 0)
+            if c.returncode != 0:
+                err = c.stderr[:200]
+                if token:
+                    err = err.replace(token, "***")
+                result["clone_error"] = err
+        except Exception as e:
+            result["clone_error"] = str(e)
+    else:
+        # GitHub Submission - repo is already in the workspace
+        repo_dir = str(workspace)
+        result = {"clone_ok": True, "clone_error": ""}
+        # Attempt to fetch all branches since WorkspaceManager uses depth 1
+        subprocess.run(["git", "config", "remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*"], cwd=repo_dir)
+        subprocess.run(["git", "fetch", "--depth=50", "origin"], cwd=repo_dir)
 
     if result["clone_ok"]:
         conflict_files = []
@@ -103,7 +111,6 @@ def main():
         rc_auth, auth_log, _ = _git(["shortlog", "-sn", "--all"], repo_dir)
         result["contributors"] = [l for l in auth_log.splitlines() if l.strip()] if rc_auth == 0 else []
         
-        # New Feature: Read config.py and sensors.py
         config_path = Path(repo_dir) / "src" / "config.py"
         if config_path.exists():
             result["config_py"] = config_path.read_text(errors="ignore")
@@ -116,9 +123,7 @@ def main():
         else:
             result["sensors_py"] = ""
             
-        # New Feature: Run Pytest
         subprocess.run(["pip", "install", "-r", "requirements.txt"], cwd=repo_dir, capture_output=True)
-        # also fallback to pip install pytest if requirements missing
         subprocess.run(["pip", "install", "pytest"], cwd=repo_dir, capture_output=True)
         
         test_run = subprocess.run(["pytest"], cwd=repo_dir, capture_output=True, text=True)

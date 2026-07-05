@@ -5,46 +5,62 @@ class Week5Grader(BaseGrader):
     def grade(self) -> GradingResult:
         checks: list[CheckResult] = []
 
-        submission_json = self.workspace / "submission.json"
-        if not submission_json.exists():
-            submission_json = self.workspace / "main.py"
+        is_github_submission = (self.workspace / ".git").exists()
+        
+        repo_owner = ""
+        repo_name = ""
+        pr_number = ""
 
-        if not submission_json.exists():
-            fail_check = CheckResult(
-                name="Submission Payload",
-                passed=False, marks=0.0, max_marks=5.0,
-                reason="No submission.json found in submitted ZIP.",
-                hint="Create a submission.json with: repo_owner, repo_name, pr_number",
-            )
-            return GradingResult(score=0.0, max_score=5.0, passed=False, checks=[fail_check], feedback="No submission.json found. Cannot grade.")
+        if not is_github_submission:
+            submission_json = self.workspace / "submission.json"
+            if not submission_json.exists():
+                submission_json = self.workspace / "main.py"
 
-        try:
-            payload = json.loads(submission_json.read_text(errors="ignore"))
-        except Exception as e:
-            fail_check = CheckResult(
-                name="Submission Payload", passed=False, marks=0.0, max_marks=5.0,
-                reason=f"submission.json is not valid JSON.",
-                hint="Ensure submission.json is a valid JSON object.",
-            )
-            return GradingResult(score=0.0, max_score=5.0, passed=False, checks=[fail_check], feedback="Invalid JSON in submission.json.")
+            if not submission_json.exists():
+                fail_check = CheckResult(
+                    name="Submission Payload",
+                    passed=False, marks=0.0, max_marks=5.0,
+                    reason="No submission.json found in submitted ZIP.",
+                    hint="Create a submission.json with: repo_owner, repo_name, pr_number",
+                )
+                return GradingResult(score=0.0, max_score=5.0, passed=False, checks=[fail_check], feedback="No submission.json found. Cannot grade.")
 
-        repo_owner = payload.get("repo_owner", "").strip()
-        repo_name  = payload.get("repo_name",  "").strip()
-        pr_number  = payload.get("pr_number",  "")
+            try:
+                payload = json.loads(submission_json.read_text(errors="ignore"))
+            except Exception as e:
+                fail_check = CheckResult(
+                    name="Submission Payload", passed=False, marks=0.0, max_marks=5.0,
+                    reason=f"submission.json is not valid JSON.",
+                    hint="Ensure submission.json is a valid JSON object.",
+                )
+                return GradingResult(score=0.0, max_score=5.0, passed=False, checks=[fail_check], feedback="Invalid JSON in submission.json.")
 
-        # ── Check 1: Submission payload complete (0.5 mark) ───────────────
-        payload_ok = bool(repo_owner and repo_name and pr_number)
-        checks.append(CheckResult(
-            name="Submission Payload Complete",
-            passed=payload_ok,
-            marks=0.5 if payload_ok else 0.0,
-            max_marks=0.5,
-            reason=(f"Payload contains repo_owner={repo_owner}, repo_name={repo_name}, pr_number={pr_number}" if payload_ok else f"Missing fields."),
-            hint="submission.json must have: repo_owner, repo_name, pr_number",
-        ))
+            repo_owner = payload.get("repo_owner", "").strip()
+            repo_name  = payload.get("repo_name",  "").strip()
+            pr_number  = payload.get("pr_number",  "")
+            
+            payload_ok = bool(repo_owner and repo_name and pr_number)
+            checks.append(CheckResult(
+                name="Submission Payload Complete",
+                passed=payload_ok,
+                marks=0.5 if payload_ok else 0.0,
+                max_marks=0.5,
+                reason=(f"Payload contains repo_owner={repo_owner}, repo_name={repo_name}, pr_number={pr_number}" if payload_ok else f"Missing fields."),
+                hint="submission.json must have: repo_owner, repo_name, pr_number",
+            ))
 
-        if not payload_ok:
-            return GradingResult(score=0.5 if payload_ok else 0.0, max_score=5.0, passed=False, checks=checks, feedback="Incomplete submission payload.")
+            if not payload_ok:
+                return GradingResult(score=0.5 if payload_ok else 0.0, max_score=5.0, passed=False, checks=checks, feedback="Incomplete submission payload.")
+        else:
+            # If it's a GitHub direct submission, we give full marks for the payload because the integration worked.
+            checks.append(CheckResult(
+                name="Submission Payload Complete",
+                passed=True,
+                marks=0.5,
+                max_marks=0.5,
+                reason="Submitted directly via GitHub integration.",
+                hint="",
+            ))
 
         # Read result from wrapper
         result_json_path = self.workspace / "result.json"
@@ -76,12 +92,12 @@ class Week5Grader(BaseGrader):
             passed=clone_ok,
             marks=0.5 if clone_ok else 0.0,
             max_marks=0.5,
-            reason=f"Cloned {repo_owner}/{repo_name} successfully." if clone_ok else f"Failed to clone: {clone_error}",
+            reason=f"Repository cloned/available successfully." if clone_ok else f"Failed to clone: {clone_error}",
             hint="Ensure the repository is public or provide a valid GitHub token.",
         ))
 
         if not clone_ok:
-            return GradingResult(score=1.0 if payload_ok and clone_ok else 0.5, max_score=5.0, passed=False, checks=checks, feedback="Could not clone repository.")
+            return GradingResult(score=1.0, max_score=5.0, passed=False, checks=checks, feedback="Could not clone repository.")
 
         # Specific check: integration-fix branch exists or merged
         branches = result.get("branches", [])
@@ -133,7 +149,6 @@ class Week5Grader(BaseGrader):
         
         # Check: Sensors Docstring
         sensors_py = result.get("sensors_py", "")
-        # very basic check to see if there's a docstring in calibrate
         has_docstring = '\"\"\"' in sensors_py or '\'\'\'' in sensors_py
         checks.append(CheckResult(
             name="Sensor Calibration Docstring",
