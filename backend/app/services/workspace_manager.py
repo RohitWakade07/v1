@@ -49,12 +49,13 @@ def clone_repository(repo_url: str, dest_dir: Path) -> None:
     subprocess.run(["git", "init"], cwd=str(dest_dir), check=True, capture_output=True)
     subprocess.run(["git", "remote", "add", "origin", parsed["base_url"]], cwd=str(dest_dir), check=True, capture_output=True)
     
-    # Configure sparse checkout to explicitly exclude heavy/unnecessary directories
+    # Ensure cone mode is disabled for pattern matching
+    subprocess.run(["git", "config", "core.sparseCheckoutCone", "false"], cwd=str(dest_dir), check=True, capture_output=True)
     subprocess.run(["git", "config", "core.sparseCheckout", "true"], cwd=str(dest_dir), check=True, capture_output=True)
     sparse_config = dest_dir / ".git" / "info" / "sparse-checkout"
-    sparse_config.write_text("/*\n!**/node_modules/\n!**/.venv/\n!**/venv/\n!**/.env\n")
+    sparse_config.write_text("/*\n!/node_modules/\n!**/node_modules/\n!/.venv/\n!**/.venv/\n!/venv/\n!**/venv/\n!/.env\n!**/.env\n")
     
-    fetch_cmd = ["git", "fetch", "--depth", "1", "origin"]
+    fetch_cmd = ["git", "fetch", "--filter=blob:none", "--depth", "1", "origin"]
     if parsed["branch"]:
         fetch_cmd.append(parsed["branch"])
     else:
