@@ -3,12 +3,31 @@ import os
 import re
 from collections import Counter
 
+def get_all_files(paths):
+    all_files = []
+    for p in paths:
+        if os.path.isfile(p):
+            all_files.append(p)
+        elif os.path.isdir(p):
+            for root, _, files in os.walk(p):
+                for f in files:
+                    all_files.append(os.path.join(root, f))
+    return all_files
+
+def find_file(filename, all_files):
+    if os.path.exists(filename):
+        return filename
+    for f in all_files:
+        if os.path.basename(f) == filename:
+            return f
+    return None
+
 def main():
     if len(sys.argv) < 2:
         print("Usage: python analyze.py <file1> <file2> ...")
         sys.exit(1)
         
-    files = sys.argv[1:]
+    all_files = get_all_files(sys.argv[1:])
     
     while True:
         try:
@@ -26,11 +45,12 @@ def main():
                     print("Usage: stats <filename>")
                     continue
                 filename = args[0]
-                if filename not in files and not os.path.exists(filename):
+                target = find_file(filename, all_files)
+                if not target:
                     print(f"Error: {filename} not found.")
                     continue
                 try:
-                    with open(filename, 'r', encoding='utf-8') as f:
+                    with open(target, 'r', encoding='utf-8') as f:
                         lines = f.readlines()
                         num_lines = len(lines)
                         text = "".join(lines)
@@ -52,12 +72,13 @@ def main():
                     print("Error: N must be an integer.")
                     continue
                 
-                if filename not in files and not os.path.exists(filename):
+                target = find_file(filename, all_files)
+                if not target:
                     print(f"Error: {filename} not found.")
                     continue
                 
                 try:
-                    with open(filename, 'r', encoding='utf-8') as f:
+                    with open(target, 'r', encoding='utf-8') as f:
                         text = f.read().lower()
                         words = re.findall(r'\b\w+\b', text)
                         counts = Counter(words)
@@ -70,18 +91,16 @@ def main():
                     print("Usage: search <word>")
                     continue
                 word = args[0].lower()
-                for filename in files:
-                    if not os.path.exists(filename):
-                        continue
+                for target in all_files:
                     try:
-                        with open(filename, 'r', encoding='utf-8') as f:
+                        with open(target, 'r', encoding='utf-8') as f:
                             text = f.read().lower()
                             if word in text:
-                                print(filename)
+                                print(os.path.basename(target))
                     except Exception:
                         pass
             else:
-                print("Unknown command.")
+                print("Error: unknown command.")
         except EOFError:
             break
 
