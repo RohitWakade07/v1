@@ -1,0 +1,1 @@
+﻿This document explains how our team collaborated on this project. We divided the work equally. Alice worked on the backend and sensors, while Bob handled the frontend and configuration. We used Git for version control and resolved conflicts by communicating effectively over Discord.
