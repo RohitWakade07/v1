@@ -194,21 +194,40 @@ class DockerExecutor:
                 branch = match.group(3)
                 path = match.group(4)
                 
-                cmd = ["git", "clone", "--depth=1"]
+                # Set up the repo and use sparse checkout and blobless clone
+                subprocess.run(["git", "init"], cwd=str(submission_dir), check=True)
+                subprocess.run(["git", "remote", "add", "origin", base_url], cwd=str(submission_dir), check=True)
+                
+                subprocess.run(["git", "config", "core.sparseCheckoutCone", "false"], cwd=str(submission_dir), check=True)
+                subprocess.run(["git", "config", "core.sparseCheckout", "true"], cwd=str(submission_dir), check=True)
+                
+                sparse_config = submission_dir / ".git" / "info" / "sparse-checkout"
+                sparse_config.write_text("/*\n!/node_modules/\n!**/node_modules/\n!/.venv/\n!**/.venv/\n!/venv/\n!**/venv/\n!/.env\n!**/.env\n")
+                
+                fetch_cmd = ["git", "fetch", "--filter=blob:none", "--depth=1", "origin"]
                 if branch:
-                    cmd.extend(["--branch", branch])
-                cmd.extend([base_url, str(submission_dir)])
+                    fetch_cmd.append(branch)
+                else:
+                    fetch_cmd.append("HEAD")
                 
                 proc = await asyncio.create_subprocess_exec(
-                    *cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                    *fetch_cmd, cwd=str(submission_dir), stdout=subprocess.PIPE, stderr=subprocess.PIPE
                 )
                 stdout, stderr = await proc.communicate()
-                elapsed = int((time.time() - t0) * 1000)
                 if proc.returncode != 0:
-                    logger.error(f"[PHASE1:GIT] Clone FAILED rc={proc.returncode} stderr={stderr.decode()[:500]}")
-                    raise RuntimeError(f"Git clone failed: {stderr.decode()}")
+                    logger.error(f"[PHASE1:GIT] Fetch FAILED rc={proc.returncode} stderr={stderr.decode()[:500]}")
+                    raise RuntimeError(f"Git fetch failed: {stderr.decode()}")
                 
-                # Proactively delete massive unnecessary directories if students accidentally pushed them
+                checkout_proc = await asyncio.create_subprocess_exec(
+                    "git", "checkout", "FETCH_HEAD", cwd=str(submission_dir), stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
+                cout, cerr = await checkout_proc.communicate()
+                elapsed = int((time.time() - t0) * 1000)
+                if checkout_proc.returncode != 0:
+                    logger.error(f"[PHASE1:GIT] Checkout FAILED rc={checkout_proc.returncode} stderr={cerr.decode()[:500]}")
+                    raise RuntimeError(f"Git checkout failed: {cerr.decode()}")
+                
+                # Proactively delete massive unnecessary directories if they somehow still made it in
                 for huge_dir in ["node_modules", ".next", "dist", "build", "venv", ".venv"]:
                     huge_path = submission_dir / huge_dir
                     if huge_path.exists() and huge_path.is_dir():
