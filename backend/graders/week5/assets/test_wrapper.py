@@ -1,4 +1,4 @@
-﻿import os, json, subprocess, re, shutil
+import os, json, subprocess, re, shutil
 from pathlib import Path
 
 def _git(args, cwd, timeout=15):
@@ -9,9 +9,6 @@ def _git(args, cwd, timeout=15):
         return 1, "", str(e)
 
 def main():
-    subprocess.run(["apt-get", "update"], capture_output=True)
-    subprocess.run(["apt-get", "install", "-y", "git"], capture_output=True)
-    
     workspace = Path(".")
     is_github_submission = (workspace / ".git").exists()
     
