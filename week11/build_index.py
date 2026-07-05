@@ -1,1 +1,0 @@
-open("index.json", "w").write("{}")
