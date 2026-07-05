@@ -26,11 +26,11 @@ class Settings(BaseSettings):
     WORKERS: int = 4
 
     # Database — individual components (used for local dev / docker-compose)
-    POSTGRES_HOST: str = "localhost"
-    POSTGRES_PORT: int = 5432
-    POSTGRES_USER: str = "grading_user"
-    POSTGRES_PASSWORD: str = "changeme"
-    POSTGRES_DB: str = "grading_db"
+    MYSQL_HOST: str = "localhost"
+    MYSQL_PORT: int = 3306
+    MYSQL_USER: str = "grading_user"
+    MYSQL_PASSWORD: str = "changeme"
+    MYSQL_DB: str = "grading_db"
 
     # Railway injects a single DATABASE_URL — takes precedence when set
     DATABASE_URL_OVERRIDE: Optional[str] = Field(
@@ -45,28 +45,26 @@ class Settings(BaseSettings):
     def DATABASE_URL(self) -> str:
         if self.DATABASE_URL_OVERRIDE:
             url = self.DATABASE_URL_OVERRIDE
-            if url.startswith("postgres://"):
-                return url.replace("postgres://", "postgresql+asyncpg://", 1)
-            if url.startswith("postgresql://") and "+" not in url.split("://")[0]:
-                return url.replace("postgresql://", "postgresql+asyncpg://", 1)
+            if url.startswith("mysql://"):
+                return url.replace("mysql://", "mysql+aiomysql://", 1)
             return url
         return (
-            f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
-            f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+            f"mysql+aiomysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}"
+            f"@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DB}"
         )
 
     @property
     def DATABASE_URL_SYNC(self) -> str:
         if self.DATABASE_URL_OVERRIDE:
             url = self.DATABASE_URL_OVERRIDE
-            for prefix in ["postgres://", "postgresql://", "postgresql+asyncpg://"]:
-                if url.startswith(prefix):
-                    base = "postgresql://" if prefix == "postgres://" else url[: url.index("://") + 3].replace("+asyncpg", "")
-                    return url.replace(prefix, "postgresql+psycopg2://", 1)
+            if url.startswith("mysql://"):
+                return url.replace("mysql://", "mysql+pymysql://", 1)
+            if url.startswith("mysql+aiomysql://"):
+                return url.replace("mysql+aiomysql://", "mysql+pymysql://", 1)
             return url
         return (
-            f"postgresql+psycopg2://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
-            f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+            f"mysql+pymysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}"
+            f"@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DB}"
         )
 
     # Redis

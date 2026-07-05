@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Optional, Any, List
 
 from sqlalchemy import String, Text, Integer, UniqueConstraint, Index, Float
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.mysql import JSON
 from sqlmodel import Field, SQLModel, Column, Relationship
 
 
@@ -124,7 +124,7 @@ class Assignment(SQLModel, table=True):
     is_published: bool = Field(default=False)
     is_archived: bool = Field(default=False)
     # Resource links: list of {title: str, url: str} stored as JSON
-    resource_links: Any = Field(default=[], sa_column=Column(JSONB, nullable=False, server_default='[]'))
+    resource_links: Any = Field(default=[], sa_column=Column(JSON, nullable=False, server_default='[]'))
     # Late submission penalty as a percentage (0-100)
     late_penalty_pct: float = Field(default=0.0, sa_column=Column(Float, nullable=False, server_default="0.0"))
     # Submission info fields (editable by admin)
@@ -173,22 +173,9 @@ class GradingSession(SQLModel, table=True):
     # guard as a safety net for the two active statuses only.
     __table_args__ = (
         Index(
-            "ix_one_active_session_per_student_assignment",
+            "ix_grading_sessions_student_assignment",
             "student_id",
             "assignment_id",
-            # postgresql_where clause — only enforced for active rows.
-            # This prevents two concurrent active sessions at the DB level
-            # without blocking historical COMPLETED/REJECTED records.
-            # NOTE: This is a PostgreSQL-specific partial index.
-            # For other databases, rely solely on the service-layer check.
-            postgresql_where=(
-                # Import done inline to avoid circular at module load time.
-                # SQLAlchemy text() used for the partial index predicate.
-                __import__('sqlalchemy').text(
-                    "status IN ('CREATED', 'CHALLENGE_ISSUED', 'RUNNING', 'PROOF_GENERATED', 'STARTED', 'IN_PROGRESS')"
-                )
-            ),
-            unique=True,
         ),
     )
 
