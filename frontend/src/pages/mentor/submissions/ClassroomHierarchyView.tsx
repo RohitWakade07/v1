@@ -6,6 +6,7 @@ import { DataTable } from '@/components/shared/DataTable'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { Modal } from '@/components/shared/Modal'
 import { StatusBadge } from '@/components/shared/StatusBadge'
+import { SandboxView } from '@/components/sandbox/SandboxView'
 import { formatDateTime } from '@/lib/utils'
 
 
@@ -19,6 +20,7 @@ export const ClassroomHierarchyView = () => {
   const [selectedClassroomId, setSelectedClassroomId] = useState<string | null>(null)
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null)
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
+  const [sandboxSubmissionId, setSandboxSubmissionId] = useState<string | null>(null)
 
   const { data: enrollments, isLoading: loadingEnrollments } = useClassroomEnrollments(selectedClassroomId)
 
@@ -216,7 +218,7 @@ export const ClassroomHierarchyView = () => {
         {selectedStudentSubmissions.length > 0 ? (
           <div className="space-y-4">
             <DataTable 
-              headers={['Attempt', 'Status', 'Score', 'Submitted At']}
+              headers={['Attempt', 'Status', 'Score', 'Submitted At', 'Actions']}
               rows={selectedStudentSubmissions.map(s => [
                 <span key={`att-${s.id}`} className="font-mono text-xs text-text-primary">#{s.attempt_number}</span>,
                 <StatusBadge key={`stat-${s.id}`} status={s.status} />,
@@ -230,6 +232,19 @@ export const ClassroomHierarchyView = () => {
                   )}
                 </span>,
                 <span key={`time-${s.id}`} className="text-xs text-text-secondary">{formatDateTime(s.submitted_at)}</span>,
+                <div key={`actions-${s.id}`}>
+                  {selectedAssignment?.category === 'MANUAL_REVIEW' && (
+                    <button
+                      onClick={() => {
+                        setSelectedStudentId(null);
+                        setSandboxSubmissionId(s.id);
+                      }}
+                      className="px-3 py-1 bg-accent-blue text-white text-xs font-semibold rounded hover:bg-accent-blue/80"
+                    >
+                      Launch Sandbox
+                    </button>
+                  )}
+                </div>
               ])}
             />
           </div>
@@ -237,6 +252,18 @@ export const ClassroomHierarchyView = () => {
           <EmptyState icon={<FileTextIcon size={24} />} title="No Attempts" message="No records found for this assignment." />
         )}
       </Modal>
+
+      {/* Step 5: Sandbox View Modal */}
+      {sandboxSubmissionId && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-8">
+          <div className="w-full max-w-6xl h-full max-h-[800px]">
+            <SandboxView 
+              submissionId={sandboxSubmissionId} 
+              onClose={() => setSandboxSubmissionId(null)} 
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
