@@ -72,6 +72,8 @@ services:
     container_name: grading_worker
     restart: unless-stopped
     env_file: .env
+    environment:
+      - SERVICE_TYPE=worker
     volumes:
       - .:/app
       # Mount the host Docker socket so the worker can spin up sibling containers

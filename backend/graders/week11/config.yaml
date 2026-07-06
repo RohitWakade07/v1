@@ -1,6 +1,6 @@
 assignment_slug: "week11"
 target_file: "main.py"
-docker_image: "python:3.10-slim"
+docker_image: "grader-python:latest"
 execution_command: "python test_wrapper.py"
 timeout_seconds: 60
 memory_limit_mb: 512

@@ -53,8 +53,15 @@ def main():
     # Query Handling
     if os.path.isfile("query.py"):
         try:
-            r_spoof = subprocess.run([sys.executable, "query.py"], input="asdfasdfasdf\nquit\n", capture_output=True, text=True, timeout=TIMEOUT)
-            out_lower_spoof = r_spoof.stdout.lower()
+            import pexpect
+            child = pexpect.spawn(sys.executable, ["query.py"], timeout=5, encoding="utf-8")
+            child.sendline("asdfasdfasdf")
+            # Wait a short moment to let it process
+            child.expect([pexpect.TIMEOUT, pexpect.EOF], timeout=1)
+            out_lower_spoof = (child.before or "").lower()
+            child.sendline("quit")
+            child.close()
+            
             corpus_files = [f.lower() for f in os.listdir("corpus")] if os.path.isdir("corpus") else []
             valid_doc_found = False
             for f in corpus_files:
@@ -73,9 +80,26 @@ def main():
             pass
 
         try:
-            r = subprocess.run([sys.executable, "query.py"], input="test\nquery2\nquit\n", capture_output=True, text=True, timeout=TIMEOUT)
-            corpus_files = [f.lower() for f in os.listdir("corpus")] if os.path.isdir("corpus") else []
-            out_lower = r.stdout.lower()
+            import pexpect
+            child = pexpect.spawn(sys.executable, ["query.py"], timeout=5, encoding="utf-8")
+            
+            # Send first query
+            child.sendline("test")
+            child.expect([pexpect.TIMEOUT, pexpect.EOF], timeout=1)
+            out_test = (child.before or "").lower()
+            
+            # Send second query
+            if child.isalive():
+                child.sendline("query2")
+                child.expect([pexpect.TIMEOUT, pexpect.EOF], timeout=1)
+            out_query2 = (child.before or "").lower()
+            
+            # Send quit
+            if child.isalive():
+                child.sendline("quit")
+                child.expect(pexpect.EOF, timeout=2)
+                
+            out_lower = out_test + out_query2
             valid_doc_found = False
             for f in corpus_files:
                 doc_name = f.replace(".json", "")
@@ -83,14 +107,22 @@ def main():
                     valid_doc_found = True
                     break
             
-            if r.returncode == 0 and (valid_doc_found or "not found" in out_lower or "0 document" in out_lower):
+            if valid_doc_found or "not found" in out_lower or "0 document" in out_lower:
                 breakdown["query_handling"] = 35.0
                 breakdown["ranking"] = 15.0
                 feedback.append("query.py handled queries correctly.")
             else:
                 breakdown["query_handling"] = 0.0
                 breakdown["ranking"] = 0.0
-                feedback.append(f"query.py failed to return valid document results. Exit code: {r.returncode}")
+                feedback.append("query.py failed to return valid document results.")
+        except pexpect.exceptions.EOF:
+            breakdown["query_handling"] = 0.0
+            breakdown["ranking"] = 0.0
+            feedback.append("query.py crashed with EOFError unexpectedly.")
+        except pexpect.exceptions.TIMEOUT:
+            breakdown["query_handling"] = 0.0
+            breakdown["ranking"] = 0.0
+            feedback.append("query.py timed out or did not exit cleanly on 'quit'.")
         except Exception as e:
             breakdown["query_handling"] = 0.0
             breakdown["ranking"] = 0.0

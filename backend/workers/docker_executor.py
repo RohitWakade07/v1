@@ -1,4 +1,4 @@
-﻿import asyncio
+import asyncio
 import logging
 import os
 import shutil
@@ -44,9 +44,9 @@ _IMAGE_TO_LANGUAGE = {
 }
 
 
-def run_fresh_container(language: str, image_name: str) -> Any:
+def run_fresh_container(language: str, image_name: str, network_disabled: bool = True) -> Any:
     container_name = f"grader-{language}-{uuid.uuid4().hex[:12]}"
-    logger.info(f"[CONTAINER:SPAWN] image={image_name} name={container_name} language={language}")
+    logger.info(f"[CONTAINER:SPAWN] image={image_name} name={container_name} language={language} network_disabled={network_disabled}")
 
     volume_name = os.environ.get("GRADER_VOLUME_NAME", "backend_grader_jobs")
     container = get_docker_client().containers.run(
@@ -54,7 +54,7 @@ def run_fresh_container(language: str, image_name: str) -> Any:
         command="tail -f /dev/null",
         name=container_name,
         user="nobody",
-        network_disabled=True,
+        network_disabled=network_disabled,
         mem_limit="256m",
         memswap_limit="256m",
         cpu_quota=50000,
@@ -317,9 +317,10 @@ class DockerExecutor:
             # â”€â”€ PHASE 2: SPIN UP CONTAINER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             image_name = config.get("docker_image", "python:3.10-slim")
             language   = _IMAGE_TO_LANGUAGE.get(image_name, "generic")
-            logger.info(f"[PHASE2:CONTAINER] Requesting container image={image_name} language={language}")
+            network_disabled = config.get("network_disabled", True)
+            logger.info(f"[PHASE2:CONTAINER] Requesting container image={image_name} language={language} network_disabled={network_disabled}")
             t0 = time.time()
-            container = run_fresh_container(language, image_name)
+            container = run_fresh_container(language, image_name, network_disabled)
             exec_metadata["container_id"] = container.id
             logger.info(f"[PHASE2:CONTAINER] Ready in {int((time.time()-t0)*1000)}ms id={container.id[:12]}")
 
@@ -338,14 +339,32 @@ class DockerExecutor:
                 container_workdir = f"{container_submission}/{config['working_dir']}"
 
             command = config.get("execution_command")
+            setup_command = config.get("setup_command")
             timeout = config.get("timeout_seconds", 60)
 
             logger.info(
-                f"[PHASE3:EXEC] cmd={command!r} workdir={container_workdir} timeout={timeout}s"
+                f"[PHASE3:EXEC] setup_cmd={setup_command!r} cmd={command!r} workdir={container_workdir} timeout={timeout}s"
             )
 
             loop = asyncio.get_running_loop()
             start_time = time.time()
+
+            if setup_command:
+                def run_setup():
+                    return container.exec_run(
+                        cmd=setup_command,
+                        workdir=container_workdir,
+                        environment={"WORKSPACE": container_submission, "ASSETS": container_assets},
+                        user="root",
+                    )
+                try:
+                    setup_res = await asyncio.wait_for(
+                        loop.run_in_executor(None, run_setup),
+                        timeout=300,
+                    )
+                    logger.info(f"[PHASE3:EXEC:SETUP] exit_code={setup_res.exit_code} stdout={setup_res.output.decode('utf-8', errors='replace')[:500]}")
+                except Exception as e:
+                    logger.error(f"[PHASE3:EXEC:SETUP] setup failed: {e}")
 
             def run_exec():
                 return container.exec_run(
