@@ -1,1 +1,5 @@
-{"url": "mock", "title": "mock", "content": "mock"}
+﻿{
+    "title": "dummy",
+    "url": "http://dummy",
+    "text": "dummy text"
+}
