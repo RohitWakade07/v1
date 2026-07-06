@@ -57,6 +57,8 @@ services:
       - "8000:8000"
     volumes:
       - .:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+      - grader_jobs:/autograder_jobs
     depends_on:
       postgres:
         condition: service_healthy
