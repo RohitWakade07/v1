@@ -17,11 +17,14 @@ export const SubmissionDetailPage = () => {
   const liveStatus = useSubmissionStatusSSE(id)
   const currentStatus = liveStatus || submission?.status
 
-  // Only fetch result if status is terminal
-  const isTerminal = ['COMPLETED', 'FAILED', 'TIMEOUT', 'VALIDATION_ERROR'].includes(currentStatus || '')
-  const { data: result } = useSubmissionResult(id, isTerminal)
-
   const { data: assignment } = useAssignment(submission?.assignment_id)
+  
+  const isManualReview = assignment?.category === 'manual_review'
+  const isTerminal = ['COMPLETED', 'FAILED', 'TIMEOUT', 'VALIDATION_ERROR'].includes(currentStatus || '')
+  
+  // Only fetch result if status is terminal and it's not a manual review
+  const shouldFetchResult = isTerminal && !isManualReview
+  const { data: result } = useSubmissionResult(id, shouldFetchResult)
 
   if (submissionLoading) {
     return (
@@ -124,7 +127,7 @@ export const SubmissionDetailPage = () => {
             </div>
           )}
 
-          {!isTerminal && (
+          {!isTerminal && !isManualReview && (
             <div className="card-dark p-10 flex flex-col items-center justify-center text-center">
               <Activity size={48} className="text-accent-blue animate-pulse mb-4" />
               <h3 className="text-lg font-semibold text-text-primary mb-2">Evaluating Submission</h3>
@@ -134,6 +137,15 @@ export const SubmissionDetailPage = () => {
             </div>
           )}
 
+          {isManualReview && (
+            <div className="card-dark p-10 flex flex-col items-center justify-center text-center border border-accent-blue/20">
+              <Clock size={48} className="text-accent-blue mb-4 opacity-80" />
+              <h3 className="text-lg font-semibold text-text-primary mb-2">Waiting for Mentor Review</h3>
+              <p className="text-sm text-text-secondary max-w-md">
+                This assignment requires manual evaluation. A mentor will review your code in an interactive sandbox and provide feedback soon.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Sidebar: Metadata (1/3 width) */}

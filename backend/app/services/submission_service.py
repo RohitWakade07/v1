@@ -159,20 +159,25 @@ class SubmissionService:
                 "priority": 5,  # default
             }
 
-            # Create grading job record
-            job = GradingJob(
-                submission_id=submission.id,
-                status=JobStatus.PENDING,
-                queue_name="normal"
-            )
-            db.add(job)
+            from app.models.models import AssignmentCategory
+            if assignment.category != AssignmentCategory.MANUAL_REVIEW:
+                # Create grading job record
+                job = GradingJob(
+                    submission_id=submission.id,
+                    status=JobStatus.PENDING,
+                    queue_name="normal"
+                )
+                db.add(job)
 
-            # Create outbox record
-            outbox_msg = SubmissionOutbox(
-                submission_id=submission.id,
-                payload=json.dumps(payload),
-            )
-            db.add(outbox_msg)
+                # Create outbox record
+                outbox_msg = SubmissionOutbox(
+                    submission_id=submission.id,
+                    payload=json.dumps(payload),
+                )
+                db.add(outbox_msg)
+            else:
+                submission.status = SubmissionStatus.COMPLETED
+                submission.completed_at = datetime.utcnow()
 
             await db.commit()
 

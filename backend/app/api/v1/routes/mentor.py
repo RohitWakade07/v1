@@ -395,7 +395,16 @@ async def list_mentor_submissions(
         select(Submission, Student, Assignment)
         .join(Student, Submission.student_id == Student.id)
         .join(Assignment, Submission.assignment_id == Assignment.id)
-        .where(Assignment.created_by_id == current_mentor.id)
+        .where(
+            or_(
+                Assignment.created_by_id == current_mentor.id,
+                Student.id.in_(
+                    select(ClassroomEnrollment.student_id)
+                    .join(Classroom, Classroom.id == ClassroomEnrollment.classroom_id)
+                    .where(Classroom.mentor_id == current_mentor.id)
+                )
+            )
+        )
         .order_by(Submission.submitted_at.desc())
     )
     rows = result.all()
