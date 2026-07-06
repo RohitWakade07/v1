@@ -12,10 +12,17 @@ from app.services.sandbox_manager import start_sandbox, stop_sandbox, get_docker
 
 router = APIRouter()
 
+import uuid
+
 @router.post("/start/{submission_id}")
 async def create_sandbox(submission_id: str, db: AsyncSession = Depends(get_db), current_user: Mentor = Depends(get_current_mentor)):
     # Verify user is an admin or the appropriate mentor
-    submission = await db.get(Submission, submission_id)
+    try:
+        sub_uuid = uuid.UUID(submission_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid submission ID format")
+        
+    submission = await db.get(Submission, sub_uuid)
     if not submission:
         raise HTTPException(status_code=404, detail="Submission not found")
         
