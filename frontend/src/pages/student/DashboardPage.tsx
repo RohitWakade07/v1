@@ -160,7 +160,7 @@ const DashboardPage = () => {
                         </p>
                       </div>
                       <span className="shrink-0 text-sm font-semibold text-accent-teal">
-                        {result.final_score.toFixed(1)}/{result.max_score}
+                        {result.final_score != null ? result.final_score.toFixed(1) : '-'}/{result.max_score != null ? result.max_score : '-'}
                       </span>
                     </Link>
                   ))}

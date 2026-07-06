@@ -33,10 +33,10 @@ export const ResultsPage = () => {
       </div>,
       <span key="assignment" className="text-sm text-text-primary">{r.assignment_title}</span>,
       <span key="score" className="text-sm font-medium text-text-primary">
-        <span className={r.final_score >= r.max_score * 0.5 ? 'text-accent-teal' : 'text-status-warning'}>
-          {r.final_score.toFixed(1)}
+        <span className={r.final_score != null && r.max_score != null && r.final_score >= r.max_score * 0.5 ? 'text-accent-teal' : 'text-status-warning'}>
+          {r.final_score != null ? r.final_score.toFixed(1) : '-'}
         </span> 
-        <span className="text-text-secondary text-xs ml-1">/ {r.max_score}</span>
+        <span className="text-text-secondary text-xs ml-1">/ {r.max_score != null ? r.max_score : '-'}</span>
       </span>,
       <span key="completed" className="text-xs text-text-secondary">{formatDate(r.completed_at)}</span>,
     ])

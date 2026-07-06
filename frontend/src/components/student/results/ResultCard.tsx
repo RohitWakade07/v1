@@ -29,9 +29,9 @@ export const ResultCard = ({ result }: ResultCardProps) => {
         <div className="flex items-center gap-2">
           <Trophy size={16} className="text-accent-teal shrink-0" />
           <span className="font-display text-xl font-bold text-accent-teal">
-            {result.final_score.toFixed(1)}
+            {result.final_score != null ? result.final_score.toFixed(1) : '-'}
           </span>
-          <span className="text-sm text-text-secondary">/ {result.max_score}</span>
+          <span className="text-sm text-text-secondary">/ {result.max_score != null ? result.max_score : '-'}</span>
         </div>
         <span className="text-sm font-semibold text-text-secondary">{pct}%</span>
       </div>
