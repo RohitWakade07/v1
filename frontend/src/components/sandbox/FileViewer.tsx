@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { apiClient } from '@/api/client';
 
 interface FileViewerProps {
   sandboxId: string;
@@ -15,7 +15,7 @@ export const FileViewer: React.FC<FileViewerProps> = ({ sandboxId }) => {
     // Fetch file list
     const fetchFiles = async () => {
       try {
-        const res = await axios.get(`/api/v1/sandbox/files/${sandboxId}`);
+        const res = await apiClient.get(`/sandbox/files/${sandboxId}`);
         setFiles(res.data.files || []);
       } catch (e) {
         console.error("Failed to load files", e);
@@ -28,7 +28,7 @@ export const FileViewer: React.FC<FileViewerProps> = ({ sandboxId }) => {
     setSelectedFile(path);
     setLoading(true);
     try {
-      const res = await axios.get(`/api/v1/sandbox/file/${sandboxId}`, {
+      const res = await apiClient.get(`/sandbox/file/${sandboxId}`, {
         params: { path }
       });
       setFileContent(res.data.content || '');
