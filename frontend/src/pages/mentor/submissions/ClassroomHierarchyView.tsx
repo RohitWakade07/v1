@@ -222,8 +222,19 @@ export const ClassroomHierarchyView = () => {
               rows={selectedStudentSubmissions.map(s => [
                 <span key={`att-${s.id}`} className="font-mono text-xs text-text-primary">#{s.attempt_number}</span>,
                 <StatusBadge key={`stat-${s.id}`} status={s.status} />,
-                <span key={`scr-${s.id}`} className="font-mono text-sm font-medium">
-                  {s.score != null ? (
+                <span key={`scr-${s.id}`} className="font-mono text-sm font-medium flex flex-col">
+                  {s.mentor_score != null ? (
+                    <>
+                      <span className={s.passed ? 'text-accent-teal' : 'text-status-warning'}>
+                        {s.mentor_score.toFixed(1)} / {s.max_score} <span className="text-[10px] text-text-secondary">(Mentor)</span>
+                      </span>
+                      {s.score != null && (
+                        <span className="text-xs text-text-muted line-through">
+                          Grader: {s.score.toFixed(1)}
+                        </span>
+                      )}
+                    </>
+                  ) : s.score != null ? (
                     <span className={s.passed ? 'text-accent-teal' : 'text-status-warning'}>
                       {s.score.toFixed(1)} / {s.max_score}
                     </span>
@@ -233,17 +244,15 @@ export const ClassroomHierarchyView = () => {
                 </span>,
                 <span key={`time-${s.id}`} className="text-xs text-text-secondary">{formatDateTime(s.submitted_at)}</span>,
                 <div key={`actions-${s.id}`}>
-                  {selectedAssignment?.category === 'manual_review' && (
-                    <button
-                      onClick={() => {
-                        setSelectedStudentId(null);
-                        setSandboxSubmissionId(s.id);
-                      }}
-                      className="px-3 py-1 bg-accent-blue text-white text-xs font-semibold rounded hover:bg-accent-blue/80"
-                    >
-                      Launch Sandbox
-                    </button>
-                  )}
+                  <button
+                    onClick={() => {
+                      setSelectedStudentId(null);
+                      setSandboxSubmissionId(s.id);
+                    }}
+                    className="px-3 py-1 bg-accent-blue text-white text-xs font-semibold rounded hover:bg-accent-blue/80 cursor-pointer"
+                  >
+                    {s.assignment_category === 'manual_review' ? 'Launch Sandbox & Grade' : 'Launch Sandbox & View'}
+                  </button>
                 </div>
               ])}
             />

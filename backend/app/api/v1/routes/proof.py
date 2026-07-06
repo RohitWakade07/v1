@@ -149,7 +149,6 @@ async def submit_eep_proof(
             nonce=f"eep-{session.id}-{now.timestamp()}",
             grader_binary_hash="eep-verifier",
             raw_proof=plaintext[:10000],
-            hmac_valid=True,
             hashes_valid=True,
             final_score=final_score,
             submitted_at=now,

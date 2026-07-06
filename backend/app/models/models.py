@@ -48,13 +48,6 @@ class GraderStatus(str, Enum):
     ARCHIVED = "ARCHIVED"
 
 
-class EvaluatorStatus(str, Enum):
-    PENDING  = "PENDING"
-    BUILDING = "BUILDING"
-    SUCCESS  = "SUCCESS"
-    FAILED   = "FAILED"
-
-
 class AssignmentCategory(str, Enum):
     ARTIFACT_VALIDATION     = "artifact_validation"
     DETERMINISTIC_EXECUTION = "deterministic_execution"
@@ -238,7 +231,7 @@ class ProofSubmission(SQLModel, table=True):
     grader_binary_hash: str = Field(sa_column=Column(String(64), nullable=False))
     raw_proof: str = Field(sa_column=Column(Text, nullable=False))
 
-    hmac_valid: bool = Field(default=False)
+
     hashes_valid: bool = Field(default=False)
     final_score: Optional[float] = Field(default=None)
 
@@ -309,21 +302,6 @@ class AssignmentGraderMapping(SQLModel, table=True):
     grader_id: uuid.UUID = Field(foreign_key="graders.id", index=True)
     grader_version_id: Optional[uuid.UUID] = Field(default=None, foreign_key="grader_versions.id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
-
-
-# ── Evaluator Build ───────────────────────────────────────────────────
-
-class EvaluatorBuild(SQLModel, table=True):
-    __tablename__ = "evaluator_builds"
-
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
-    assignment_id: uuid.UUID = Field(foreign_key="assignments.id", index=True)
-    mentor_id: uuid.UUID = Field(foreign_key="mentors.id")
-    status: EvaluatorStatus = Field(default=EvaluatorStatus.PENDING)
-    binary_hash: Optional[str] = Field(default=None, sa_column=Column(String(64)))
-    error_message: Optional[str] = Field(default=None, sa_column=Column(Text))
-    started_at: datetime = Field(default_factory=datetime.utcnow)
-    completed_at: Optional[datetime] = Field(default=None)
 
 
 # ── Notification (polymorphic, rebuilt) ──────────────────────────────
@@ -426,6 +404,8 @@ class Submission(SQLModel, table=True):
     score: Optional[float] = Field(default=None)
     max_score: Optional[float] = Field(default=None)
     passed: Optional[bool] = Field(default=None)
+    mentor_score: Optional[float] = Field(default=None, sa_column=Column(Float, nullable=True))
+    mentor_feedback: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
     attempt_number: int = Field(default=1)
     worker_id: Optional[str] = Field(default=None, sa_column=Column(String(100), nullable=True))
     validation_error: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))

@@ -5,6 +5,7 @@ import { EmptyState } from '@/components/shared/EmptyState'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { useMentorSubmissions } from '@/hooks/mentor/useMentor'
 import { formatDateTime } from '@/lib/utils'
+import { SandboxView } from '@/components/sandbox/SandboxView'
 
 const STATUS_OPTIONS = [
   'ALL', 'PENDING', 'QUEUED', 'RUNNING', 'COMPLETED', 'FAILED', 'TIMEOUT', 'CANCELLED', 'VALIDATION_ERROR',
@@ -14,6 +15,7 @@ export const GlobalQueueView = () => {
   const { data: submissions, isLoading } = useMentorSubmissions()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('ALL')
+  const [sandboxSubmissionId, setSandboxSubmissionId] = useState<string | null>(null)
 
   const filteredData = useMemo(() => {
     if (!submissions) return []
@@ -27,7 +29,7 @@ export const GlobalQueueView = () => {
     })
   }, [submissions, searchTerm, statusFilter])
 
-  const headers = ['Student', 'Assignment', 'Type', 'Attempt', 'Status', 'Score', 'Submitted At']
+  const headers = ['Student', 'Assignment', 'Type', 'Attempt', 'Status', 'Score', 'Submitted At', 'Actions']
 
   const rows = useMemo(() => {
     return filteredData.map((s) => [
@@ -46,8 +48,23 @@ export const GlobalQueueView = () => {
         #{s.attempt_number}
       </span>,
       <StatusBadge key={`status-${s.id}`} status={s.status} />,
-      <span key={`score-${s.id}`} className="font-mono text-sm font-medium">
-        {s.score != null ? (
+      <span key={`score-${s.id}`} className="font-mono text-sm font-medium flex flex-col">
+        {s.mentor_score != null ? (
+          <>
+            <span className={s.passed ? 'text-accent-teal' : 'text-status-warning'}>
+              {s.mentor_score.toFixed(1)}
+              {s.max_score != null && (
+                <span className="text-text-secondary text-xs ml-1">/ {s.max_score}</span>
+              )}
+              <span className="text-[10px] text-text-secondary block font-sans">(Mentor)</span>
+            </span>
+            {s.score != null && (
+              <span className="text-xs text-text-muted line-through">
+                Grader: {s.score.toFixed(1)}
+              </span>
+            )}
+          </>
+        ) : s.score != null ? (
           <span className={s.passed ? 'text-accent-teal' : 'text-status-warning'}>
             {s.score.toFixed(1)}
             {s.max_score != null && (
@@ -61,6 +78,14 @@ export const GlobalQueueView = () => {
       <span key={`submitted-${s.id}`} className="text-xs text-text-secondary">
         {formatDateTime(s.submitted_at)}
       </span>,
+      <div key={`actions-${s.id}`}>
+        <button
+          onClick={() => setSandboxSubmissionId(s.id)}
+          className="px-3 py-1 bg-accent-blue text-white text-xs font-semibold rounded hover:bg-accent-blue/80 cursor-pointer"
+        >
+          {s.assignment_category === 'manual_review' ? 'Launch & Grade' : 'Launch & View'}
+        </button>
+      </div>,
     ])
   }, [filteredData])
 
@@ -108,6 +133,18 @@ export const GlobalQueueView = () => {
         />
       ) : (
         <DataTable headers={headers} rows={rows} />
+      )}
+
+      {/* Sandbox View Modal */}
+      {sandboxSubmissionId && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-8">
+          <div className="w-full max-w-6xl h-full max-h-[800px]">
+            <SandboxView 
+              submissionId={sandboxSubmissionId} 
+              onClose={() => setSandboxSubmissionId(null)} 
+            />
+          </div>
+        </div>
       )}
     </div>
   )

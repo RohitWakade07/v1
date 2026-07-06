@@ -1,5 +1,3 @@
-import hashlib
-import hmac
 import json
 import uuid
 from datetime import datetime, timezone
@@ -25,37 +23,6 @@ async def register_and_login(client, roll="22BEC001", password="password123"):
         "password": password,
     })
     return resp.json()["access_token"]
-
-
-def make_proof(session_id, assignment_id, student_id="22BEC001", nonce=None):
-    nonce = nonce or str(uuid.uuid4())
-    payload = {
-        "session_id": str(session_id),
-        "assignment_id": str(assignment_id),
-        "student_id": student_id,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "nonce": nonce,
-        "grader_binary_hash": "a" * 64,
-        "results": {
-            "test_1": {
-                "test_id": "test_1",
-                "passed": True,
-                "stdout_hash": "b" * 64,
-                "stderr_hash": None,
-                "exit_code": 0,
-                "score": 50.0,
-            }
-        },
-        "artifact_hashes": {"output.txt": "c" * 64},
-    }
-    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
-    sig = hmac.new(
-        settings.PROOF_SIGNING_KEY.encode(),
-        canonical.encode(),
-        hashlib.sha256,
-    ).hexdigest()
-    payload["hmac_signature"] = sig
-    return payload
 
 
 # ── Auth tests ────────────────────────────────────────────────────────

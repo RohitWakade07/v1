@@ -58,6 +58,16 @@ export const SubmissionDetailPage = () => {
         {/* Main Content: Execution Logs and Checks (2/3 width) */}
         <div className="lg:col-span-2 space-y-6">
           
+          {/* Mentor Feedback */}
+          {submission.mentor_feedback && (
+            <div className="card-dark p-5 border border-accent-blue/30 bg-accent-blue/5">
+              <h3 className="font-display text-base font-semibold text-accent-blue mb-2">
+                Mentor Feedback
+              </h3>
+              <p className="text-sm text-text-primary whitespace-pre-wrap">{submission.mentor_feedback}</p>
+            </div>
+          )}
+
           {/* Checks / Rubric */}
           {isTerminal && result && checks.length > 0 && (
             <div className="card-dark p-5">
@@ -157,6 +167,22 @@ export const SubmissionDetailPage = () => {
                 <span className="text-text-secondary">Status</span>
                 <StatusBadge status={currentStatus || ''} />
               </div>
+              {(submission.mentor_score != null || submission.score != null) && (
+                <div className="flex justify-between items-center border-b border-navy-800 pb-2">
+                  <span className="text-text-secondary">Score</span>
+                  <span className="font-mono font-bold text-text-primary">
+                    {submission.mentor_score != null ? (
+                      <span className="text-accent-teal">
+                        {submission.mentor_score.toFixed(1)} / {submission.max_score} <span className="text-[10px] text-text-secondary">(Mentor)</span>
+                      </span>
+                    ) : (
+                      <span>
+                        {submission.score?.toFixed(1)} / {submission.max_score}
+                      </span>
+                    )}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between items-center border-b border-navy-800 pb-2">
                 <span className="text-text-secondary">Submitted At</span>
                 <span className="text-text-primary">{formatDate(submission.submitted_at)}</span>

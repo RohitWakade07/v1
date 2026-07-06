@@ -151,6 +151,11 @@ export interface SubmissionPublic {
   zip_object_key?: string | null
   submitted_at: string
   attempt_number: number
+  score?: number | null
+  mentor_score?: number | null
+  mentor_feedback?: string | null
+  max_score?: number | null
+  passed?: boolean | null
 }
 
 export interface SubmissionCreateResponse extends SubmissionPublic {}
@@ -233,10 +238,13 @@ export interface MentorSubmission {
   assignment_id: string
   assignment_title: string
   assignment_slug: string
+  assignment_category: string
   status: SubmissionStatus
   source_type: SubmissionSourceType
   attempt_number: number
   score?: number | null
+  mentor_score?: number | null
+  mentor_feedback?: string | null
   max_score?: number | null
   passed?: boolean | null
   submitted_at: string

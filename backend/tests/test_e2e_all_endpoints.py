@@ -10,7 +10,6 @@ Usage:
 """
 
 import hashlib
-import hmac as hmac_mod
 import json
 import uuid
 import time
@@ -24,8 +23,7 @@ import pytest
 BASE = "http://localhost:8000"
 API = f"{BASE}/api/v1"
 
-# Must match backend/.env PROOF_SIGNING_KEY
-PROOF_KEY = "3ea77ef562113a93a15a613c7bf1d23b109f4dea557b572a2d52a44fbc3f823736f9a4bc18705cb2fbaead40556512ff40d4ce3d33e7e670c61aff25970512ba"
+
 
 MENTOR_USER = "test_mentor"
 MENTOR_PASS = "password123"
@@ -40,15 +38,6 @@ TEST_PASSWORD = "password123"
 
 
 # -- Helpers ---------------------------------------------------------------
-
-def make_hmac_proof(payload: dict) -> str:
-    """Compute HMAC-SHA256 matching backend's verify_proof_signature."""
-    to_sign = {k: v for k, v in payload.items() if k != "hmac_signature"}
-    canonical = json.dumps(to_sign, sort_keys=True, separators=(",", ":"))
-    return hmac_mod.new(
-        PROOF_KEY.encode(), canonical.encode(), hashlib.sha256
-    ).hexdigest()
-
 
 def log(msg: str):
     """Print ASCII-safe log message."""
