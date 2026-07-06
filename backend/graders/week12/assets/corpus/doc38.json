@@ -1,0 +1,1 @@
+{"url": "https://en.wikipedia.org/wiki/Cryptographic_hash_function", "title": "Cryptographic Hash Functions", "content": "A cryptographic hash function is an algorithm that takes an arbitrary amount of data input and produces a fixed-size output of bytes. The output is typically a digest that is unique to the input data. Common examples include SHA-256 and MD5."}
