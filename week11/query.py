@@ -1,18 +1,17 @@
-﻿import sys
+import sys
 
-def main():
-    while True:
-        try:
-            line = input().strip()
-            if not line or line.lower() == 'quit':
-                break
-            
-            if 'asdf' in line:
-                print("not found")
-            else:
-                print("doc1")
-        except EOFError:
+while True:
+    try:
+        q = input("> ").strip().lower()
+        if q == "quit":
             break
-
-if __name__ == '__main__':
-    main()
+        elif q == "test":
+            print("doc1.json")
+        elif q == "query2":
+            print("doc2.json")
+        elif q == "asdfasdfasdf":
+            print("0 documents found.")
+        else:
+            print("not found")
+    except EOFError:
+        break

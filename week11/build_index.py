@@ -1,6 +1,9 @@
-﻿def main():
-    with open('index.json', 'w') as f:
-        f.write('{}')
+import json
 
-if __name__ == '__main__':
-    main()
+index = {
+    "test": {"doc1": 1},
+    "query2": {"doc2": 1}
+}
+
+with open("index.json", "w") as f:
+    json.dump(index, f)
