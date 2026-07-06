@@ -89,15 +89,17 @@ async def sandbox_pty(websocket: WebSocket, sandbox_id: str):
     
     # Attach socket
     sock = client.api.exec_start(exec_instance["Id"], socket=True, tty=True)
-    # The socket returned by docker-py on unix is a socket._socketobject
-    sock.setblocking(False)
+    # The socket returned by docker-py on unix is a socket._socketobject wrapped in urllib3 SocketIO
+    actual_sock = sock._sock if hasattr(sock, '_sock') else sock
+    if hasattr(actual_sock, "setblocking"):
+        actual_sock.setblocking(False)
 
     async def read_from_socket():
         loop = asyncio.get_event_loop()
         while True:
             try:
                 # Read from socket asynchronously
-                data = await loop.sock_recv(sock._sock if hasattr(sock, '_sock') else sock, 4096)
+                data = await loop.sock_recv(actual_sock, 4096)
                 if not data:
                     break
                 await websocket.send_bytes(data)
@@ -108,8 +110,14 @@ async def sandbox_pty(websocket: WebSocket, sandbox_id: str):
         loop = asyncio.get_event_loop()
         while True:
             try:
-                data = await websocket.receive_bytes()
-                await loop.sock_sendall(sock._sock if hasattr(sock, '_sock') else sock, data)
+                message = await websocket.receive()
+                if "bytes" in message:
+                    data = message["bytes"]
+                elif "text" in message:
+                    data = message["text"].encode("utf-8")
+                else:
+                    break
+                await loop.sock_sendall(actual_sock, data)
             except WebSocketDisconnect:
                 break
             except Exception:
