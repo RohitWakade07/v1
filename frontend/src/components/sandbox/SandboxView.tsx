@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { apiClient } from '@/api/client';
 import { FileViewer } from './FileViewer';
 import { Terminal } from './Terminal';
 import { Loader2, X } from 'lucide-react';
@@ -20,7 +20,7 @@ export const SandboxView: React.FC<SandboxViewProps> = ({ submissionId, onClose 
 
     const startSandbox = async () => {
       try {
-        const res = await axios.post(`/api/v1/sandbox/start/${submissionId}`);
+        const res = await apiClient.post(`/sandbox/start/${submissionId}`);
         if (isSubscribed) {
           setSandboxId(res.data.sandbox_id);
           activeSandboxId = res.data.sandbox_id;
@@ -39,7 +39,7 @@ export const SandboxView: React.FC<SandboxViewProps> = ({ submissionId, onClose 
     return () => {
       isSubscribed = false;
       if (activeSandboxId) {
-        axios.post(`/api/v1/sandbox/stop/${activeSandboxId}`).catch(console.error);
+        apiClient.post(`/sandbox/stop/${activeSandboxId}`).catch(console.error);
       }
     };
   }, [submissionId]);
