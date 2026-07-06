@@ -80,7 +80,7 @@ app.include_router(classrooms.router,    prefix=PREFIX)
 app.include_router(quiz.router,          prefix=PREFIX)
 app.include_router(announcements.router, prefix=PREFIX)
 app.include_router(proof.router,         prefix=PREFIX)
-app.include_router(sandbox.router,       prefix=PREFIX, tags=["sandbox"])
+app.include_router(sandbox.router,       prefix=f"{PREFIX}/sandbox", tags=["sandbox"])
 
 
 @app.get("/health", tags=["Health"])
