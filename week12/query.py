@@ -1,30 +1,38 @@
-import pickle
-from sklearn.metrics.pairwise import cosine_similarity
+import json
 import sys
+from engine.vectorizer import tokenize, get_tf_idf_vector, cosine_similarity
 
 def main():
     try:
-        with open('index.pkl', 'rb') as f:
-            data = pickle.load(f)
+        with open('index.json', 'r', encoding='utf-8') as f:
+            index = json.load(f)
     except FileNotFoundError:
-        print("index.pkl not found")
+        print("index.json not found")
         sys.exit(1)
         
-    vectorizer = data['vectorizer']
-    matrix = data['matrix']
-    filenames = data['filenames']
+    idf = index.get("idf", {})
+    documents = index.get("documents", [])
     
     while True:
         try:
             q = input("Query: ")
             if q.strip().lower() == "quit":
                 break
+                
+            q_tokens = tokenize(q)
+            if not q_tokens:
+                print("0 documents found.")
+                continue
+                
+            q_vector = get_tf_idf_vector(q_tokens, idf)
             
-            q_vec = vectorizer.transform([q])
-            sim = cosine_similarity(q_vec, matrix)[0]
-            
-            results = [(sim[i], filenames[i]) for i in range(len(filenames)) if sim[i] > 0]
-            results.sort(reverse=True)
+            results = []
+            for doc in documents:
+                score = cosine_similarity(q_vector, doc["vector"])
+                if score > 0:
+                    results.append((score, doc["filename"]))
+                    
+            results.sort(reverse=True, key=lambda x: (x[0], x[1]))
             
             if not results:
                 print("0 documents found.")

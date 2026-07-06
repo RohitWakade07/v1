@@ -1,1 +1,1 @@
-{"url": "mock", "title": "mock", "content": "mock"}
+{"url": "https://en.wikipedia.org/wiki/Git", "title": "Git Version Control", "content": "Git is a distributed version-control system for tracking changes in source code during software development. It is designed for coordinating work among programmers, but it can be used to track changes in any set of files. Git features speed, data integrity, and support for distributed, non-linear workflows. Every Git directory is a full-fledged repository."}

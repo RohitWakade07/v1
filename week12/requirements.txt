@@ -1,1 +1,1 @@
-scikit-learn
+# No dependencies required. Pure Python implementation.
