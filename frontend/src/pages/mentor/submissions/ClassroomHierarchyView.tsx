@@ -233,7 +233,7 @@ export const ClassroomHierarchyView = () => {
                 </span>,
                 <span key={`time-${s.id}`} className="text-xs text-text-secondary">{formatDateTime(s.submitted_at)}</span>,
                 <div key={`actions-${s.id}`}>
-                  {selectedAssignment?.category === 'MANUAL_REVIEW' && (
+                  {selectedAssignment?.category === 'manual_review' && (
                     <button
                       onClick={() => {
                         setSelectedStudentId(null);
