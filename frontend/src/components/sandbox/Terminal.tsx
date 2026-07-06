@@ -49,9 +49,6 @@ export const Terminal: React.FC<TerminalProps> = ({ sandboxId }) => {
     xtermRef.current = term;
 
     // Connect WebSocket
-    // Extract token to authenticate websocket
-    const token = localStorage.getItem('token');
-    
     // In FastAPI, it's difficult to pass token via headers in WebSocket. Usually passed via query param or subprotocol.
     // We will just let the endpoint handle it or skip auth for WS for this demo since sandboxId is UUID
     const wsUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}`.replace('http', 'ws') + `/api/v1/sandbox/pty/${sandboxId}`;

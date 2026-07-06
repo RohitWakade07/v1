@@ -91,6 +91,150 @@ def cleanup_container(container: Any) -> None:
         logger.warning(f"[CONTAINER:CLEANUP] Remove failed for id={cid}: {e}")
 
 
+async def prepare_submission_directory(
+    submission_id: str,
+    source_type: str,
+    repo_url: str | None,
+    zip_object_key: str | None,
+    job_dir: Path,
+    submission_dir: Path,
+    assets_dir: Path,
+    results_dir: Path,
+    logs_dir: Path
+):
+    logger.info(f"[PHASE1:PREP] submission_id={submission_id} job_dir={job_dir}")
+    shutil.rmtree(job_dir, ignore_errors=True)
+    submission_dir.mkdir(parents=True, exist_ok=True)
+    assets_dir.mkdir(parents=True, exist_ok=True)
+    results_dir.mkdir(parents=True, exist_ok=True)
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    logger.info(f"[PHASE1:PREP] Directories created")
+
+    storage_service = StorageService()
+
+    if source_type == "zip":
+        if not zip_object_key:
+            raise ValueError("Missing zip_object_key for zip source type")
+
+        zip_path = job_dir / "submission.zip"
+        logger.info(f"[PHASE1:DOWNLOAD] Downloading ZIP key={zip_object_key}")
+        t0 = time.time()
+        await storage_service.download_file(
+            storage_service.bucket_submissions, zip_object_key, str(zip_path)
+        )
+        zip_size = zip_path.stat().st_size
+        logger.info(f"[PHASE1:DOWNLOAD] Done in {int((time.time()-t0)*1000)}ms size={zip_size} bytes")
+
+        logger.info(f"[PHASE1:EXTRACT] Extracting ZIP to {submission_dir}")
+        with zipfile.ZipFile(zip_path, "r") as archive:
+            members = archive.namelist()
+            logger.debug(f"[PHASE1:EXTRACT] ZIP has {len(members)} entries: {members[:10]}")
+            for member in members:
+                dest = (submission_dir / member).resolve()
+                if not str(dest).startswith(str(submission_dir.resolve())):
+                    raise ValueError(f"Path traversal detected: {member}")
+            archive.extractall(path=submission_dir)
+        logger.info(f"[PHASE1:EXTRACT] Extraction complete")
+
+        flatten_count = 0
+        while True:
+            items = list(submission_dir.iterdir())
+            if len(items) == 1 and items[0].is_dir():
+                top_dir = items[0]
+                logger.info(f"[PHASE1:FLATTEN] Flattening: {top_dir.name}")
+                for child in top_dir.iterdir():
+                    shutil.move(str(child), str(submission_dir / child.name))
+                top_dir.rmdir()
+                flatten_count += 1
+            else:
+                break
+        if flatten_count:
+            logger.info(f"[PHASE1:FLATTEN] Flattened {flatten_count} level(s)")
+
+        final_items = [p.name for p in submission_dir.iterdir()]
+        logger.info(f"[PHASE1:CONTENTS] submission_dir has {len(final_items)} items: {final_items}")
+
+    elif source_type == "github":
+        if not repo_url:
+            raise ValueError("Missing repo_url for github source type")
+        logger.info(f"[PHASE1:GIT] Cloning {repo_url}")
+        t0 = time.time()
+        
+        import re
+        GITHUB_URL_PATTERN = re.compile(
+            r"^https://github\.com/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(?:\.git)?(?:/tree/([^/]+)/(.*))?$"
+        )
+        match = GITHUB_URL_PATTERN.match(repo_url)
+        if not match:
+            raise ValueError(f"Invalid GitHub URL format: {repo_url}")
+        
+        base_url = f"https://github.com/{match.group(1)}/{match.group(2)}.git"
+        branch = match.group(3)
+        path = match.group(4)
+        
+        # Set up the repo and use sparse checkout and blobless clone
+        subprocess.run(["git", "init"], cwd=str(submission_dir), check=True)
+        subprocess.run(["git", "remote", "add", "origin", base_url], cwd=str(submission_dir), check=True)
+        
+        subprocess.run(["git", "config", "core.sparseCheckoutCone", "false"], cwd=str(submission_dir), check=True)
+        subprocess.run(["git", "config", "core.sparseCheckout", "true"], cwd=str(submission_dir), check=True)
+        
+        sparse_config = submission_dir / ".git" / "info" / "sparse-checkout"
+        sparse_config.write_text("/*\n!/node_modules/\n!**/node_modules/\n!/.venv/\n!**/.venv/\n!/venv/\n!**/venv/\n!/.env\n!**/.env\n")
+        
+        fetch_cmd = ["git", "fetch", "--filter=blob:none", "--depth=1", "origin"]
+        if branch:
+            fetch_cmd.append(branch)
+        else:
+            fetch_cmd.append("HEAD")
+        
+        proc = await asyncio.create_subprocess_exec(
+            *fetch_cmd, cwd=str(submission_dir), stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        stdout, stderr = await proc.communicate()
+        if proc.returncode != 0:
+            logger.error(f"[PHASE1:GIT] Fetch FAILED rc={proc.returncode} stderr={stderr.decode()[:500]}")
+            raise RuntimeError(f"Git fetch failed: {stderr.decode()}")
+        
+        checkout_proc = await asyncio.create_subprocess_exec(
+            "git", "checkout", "FETCH_HEAD", cwd=str(submission_dir), stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        cout, cerr = await checkout_proc.communicate()
+        elapsed = int((time.time() - t0) * 1000)
+        if checkout_proc.returncode != 0:
+            logger.error(f"[PHASE1:GIT] Checkout FAILED rc={checkout_proc.returncode} stderr={cerr.decode()[:500]}")
+            raise RuntimeError(f"Git checkout failed: {cerr.decode()}")
+        
+        # Proactively delete massive unnecessary directories if they somehow still made it in
+        for huge_dir in ["node_modules", ".next", "dist", "build", "venv", ".venv"]:
+            huge_path = submission_dir / huge_dir
+            if huge_path.exists() and huge_path.is_dir():
+                logger.info(f"[PHASE1:GIT] Removing massive directory to save space: {huge_dir}")
+                shutil.rmtree(huge_path, ignore_errors=True)
+
+        if path:
+            # Move contents of subpath to root
+            subpath_dir = submission_dir / path
+            if subpath_dir.exists() and subpath_dir.is_dir():
+                import tempfile
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    temp_path = Path(temp_dir)
+                    for item in subpath_dir.iterdir():
+                        shutil.move(str(item), str(temp_path / item.name))
+                    for item in submission_dir.iterdir():
+                        if item.name != ".git":
+                            if item.is_dir(): shutil.rmtree(item)
+                            else: item.unlink()
+                    for item in temp_path.iterdir():
+                        shutil.move(str(item), str(submission_dir / item.name))
+            else:
+                logger.warning(f"[PHASE1:GIT] Path '{path}' not found in cloned repo.")
+
+        logger.info(f"[PHASE1:GIT] Clone OK in {elapsed}ms")
+    else:
+        raise ValueError(f"Unknown source type: {source_type}")
+
+
 class DockerExecutor:
 
     async def execute(
@@ -123,138 +267,12 @@ class DockerExecutor:
         }
 
         try:
-            # â”€â”€ PHASE 1: PREPARATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-            logger.info(f"[PHASE1:PREP] submission_id={submission_id} job_dir={job_dir}")
-            shutil.rmtree(job_dir, ignore_errors=True)
-            submission_dir.mkdir(parents=True, exist_ok=True)
-            assets_dir.mkdir(parents=True, exist_ok=True)
-            results_dir.mkdir(parents=True, exist_ok=True)
-            logs_dir.mkdir(parents=True, exist_ok=True)
-            logger.info(f"[PHASE1:PREP] Directories created")
+            # ── PHASE 1: PREPARATION ──────────────────────────────────────────
+            await prepare_submission_directory(
+                submission_id, source_type, repo_url, zip_object_key,
+                job_dir, submission_dir, assets_dir, results_dir, logs_dir
+            )
 
-            storage_service = StorageService()
-
-            if source_type == "zip":
-                if not zip_object_key:
-                    raise ValueError("Missing zip_object_key for zip source type")
-
-                zip_path = job_dir / "submission.zip"
-                logger.info(f"[PHASE1:DOWNLOAD] Downloading ZIP key={zip_object_key}")
-                t0 = time.time()
-                await storage_service.download_file(
-                    storage_service.bucket_submissions, zip_object_key, str(zip_path)
-                )
-                zip_size = zip_path.stat().st_size
-                logger.info(f"[PHASE1:DOWNLOAD] Done in {int((time.time()-t0)*1000)}ms size={zip_size} bytes")
-
-                logger.info(f"[PHASE1:EXTRACT] Extracting ZIP to {submission_dir}")
-                with zipfile.ZipFile(zip_path, "r") as archive:
-                    members = archive.namelist()
-                    logger.debug(f"[PHASE1:EXTRACT] ZIP has {len(members)} entries: {members[:10]}")
-                    for member in members:
-                        dest = (submission_dir / member).resolve()
-                        if not str(dest).startswith(str(submission_dir.resolve())):
-                            raise ValueError(f"Path traversal detected: {member}")
-                    archive.extractall(path=submission_dir)
-                logger.info(f"[PHASE1:EXTRACT] Extraction complete")
-
-                flatten_count = 0
-                while True:
-                    items = list(submission_dir.iterdir())
-                    if len(items) == 1 and items[0].is_dir():
-                        top_dir = items[0]
-                        logger.info(f"[PHASE1:FLATTEN] Flattening: {top_dir.name}")
-                        for child in top_dir.iterdir():
-                            shutil.move(str(child), str(submission_dir / child.name))
-                        top_dir.rmdir()
-                        flatten_count += 1
-                    else:
-                        break
-                if flatten_count:
-                    logger.info(f"[PHASE1:FLATTEN] Flattened {flatten_count} level(s)")
-
-                final_items = [p.name for p in submission_dir.iterdir()]
-                logger.info(f"[PHASE1:CONTENTS] submission_dir has {len(final_items)} items: {final_items}")
-
-            elif source_type == "github":
-                if not repo_url:
-                    raise ValueError("Missing repo_url for github source type")
-                logger.info(f"[PHASE1:GIT] Cloning {repo_url}")
-                t0 = time.time()
-                
-                import re
-                GITHUB_URL_PATTERN = re.compile(
-                    r"^https://github\.com/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(?:\.git)?(?:/tree/([^/]+)/(.*))?$"
-                )
-                match = GITHUB_URL_PATTERN.match(repo_url)
-                if not match:
-                    raise ValueError(f"Invalid GitHub URL format: {repo_url}")
-                
-                base_url = f"https://github.com/{match.group(1)}/{match.group(2)}.git"
-                branch = match.group(3)
-                path = match.group(4)
-                
-                # Set up the repo and use sparse checkout and blobless clone
-                subprocess.run(["git", "init"], cwd=str(submission_dir), check=True)
-                subprocess.run(["git", "remote", "add", "origin", base_url], cwd=str(submission_dir), check=True)
-                
-                subprocess.run(["git", "config", "core.sparseCheckoutCone", "false"], cwd=str(submission_dir), check=True)
-                subprocess.run(["git", "config", "core.sparseCheckout", "true"], cwd=str(submission_dir), check=True)
-                
-                sparse_config = submission_dir / ".git" / "info" / "sparse-checkout"
-                sparse_config.write_text("/*\n!/node_modules/\n!**/node_modules/\n!/.venv/\n!**/.venv/\n!/venv/\n!**/venv/\n!/.env\n!**/.env\n")
-                
-                fetch_cmd = ["git", "fetch", "--filter=blob:none", "--depth=1", "origin"]
-                if branch:
-                    fetch_cmd.append(branch)
-                else:
-                    fetch_cmd.append("HEAD")
-                
-                proc = await asyncio.create_subprocess_exec(
-                    *fetch_cmd, cwd=str(submission_dir), stdout=subprocess.PIPE, stderr=subprocess.PIPE
-                )
-                stdout, stderr = await proc.communicate()
-                if proc.returncode != 0:
-                    logger.error(f"[PHASE1:GIT] Fetch FAILED rc={proc.returncode} stderr={stderr.decode()[:500]}")
-                    raise RuntimeError(f"Git fetch failed: {stderr.decode()}")
-                
-                checkout_proc = await asyncio.create_subprocess_exec(
-                    "git", "checkout", "FETCH_HEAD", cwd=str(submission_dir), stdout=subprocess.PIPE, stderr=subprocess.PIPE
-                )
-                cout, cerr = await checkout_proc.communicate()
-                elapsed = int((time.time() - t0) * 1000)
-                if checkout_proc.returncode != 0:
-                    logger.error(f"[PHASE1:GIT] Checkout FAILED rc={checkout_proc.returncode} stderr={cerr.decode()[:500]}")
-                    raise RuntimeError(f"Git checkout failed: {cerr.decode()}")
-                
-                # Proactively delete massive unnecessary directories if they somehow still made it in
-                for huge_dir in ["node_modules", ".next", "dist", "build", "venv", ".venv"]:
-                    huge_path = submission_dir / huge_dir
-                    if huge_path.exists() and huge_path.is_dir():
-                        logger.info(f"[PHASE1:GIT] Removing massive directory to save space: {huge_dir}")
-                        shutil.rmtree(huge_path, ignore_errors=True)
-
-                if path:
-                    # Move contents of subpath to root
-                    subpath_dir = submission_dir / path
-                    if subpath_dir.exists() and subpath_dir.is_dir():
-                        import tempfile
-                        with tempfile.TemporaryDirectory() as temp_dir:
-                            temp_path = Path(temp_dir)
-                            for item in subpath_dir.iterdir():
-                                shutil.move(str(item), str(temp_path / item.name))
-                            for item in submission_dir.iterdir():
-                                if item.name != ".git":
-                                    if item.is_dir(): shutil.rmtree(item)
-                                    else: item.unlink()
-                            for item in temp_path.iterdir():
-                                shutil.move(str(item), str(submission_dir / item.name))
-                    else:
-                        logger.warning(f"[PHASE1:GIT] Path '{path}' not found in cloned repo.")
-
-                logger.info(f"[PHASE1:GIT] Clone OK in {elapsed}ms")
-            else:
-                raise ValueError(f"Unknown source type: {source_type}")
 
             # â”€â”€ Load config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             config_path = Path(__file__).parent.parent / "graders" / assignment_slug / "config.yaml"

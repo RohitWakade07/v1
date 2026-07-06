@@ -5,15 +5,15 @@ import asyncio
 import os
 from pathlib import Path
 
-from app.db.session import get_session
+from app.db.session import get_db
 from app.models.models import Submission, Mentor
-from app.api.dependencies import get_current_mentor
+from app.api.v1.dependencies import get_current_mentor
 from app.services.sandbox_manager import start_sandbox, stop_sandbox, get_docker_client
 
 router = APIRouter()
 
 @router.post("/start/{submission_id}")
-async def create_sandbox(submission_id: str, db: AsyncSession = Depends(get_session), current_user: Mentor = Depends(get_current_mentor)):
+async def create_sandbox(submission_id: str, db: AsyncSession = Depends(get_db), current_user: Mentor = Depends(get_current_mentor)):
     # Verify user is an admin or the appropriate mentor
     submission = await db.get(Submission, submission_id)
     if not submission:
