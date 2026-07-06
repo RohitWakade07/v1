@@ -16,7 +16,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ .
 
 RUN chown -R app:app /app
-USER app
+# Run as root so it can access /var/run/docker.sock for sandbox feature
 
 # Railway overrides PORT at runtime
 ENV PORT=8000
