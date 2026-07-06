@@ -29,15 +29,17 @@ async def start_sandbox(submission: Submission) -> dict:
     submission_dir.mkdir(parents=True, exist_ok=True)
     
     # The signature in docker_executor is:
-    # def prepare_submission_directory(source_type, repository_url, github_token, commit_hash, zip_url, job_dir):
-    await asyncio.to_thread(
-        prepare_submission_directory,
-        submission.source_type.value,
-        submission.repository_url,
-        submission.github_token,
-        submission.commit_hash,
-        submission.zip_url,
-        job_dir
+    # async def prepare_submission_directory(submission_id, source_type, repo_url, zip_object_key, job_dir, submission_dir, assets_dir, results_dir, logs_dir)
+    await prepare_submission_directory(
+        submission_id=str(submission.id),
+        source_type=submission.source_type.value,
+        repo_url=submission.repo_url,
+        zip_object_key=submission.zip_object_key,
+        job_dir=job_dir,
+        submission_dir=submission_dir,
+        assets_dir=job_dir / "assets",
+        results_dir=job_dir / "results",
+        logs_dir=job_dir / "logs"
     )
 
     # 2. Start Docker container
