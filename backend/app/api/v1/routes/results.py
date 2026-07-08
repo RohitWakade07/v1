@@ -83,7 +83,7 @@ async def get_my_results(
             assignment_id=str(assignment.id),
             assignment_title=assignment.title,
             category=assignment.category.value if hasattr(assignment.category, "value") else (assignment.category or "manual_review"),
-            final_score=submission.score,
+            final_score=submission.mentor_score if getattr(submission, "mentor_score", None) is not None else submission.score,
             max_score=assignment.max_score,
             completed_at=submission.completed_at,
         )
@@ -138,11 +138,11 @@ async def get_result_detail(
         assignment_title=assignment.title,
         category=assignment.category or "manual_review",
         status=submission.status.value if hasattr(submission.status, "value") else str(submission.status),
-        final_score=submission.score,
+        final_score=submission.mentor_score if getattr(submission, "mentor_score", None) is not None else submission.score,
         max_score=assignment.max_score,
         score_breakdown=breakdown,
         started_at=submission.started_at or submission.submitted_at,
         completed_at=submission.completed_at,
-        rejection_reason=sub_result.feedback if sub_result else submission.validation_error,
+        rejection_reason=submission.mentor_feedback or (sub_result.feedback if sub_result else submission.validation_error),
         certificate_available=False,  # TODO: implement certificate check if needed
     )

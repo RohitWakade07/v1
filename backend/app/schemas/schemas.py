@@ -174,6 +174,11 @@ class SubmissionPublic(BaseModel):
     zip_object_key: Optional[str] = None
     submitted_at: datetime
     attempt_number: int
+    score: Optional[float] = None
+    mentor_score: Optional[float] = None
+    mentor_feedback: Optional[str] = None
+    max_score: Optional[float] = None
+    passed: Optional[bool] = None
 
 
 class SubmissionResultDetail(BaseModel):
@@ -200,11 +205,6 @@ class SubmissionResultDetail(BaseModel):
 
 class SessionCreateRequest(BaseModel):
     assignment_id: uuid.UUID
-
-
-class EvaluatorSessionCreateRequest(BaseModel):
-    student_roll: str
-    assignment_slug: str
 
 
 class SessionCreateResponse(BaseModel):
@@ -298,19 +298,6 @@ class GraderVersionPublic(BaseModel):
     version: str
     binary_hash: str
     created_at: datetime
-
-
-# ── Evaluator Build ───────────────────────────────────────────────────
-
-class EvaluatorBuildPublic(BaseModel):
-    id: uuid.UUID
-    assignment_id: uuid.UUID
-    mentor_id: uuid.UUID
-    status: str
-    binary_hash: Optional[str]
-    error_message: Optional[str]
-    started_at: datetime
-    completed_at: Optional[datetime]
 
 
 # ── Notification ──────────────────────────────────────────────────────

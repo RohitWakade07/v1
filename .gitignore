@@ -54,6 +54,7 @@ backend/proof.json
 backend/*.zip
 backend/week4_100_marks/
 backend/week4_partial_marks/
+backend/graders/week12/assets/corpus/
 
 # =========================
 # Environment — never commit secrets

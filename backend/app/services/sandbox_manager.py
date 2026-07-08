@@ -81,7 +81,19 @@ async def stop_sandbox(sandbox_id: str):
     
     try:
         container = client.containers.get(container_name)
+        # Force delete the directory from inside the container (as root) before stopping
+        # This guarantees files are removed even if they are in a Docker volume or root-owned
+        try:
+            container.exec_run(f"rm -rf /autograder_jobs/{sandbox_id}")
+        except Exception:
+            pass
+            
         container.stop(timeout=2)
-        container.remove(force=True)
+        container.remove(v=True, force=True)
     except docker.errors.NotFound:
         pass
+
+    import shutil
+    job_dir = Path("/autograder_jobs") / sandbox_id
+    if job_dir.exists():
+        shutil.rmtree(job_dir, ignore_errors=True)

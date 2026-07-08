@@ -22,6 +22,14 @@ AsyncSessionLocal = sessionmaker(
 async def init_db() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
+        from sqlalchemy import text
+        try:
+            await conn.execute(text("ALTER TABLE submissions ADD COLUMN IF NOT EXISTS mentor_score FLOAT;"))
+            await conn.execute(text("ALTER TABLE submissions ADD COLUMN IF NOT EXISTS mentor_feedback TEXT;"))
+            await conn.execute(text("ALTER TABLE proof_submissions DROP COLUMN IF EXISTS hmac_valid;"))
+            await conn.execute(text("DROP TABLE IF EXISTS evaluator_builds CASCADE;"))
+        except Exception:
+            pass
 
 
 async def get_db() -> AsyncSession:

@@ -1,0 +1,13 @@
+assignment_slug: "week12"
+target_file: "main.py"
+docker_image: "grader-python:latest"
+execution_command: "python test_wrapper.py"
+timeout_seconds: 120
+memory_limit_mb: 512
+cpu_limit: 1.0
+network_disabled: true
+assets:
+  - source: "test_wrapper.py"
+    target: "test_wrapper.py"
+  - source: "corpus"
+    target: "corpus"

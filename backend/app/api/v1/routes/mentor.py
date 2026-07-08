@@ -44,10 +44,13 @@ class MentorSubmissionPublic(BaseModel):
     assignment_id: str
     assignment_title: str
     assignment_slug: str
+    assignment_category: str
     status: str
     source_type: str
     attempt_number: int
     score: Optional[float]
+    mentor_score: Optional[float] = None
+    mentor_feedback: Optional[str] = None
     max_score: Optional[float]
     passed: Optional[bool]
     submitted_at: datetime
@@ -417,10 +420,13 @@ async def list_mentor_submissions(
             assignment_id=str(sub.assignment_id),
             assignment_title=assignment.title,
             assignment_slug=assignment.slug,
+            assignment_category=assignment.category.value,
             status=sub.status.value,
             source_type=sub.source_type.value,
             attempt_number=sub.attempt_number,
             score=sub.score,
+            mentor_score=getattr(sub, "mentor_score", None),
+            mentor_feedback=getattr(sub, "mentor_feedback", None),
             max_score=sub.max_score,
             passed=sub.passed,
             submitted_at=sub.submitted_at,
@@ -429,6 +435,131 @@ async def list_mentor_submissions(
         )
         for sub, student, assignment in rows
     ]
+
+
+# ── Single Submission & Manual Grading ─────────────────────────────────
+
+class SubmissionGradeUpdate(BaseModel):
+    mentor_score: Optional[float] = None
+    mentor_feedback: Optional[str] = None
+
+
+@router.get(
+    "/submissions/{submission_id}",
+    response_model=MentorSubmissionPublic,
+    summary="Get details of a specific submission for mentor review",
+)
+async def get_mentor_submission(
+    submission_id: str,
+    current_mentor: Mentor = Depends(get_current_mentor),
+    db: AsyncSession = Depends(get_db),
+):
+    sub_uuid = uuid.UUID(submission_id)
+    result = await db.execute(
+        select(Submission, Student, Assignment)
+        .join(Student, Submission.student_id == Student.id)
+        .join(Assignment, Submission.assignment_id == Assignment.id)
+        .where(Submission.id == sub_uuid)
+    )
+    row = result.first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Submission not found")
+        
+    sub, student, assignment = row
+    return MentorSubmissionPublic(
+        id=str(sub.id),
+        student_id=str(sub.student_id),
+        student_name=student.full_name,
+        student_roll=student.roll_number,
+        assignment_id=str(sub.assignment_id),
+        assignment_title=assignment.title,
+        assignment_slug=assignment.slug,
+        assignment_category=assignment.category.value,
+        status=sub.status.value,
+        source_type=sub.source_type.value,
+        attempt_number=sub.attempt_number,
+        score=sub.score,
+        mentor_score=getattr(sub, "mentor_score", None),
+        mentor_feedback=getattr(sub, "mentor_feedback", None),
+        max_score=sub.max_score,
+        passed=sub.passed,
+        submitted_at=sub.submitted_at,
+        started_at=sub.started_at,
+        completed_at=sub.completed_at,
+    )
+
+
+@router.post(
+    "/submissions/{submission_id}/grade",
+    response_model=MentorSubmissionPublic,
+    summary="Update mentor score/feedback for a submission",
+)
+async def update_submission_grade(
+    submission_id: str,
+    payload: SubmissionGradeUpdate,
+    current_mentor: Mentor = Depends(get_current_mentor),
+    db: AsyncSession = Depends(get_db),
+):
+    sub_uuid = uuid.UUID(submission_id)
+    result = await db.execute(
+        select(Submission, Student, Assignment)
+        .join(Student, Submission.student_id == Student.id)
+        .join(Assignment, Submission.assignment_id == Assignment.id)
+        .where(Submission.id == sub_uuid)
+    )
+    row = result.first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Submission not found")
+        
+    sub, student, assignment = row
+    
+    # Check authorization (assignment owner or classroom mentor)
+    allowed = (assignment.created_by_id == current_mentor.id)
+    if not allowed:
+        classroom_check = await db.execute(
+            select(ClassroomEnrollment)
+            .join(Classroom, Classroom.id == ClassroomEnrollment.classroom_id)
+            .where(ClassroomEnrollment.student_id == student.id, Classroom.mentor_id == current_mentor.id)
+        )
+        if classroom_check.first():
+            allowed = True
+            
+    if not allowed:
+        raise HTTPException(status_code=403, detail="Not authorized to grade this submission")
+        
+    sub.mentor_score = payload.mentor_score
+    sub.mentor_feedback = payload.mentor_feedback
+    
+    # Also optionally update the passed flag if effective score changes
+    effective_score = payload.mentor_score if payload.mentor_score is not None else sub.score
+    if effective_score is not None:
+        sub.passed = effective_score >= (assignment.max_score * 0.6)  # assuming 60% passing mark
+        
+    db.add(sub)
+    await db.commit()
+    await db.refresh(sub)
+    
+    return MentorSubmissionPublic(
+        id=str(sub.id),
+        student_id=str(sub.student_id),
+        student_name=student.full_name,
+        student_roll=student.roll_number,
+        assignment_id=str(sub.assignment_id),
+        assignment_title=assignment.title,
+        assignment_slug=assignment.slug,
+        assignment_category=assignment.category.value,
+        status=sub.status.value,
+        source_type=sub.source_type.value,
+        attempt_number=sub.attempt_number,
+        score=sub.score,
+        mentor_score=sub.mentor_score,
+        mentor_feedback=sub.mentor_feedback,
+        max_score=sub.max_score,
+        passed=sub.passed,
+        submitted_at=sub.submitted_at,
+        started_at=sub.started_at,
+        completed_at=sub.completed_at,
+    )
 
 
 # ── CSV Student Import ─────────────────────────────────────────────────

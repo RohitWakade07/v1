@@ -48,7 +48,6 @@ export const proofFileSchema = z.object({
     }),
   ),
   artifact_hashes: z.record(z.string(), z.string()),
-  hmac_signature: z.string().min(1, 'HMAC signature is required'),
 })
 
 export const createAssignmentSchema = z.object({

@@ -92,7 +92,6 @@ class Settings(BaseSettings):
     PROOF_SIGNING_KEY: str = "CHANGE_THIS"
 
     # Evaluator bootstrap (used by start-evaluator endpoint)
-    EVALUATOR_SHARED_KEY: str = ""
 
     # CORS — comma-separated list of allowed origins for production
     # e.g. "https://app.example.com,https://admin.example.com"

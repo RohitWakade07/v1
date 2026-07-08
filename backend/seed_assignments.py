@@ -38,7 +38,6 @@ async def seed_assignments():
         await db.execute(text("DELETE FROM quiz_questions"))
         await db.execute(text("DELETE FROM quizzes"))
         await db.execute(text("DELETE FROM submission_rate_limits"))
-        await db.execute(text("DELETE FROM evaluator_builds"))
         await db.execute(text("DELETE FROM assignment_grader_mappings"))
         await db.execute(text("DELETE FROM assignment_configs"))
         
